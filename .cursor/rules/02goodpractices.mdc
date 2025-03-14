@@ -1,0 +1,195 @@
+---
+description: Good practics in ROS2
+globs: 
+alwaysApply: false
+---
+# Regla: Buenas Prácticas para AidGuide 04
+
+Esta regla establece las buenas prácticas y estándares de desarrollo para el proyecto AidGuide 04, un sistema de guiado asistido para robots móviles basado en ROS2 Galactic.
+
+## Descripción
+Define los estándares de calidad, convenciones de código y mejores prácticas para mantener la consistencia y profesionalismo en el desarrollo del proyecto.
+
+## Estándares de Código
+
+### 1. Estructura de Nodos
+- Cada nodo debe estar en su propio archivo Python
+- Nombres de archivos en snake_case
+- Estructura básica de un nodo:
+```python
+#!/usr/bin/env python3
+"""
+Descripción del nodo y su funcionalidad
+"""
+
+import rclpy
+from rclpy.node import Node
+from std_msgs.msg import String
+
+class NodoEjemplo(Node):
+    """
+    Clase que implementa la funcionalidad del nodo
+    """
+    def __init__(self):
+        super().__init__('nodo_ejemplo')
+        self.get_logger().info('Iniciando nodo...')
+        
+    def metodo_ejemplo(self):
+        """
+        Descripción del método
+        """
+        pass
+
+def main(args=None):
+    rclpy.init(args=args)
+    nodo = NodoEjemplo()
+    try:
+        rclpy.spin(nodo)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        nodo.destroy_node()
+        rclpy.shutdown()
+
+if __name__ == '__main__':
+    main()
+```
+
+### 2. Convenciones de Nombrado
+- Clases: PascalCase (ej: `NavigationController`)
+- Métodos: snake_case (ej: `process_sensor_data`)
+- Variables: snake_case (ej: `robot_position`)
+- Constantes: UPPER_SNAKE_CASE (ej: `MAX_SPEED`)
+- Topics: snake_case (ej: `/robot/status`)
+- Servicios: PascalCase (ej: `/GetRobotStatus`)
+
+### 3. Documentación
+- Cada archivo debe tener un docstring al inicio
+- Cada clase debe tener un docstring
+- Cada método público debe tener un docstring
+- Formato de docstrings:
+```python
+"""
+Descripción general del módulo/clase/método
+
+Args:
+    param1 (tipo): Descripción del parámetro
+
+Returns:
+    tipo: Descripción del valor de retorno
+
+Raises:
+    ExceptionType: Descripción de la excepción
+"""
+```
+
+### 4. Gestión de Errores
+- Usar excepciones específicas de ROS2
+- Implementar manejo de errores en operaciones críticas
+- Logging apropiado para diferentes niveles:
+  - DEBUG: Información detallada
+  - INFO: Estado normal
+  - WARN: Situaciones inesperadas pero manejables
+  - ERROR: Errores que requieren atención
+  - FATAL: Errores críticos que impiden la operación
+
+### 5. Testing
+- Tests unitarios para cada módulo
+- Tests de integración para funcionalidades complejas
+- Cobertura mínima de código: 80%
+- Nombres de tests descriptivos
+- Estructura de test:
+```python
+def test_nombre_del_test():
+    """
+    Descripción del test
+    """
+    # Arrange
+    setup_test_environment()
+    
+    # Act
+    result = execute_test_action()
+    
+    # Assert
+    assert result == expected_value
+```
+
+### 6. Control de Versiones
+- Commits atómicos y descriptivos
+- Mensajes de commit en español
+- Formato de mensajes:
+```
+<tipo>: <descripción>
+
+[opcional: cuerpo del mensaje]
+
+[opcional: pie de página]
+```
+- Tipos de commit:
+  - feat: Nueva característica
+  - fix: Corrección de bug
+  - docs: Cambios en documentación
+  - style: Cambios de formato
+  - refactor: Refactorización de código
+  - test: Añadir/modificar tests
+  - chore: Tareas de mantenimiento
+
+### 7. Seguridad
+- No exponer información sensible en logs
+- Validar todos los inputs
+- Implementar timeouts en operaciones críticas
+- Manejar adecuadamente los recursos del sistema
+
+### 8. Rendimiento
+- Optimizar bucles y operaciones costosas
+- Usar estructuras de datos apropiadas
+- Implementar caching cuando sea necesario
+- Monitorear uso de recursos
+
+## Herramientas de Desarrollo
+
+### 1. Linting y Formateo
+- Usar flake8 para linting
+- Usar black para formateo
+- Configuración en setup.cfg:
+```ini
+[flake8]
+max-line-length = 100
+exclude = .git,__pycache__,build,dist
+```
+
+### 2. Pre-commit Hooks
+- Validar formato de código
+- Ejecutar tests
+- Verificar documentación
+- Comprobar seguridad básica
+
+### 3. CI/CD
+- Tests automáticos en cada push
+- Validación de documentación
+- Análisis estático de código
+- Generación automática de documentación
+
+## Workflow de Desarrollo
+
+### 1. Creación de Nueva Característica
+1. Crear rama feature/descripcion
+2. Implementar cambios
+3. Añadir tests
+4. Actualizar documentación
+5. Crear pull request
+6. Revisión de código
+7. Merge a main
+
+### 2. Corrección de Bugs
+1. Crear rama hotfix/descripcion
+2. Implementar corrección
+3. Añadir tests de regresión
+4. Crear pull request
+5. Revisión de código
+6. Merge a main y develop
+
+## Referencias
+- [ROS2 Code Style Guide](mdc:https:/docs.ros.org/en/humble/The-ROS2-Project/Contributing/Code-Style-Language-Versions.html)
+- [Python Style Guide (PEP 8)](mdc:https:/www.python.org/dev/peps/pep-0008)
+- [ROS2 Testing Guidelines](mdc:https:/docs.ros.org/en/humble/The-ROS2-Project/Contributing/Testing.html) 

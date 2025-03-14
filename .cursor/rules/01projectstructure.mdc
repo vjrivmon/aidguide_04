@@ -1,0 +1,206 @@
+---
+description: Project Structure for ROS2 Galactic
+globs: 
+alwaysApply: false
+---
+# Regla: Crear Estructura de Proyecto ROS2
+
+Esta regla genera la estructura básica de directorios y archivos necesarios para un proyecto ROS2 grupal.
+
+## Descripción
+Crea una estructura de directorios y archivos base para un proyecto ROS2, incluyendo los paquetes necesarios, archivos de configuración y documentación inicial.
+
+## Estructura del Proyecto
+```
+{workspace_name}/
+├── src/
+│   ├── custom_interface/           # Paquete de interfaces personalizadas
+│   │   ├── msg/                   # Mensajes personalizados
+│   │   ├── srv/                   # Servicios personalizados
+│   │   ├── CMakeLists.txt         # Configuración de compilación
+│   │   └── package.xml            # Metadatos del paquete
+│   └── {project_name}/            # Paquete principal
+│       ├── {project_name}/        # Módulo Python principal
+│       │   └── __init__.py        # Inicialización del módulo
+│       ├── launch/                # Archivos de lanzamiento
+│       ├── resource/              # Recursos del paquete
+│       │   └── {project_name}     # Identificador del paquete
+│       ├── test/                  # Tests unitarios
+│       │   ├── test_copyright.py
+│       │   ├── test_flake8.py
+│       │   └── test_pep257.py
+│       ├── package.xml            # Metadatos del paquete
+│       ├── setup.cfg              # Configuración de instalación
+│       └── setup.py               # Script de instalación
+└── .gitignore                     # Exclusiones de Git
+```
+
+## Mejores Prácticas
+
+### 1. Organización de Código
+- Separar claramente la lógica de negocio en módulos independientes
+- Mantener una estructura de directorios clara y consistente
+- Usar nombres descriptivos para archivos y directorios
+- Documentar cada módulo y función
+
+### 2. Gestión de Dependencias
+- Especificar versiones exactas en package.xml
+- Mantener las dependencias al mínimo necesario
+- Documentar todas las dependencias externas
+
+### 3. Testing
+- Incluir tests unitarios para cada módulo
+- Mantener una cobertura de código alta
+- Automatizar la ejecución de tests
+
+### 4. Documentación
+- Mantener README.md actualizado
+- Documentar APIs y interfaces
+- Incluir ejemplos de uso
+
+### 5. Control de Versiones
+- Usar ramas feature para nuevas funcionalidades
+- Mantener commits atómicos y descriptivos
+- Seguir convenciones de nombrado
+
+## Plantillas
+
+### package.xml (custom_interface)
+```xml
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>custom_interface</name>
+  <version>0.0.1</version>
+  <description>Interfaces personalizadas para {project_name}</description>
+  <maintainer email="{maintainer_email}">{maintainer_name}</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>rosidl_default_generators</build_depend>
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <member_of_group>rosidl_interface_packages</member_of_group>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+```
+
+### CMakeLists.txt (custom_interface)
+```cmake
+cmake_minimum_required(VERSION 3.8)
+project(custom_interface)
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
+
+rosidl_generate_interfaces(${PROJECT_NAME}
+  "msg/RobotState.msg"
+  "msg/NavigationCommand.msg"
+  "srv/GetRobotStatus.srv"
+  "srv/SetNavigationGoal.srv"
+)
+
+ament_package()
+```
+
+### setup.py (project)
+```python
+from setuptools import setup
+import os
+from glob import glob
+
+package_name = '{project_name}'
+
+setup(
+    name=package_name,
+    version='0.0.1',
+    packages=[package_name],
+    data_files=[
+        ('share/ament_index/resource_index/packages',
+            ['resource/' + package_name]),
+        ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name), glob('launch/*.launch.py'))
+    ],
+    install_requires=['setuptools'],
+    zip_safe=True,
+    maintainer='{maintainer_name}',
+    maintainer_email='{maintainer_email}',
+    description='{project_description}',
+    license='MIT',
+    tests_require=['pytest'],
+    entry_points={
+        'console_scripts': [
+            'main_node = {project_name}.main_node:main',
+            'navigation_node = {project_name}.navigation_node:main',
+            'safety_node = {project_name}.safety_node:main'
+        ],
+    },
+)
+```
+
+### .gitignore
+```
+# ROS2 build directories
+build/
+install/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+```
+
+## Validación
+- Verificar que todos los directorios se han creado correctamente
+- Comprobar que los archivos de configuración son válidos
+- Validar que la estructura sigue las convenciones de ROS2
+- Confirmar que los permisos de archivos son correctos
+
+## Notas
+- Asegurarse de tener ROS2 instalado antes de ejecutar
+- Modificar los archivos de configuración según las necesidades específicas
+- Actualizar las dependencias según los requisitos del proyecto
+- Mantener la documentación actualizada
+
+## Referencias
+- [ROS2 Creating a workspace](mdc:https:/docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-A-Workspace/Creating-A-Workspace.html)
+- [ROS2 Creating a package](mdc:https:/docs.ros.org/en/humble/Tutorials/Beginner-Client-Libraries/Creating-Your-First-ROS2-Package.html)
