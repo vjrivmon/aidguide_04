@@ -40,7 +40,7 @@ export default function Home() {
                 Tecnología Inclusiva
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-                AidGUide: Navega el mundo con confianza y seguridad
+                AidGuide: Navega el mundo con confianza y seguridad
               </h1>
               <p className="text-lg mb-8 text-gray-700">
                 Perro guía para personas invidentes y con movilidad reducida con inteligencia artificial y visión en tiempo real para crear un entorno

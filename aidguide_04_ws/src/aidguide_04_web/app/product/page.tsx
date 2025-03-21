@@ -1,6 +1,24 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 import { Check } from "lucide-react"
+import dynamic from "next/dynamic"
+import { Suspense } from "react"
+
+// Importar el componente de modelo 3D de forma dinámica
+const RobotProductoModel = dynamic(() => import("@/components/robot-producto-model"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-80 md:h-96 flex items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 rounded-33 shadow-lg">
+      <div className="animate-pulse flex flex-col items-center">
+        <div className="w-24 h-24 bg-blue-200 rounded-full mb-4"></div>
+        <div className="h-4 w-32 bg-blue-200 rounded mb-2"></div>
+        <div className="h-3 w-24 bg-blue-100 rounded"></div>
+      </div>
+    </div>
+  ),
+})
 
 export default function Product() {
   const features = [
@@ -79,7 +97,19 @@ export default function Product() {
             </div>
             <div className="flex justify-center">
               <div className="relative w-full max-w-md h-80 md:h-96">
-                <Image src="/logo.svg" alt="AidGuide Robot" fill className="object-contain" />
+                <Suspense
+                  fallback={
+                    <div className="w-full h-80 md:h-96 flex items-center justify-center bg-gradient-to-b from-blue-50 to-gray-100 rounded-33 shadow-lg">
+                      <div className="animate-pulse flex flex-col items-center">
+                        <div className="w-24 h-24 bg-blue-200 rounded-full mb-4"></div>
+                        <div className="h-4 w-32 bg-blue-200 rounded mb-2"></div>
+                        <div className="h-3 w-24 bg-blue-100 rounded"></div>
+                      </div>
+                    </div>
+                  }
+                >
+                  <RobotProductoModel />
+                </Suspense>
               </div>
             </div>
           </div>
