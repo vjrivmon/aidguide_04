@@ -36,14 +36,14 @@ export default function Home() {
         <div className="container-custom relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
-              <div className="inline-block px-3 py-1 bg-blue-100 text-button rounded-33 text-sm font-medium mb-6">
+              <div className="inline-block px-3 py-1 bg-green-300 text-black rounded-33 text-sm font-medium mb-6">
                 Tecnología Inclusiva
               </div>
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 leading-tight">
-                Robot guía para personas invidentes
+                AidGuide: Navega el mundo con confianza y seguridad
               </h1>
               <p className="text-lg mb-8 text-gray-700">
-                Utilizando tecnologías avanzadas, inteligencia artificial y visión en tiempo real para crear un entorno
+                Perro guía para personas invidentes y con movilidad reducida con inteligencia artificial y visión en tiempo real para crear un entorno
                 más seguro e inclusivo.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -120,7 +120,7 @@ export default function Home() {
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-button rounded-full"></div>
             </h2>
             <p className="max-w-2xl mx-auto text-gray-600 mt-6">
-              Nuestro robot guía está diseñado para proporcionar la máxima autonomía y seguridad a personas invidentes.
+              Nuestro robot guía está diseñado para proporcionar la máxima autonomía y seguridad a sus usuarios.
             </p>
           </motion.div>
 
@@ -196,7 +196,7 @@ export default function Home() {
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-button rounded-full"></div>
             </h2>
             <p className="max-w-2xl mx-auto text-gray-600 mt-6">
-              Descubre cómo AidGuide está transformando la vida de personas invidentes.
+              Descubre cómo AidGuide está transformando la vida de sus usuarios.
             </p>
           </motion.div>
 

@@ -21,9 +21,9 @@ export default function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Link href="/" className="text-text hover:text-button transition-colors">
+            {/*<Link href="/" className="text-text hover:text-button transition-colors">
               Inicio
-            </Link>
+            </Link>*/}
 
             {/* Enlaces para todos los usuarios */}
             {(!user || user.role === "user") && (
@@ -98,13 +98,13 @@ export default function Header() {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav className="md:hidden py-4 flex flex-col space-y-4">
-            <Link
+            {/*<Link
               href="/"
               className="text-text hover:text-button transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Inicio
-            </Link>
+            </Link>*/}
 
             {/* Enlaces para todos los usuarios */}
             {(!user || user.role === "user") && (

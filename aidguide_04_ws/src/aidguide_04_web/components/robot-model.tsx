@@ -84,7 +84,8 @@ export default function RobotModel() {
         </Stage>
         <OrbitControls 
           enableZoom={true} 
-          autoRotate={false}
+          autoRotate={true}
+          autoRotateSpeed={2.0}
           target={[0, 0, 0]}
         />
       </Canvas>
