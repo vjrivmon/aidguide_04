@@ -94,7 +94,7 @@ function Model() {
     <group ref={modelRef}>
       <primitive 
         object={scene} 
-        scale={5}
+        scale={7}
         position={INITIAL_POSITION}
         rotation={[0, 0, 0]}
         dispose={null}

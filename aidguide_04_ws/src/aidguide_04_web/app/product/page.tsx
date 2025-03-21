@@ -82,7 +82,7 @@ export default function Product() {
               <p className="text-lg mb-8">El compañero perfecto para una movilidad segura, autónoma e inclusiva.</p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/register"
+                  href="#planes-y-precios"
                   className="bg-white text-button py-2 px-6 rounded-33 hover:bg-gray-100 transition-colors font-medium shadow-md"
                 >
                   Solicitar demostración
@@ -243,7 +243,7 @@ export default function Product() {
       </section>
 
       {/* Pricing */}
-      <section className="py-16 bg-white">
+      <section id="planes-y-precios" className="py-16 bg-white">
         <div className="container-custom">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">Planes y Precios</h2>
@@ -380,7 +380,7 @@ export default function Product() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              href="/register"
+              href="#planes-y-precios"
               className="bg-white text-button py-3 px-8 rounded-33 hover:bg-gray-100 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               Solicitar demostración

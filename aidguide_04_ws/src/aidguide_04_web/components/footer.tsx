@@ -76,7 +76,7 @@ export default function Footer() {
             <address className="not-italic">
               <p>Email: info@aidguide.com</p>
               <p>Teléfono: +34 123 456 789</p>
-              <p>Dirección: C/ Paranimf, 123</p>
+              <p>Dirección: C/ Paranimf, 1</p>
               <p>Gandía, Valencia, España</p>
             </address>
           </div>
