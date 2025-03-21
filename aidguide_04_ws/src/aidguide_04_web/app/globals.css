@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background-color: #d5deef;
+  --background-color-secondary: #2867b2;
+  --text-color: #000000;
+  --button-color: #2867b2;
+  --button-color-secondary: #d5deef;
+  --button-color-black: #000000;
+  --text-color-white: #ffffff;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background text-text;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-button text-white py-2 px-6 rounded-33 hover:opacity-90 transition-all duration-300 shadow-md;
+  }
+
+  .btn-secondary {
+    @apply bg-button-secondary text-button py-2 px-6 rounded-33 hover:opacity-90 transition-all duration-300 border border-button shadow-sm;
+  }
+
+  .btn-black {
+    @apply bg-button-black text-white py-2 px-6 rounded-33 hover:bg-opacity-90 transition-all duration-300;
+  }
+
+  .container-custom {
+    @apply container mx-auto px-4 md:px-6;
+  }
+
+  .form-input {
+    @apply w-full p-2 border border-gray-300 rounded-33 focus:outline-none focus:ring-2 focus:ring-button transition-all duration-200;
+  }
+
+  .form-label {
+    @apply block text-sm font-medium mb-1;
+  }
+
+  .card {
+    @apply bg-white p-6 rounded-33 shadow-md;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-button to-blue-700;
+  }
+
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+}
+
+.shadow-soft {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.8s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
