@@ -43,6 +43,10 @@ install_node() {
         export NVM_DIR="$HOME/.nvm"
         [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
         [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
+
+        # Recargar el shell para asegurar que nvm está disponible
+        echo -e "${YELLOW}📝 Recargando el shell para aplicar los cambios...${NC}"
+        exec $SHELL
     else
         # Cargar nvm si ya está instalado
         export NVM_DIR="$HOME/.nvm"
@@ -53,17 +57,18 @@ install_node() {
     if ! command -v nvm &> /dev/null; then
         echo -e "${RED}❌ Error al instalar nvm. Intentando método alternativo...${NC}"
         if command -v apt &> /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+            curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
             sudo apt install -y nodejs
         else
             echo -e "${RED}❌ No se pudo instalar Node.js. Por favor, instálalo manualmente.${NC}"
             exit 1
         fi
     else
-        # Instalar la versión correcta de Node.js
-        echo -e "${YELLOW}📦 Instalando Node.js v16...${NC}"
-        nvm install 16
-        nvm use 16
+        # Instalar la versión LTS de Node.js 18
+        echo -e "${YELLOW}📦 Instalando Node.js v18 LTS...${NC}"
+        nvm install 18
+        nvm use 18
+        nvm alias default 18
     fi
 }
 
@@ -74,7 +79,7 @@ if ! command -v npm &> /dev/null; then
 else
     # Verificar la versión de Node.js
     NODE_VERSION=$(node -v | cut -d'v' -f2)
-    REQUIRED_VERSION="16.0.0"
+    REQUIRED_VERSION="18.0.0"
 
     if [ "$(printf '%s\n' "$REQUIRED_VERSION" "$NODE_VERSION" | sort -V | head -n1)" != "$REQUIRED_VERSION" ]; then
         echo -e "${YELLOW}📦 Actualizando Node.js a la versión requerida...${NC}"
@@ -98,39 +103,51 @@ cd ./aidguide_04_ws/src/aidguide_04_web || {
     exit 1
 }
 
-# Limpiar caché de npm si existe node_modules con problemas
-if [ -d "node_modules" ] && [ ! -f "node_modules/.package-lock.json" ]; then
-    echo -e "${YELLOW}🧹 Limpiando instalación anterior...${NC}"
-    rm -rf node_modules package-lock.json
-    npm cache clean --force
-fi
+# Limpiar instalación anterior si existe
+echo -e "${YELLOW}🧹 Limpiando instalación anterior...${NC}"
+rm -rf node_modules package-lock.json .next
+npm cache clean --force
 
-# Verificar si node_modules existe y está actualizado
-if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
-    echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
-    # Intentar diferentes estrategias de instalación
-    npm install --legacy-peer-deps || {
-        echo -e "${YELLOW}⚠️ Primer intento fallido, intentando con --force...${NC}"
-        npm install --force || {
-            echo -e "${YELLOW}⚠️ Segundo intento fallido, intentando limpiar caché...${NC}"
-            npm cache clean --force
-            npm install --legacy-peer-deps --no-package-lock || {
-                echo -e "${RED}❌ Error al instalar las dependencias${NC}"
-                exit 1
-            }
+# Instalar dependencias
+echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
+# Intentar diferentes estrategias de instalación
+npm install --legacy-peer-deps || {
+    echo -e "${YELLOW}⚠️ Primer intento fallido, intentando con --force...${NC}"
+    npm install --force || {
+        echo -e "${YELLOW}⚠️ Segundo intento fallido, intentando limpiar caché...${NC}"
+        npm cache clean --force
+        npm install --legacy-peer-deps --no-package-lock || {
+            echo -e "${RED}❌ Error al instalar las dependencias${NC}"
+            echo -e "${YELLOW}📝 Por favor, intenta los siguientes pasos manualmente:${NC}"
+            echo -e "${YELLOW}1. Ejecuta: nvm use 18${NC}"
+            echo -e "${YELLOW}2. Ejecuta: npm cache clean --force${NC}"
+            echo -e "${YELLOW}3. Ejecuta: npm install --legacy-peer-deps${NC}"
+            exit 1
         }
     }
-else
-    echo -e "${GREEN}✅ Las dependencias ya están instaladas${NC}"
+}
+
+# Verificar que next está instalado correctamente
+if ! npm list next | grep -q "next@"; then
+    echo -e "${RED}❌ Next.js no se instaló correctamente${NC}"
+    echo -e "${YELLOW}📝 Intentando instalar Next.js específicamente...${NC}"
+    npm install next@latest react@latest react-dom@latest
 fi
 
 # Iniciar el servidor de desarrollo
 echo -e "${CYAN}🌐 Iniciando el servidor de desarrollo...${NC}"
 npm run dev || {
     echo -e "${RED}❌ Error al iniciar el servidor de desarrollo${NC}"
-    echo -e "${YELLOW}📝 Intenta los siguientes pasos:${NC}"
-    echo -e "${YELLOW}1. Eliminar node_modules y package-lock.json${NC}"
-    echo -e "${YELLOW}2. Ejecutar: npm cache clean --force${NC}"
-    echo -e "${YELLOW}3. Ejecutar el script nuevamente${NC}"
+    echo -e "${YELLOW}📝 Verifica lo siguiente:${NC}"
+    echo -e "${YELLOW}1. Versión de Node.js (debe ser 18 o superior):${NC}"
+    node -v
+    echo -e "${YELLOW}2. Versión de npm:${NC}"
+    npm -v
+    echo -e "${YELLOW}3. Contenido de package.json:${NC}"
+    cat package.json
+    echo -e "${YELLOW}4. Para reintentar:${NC}"
+    echo -e "${YELLOW}   - Elimina node_modules, package-lock.json y .next${NC}"
+    echo -e "${YELLOW}   - Ejecuta: nvm use 18${NC}"
+    echo -e "${YELLOW}   - Ejecuta el script nuevamente${NC}"
     exit 1
 } 
