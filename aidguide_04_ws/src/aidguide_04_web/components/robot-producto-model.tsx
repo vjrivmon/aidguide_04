@@ -9,97 +9,70 @@ import * as THREE from 'three'
 // Pre-cargar el modelo
 useGLTF.preload('/robot_producto/source/ROBOT_ANIM_C.glb')
 
+const INITIAL_POSITION = [0, -1.9, 0] as const
 function Model() {
   const modelRef = useRef<THREE.Group>(null)
-  const [currentAnimation, setCurrentAnimation] = useState(0)
   const [mixer, setMixer] = useState<THREE.AnimationMixer | null>(null)
-  const [animations, setAnimations] = useState<THREE.AnimationClip[]>([])
+  const currentActionRef = useRef<THREE.AnimationAction | null>(null)
 
   // Cargar el modelo
-  const { scene, animations: loadedAnimations } = useGLTF('/robot_producto/source/ROBOT_ANIM_C.glb', true)
-
-  // Orden de las animaciones
-  const animationSequence = ['Saludo', 'Idle', 'Hablando', 'Idle1', 'Salto_Giro', 'Idle2', 'Despedida']
+  const { scene, animations } = useGLTF('/robot_producto/source/ROBOT_ANIM_C.glb', true)
 
   useEffect(() => {
-    if (scene && loadedAnimations.length > 0) {
-      console.log("Animaciones disponibles:", loadedAnimations.map(a => a.name))
-      const newMixer = new THREE.AnimationMixer(scene)
-      setMixer(newMixer)
-      setAnimations(loadedAnimations)
-
-      // Iniciar con la primera animación
-      playAnimation(0)
+    // Asegurar que el modelo siempre comience en la posición inicial
+    if (scene) {
+      scene.position.set(INITIAL_POSITION[0], INITIAL_POSITION[1], INITIAL_POSITION[2])
     }
 
-    // Cleanup
+    if (scene && animations.length > 0) {
+      console.log("Animaciones disponibles:", animations.map(a => a.name))
+      const newMixer = new THREE.AnimationMixer(scene)
+      setMixer(newMixer)
+
+      // Encontrar la animación "Idle"
+      const idleAnimation = animations.find(anim => anim.name === 'Idle')
+      
+      if (idleAnimation) {
+        const action = newMixer.clipAction(idleAnimation)
+        currentActionRef.current = action
+        
+        // Configurar la animación para bucle infinito
+        action.reset()
+        action.clampWhenFinished = false
+        action.loop = THREE.LoopRepeat
+        action.play()
+      }
+    }
+
     return () => {
       if (mixer) {
         mixer.stopAllAction()
         mixer.uncacheRoot(scene)
       }
+      if (currentActionRef.current) {
+        currentActionRef.current.stop()
+      }
     }
-  }, [scene, loadedAnimations])
+  }, [scene, animations])
 
-  // Usar useFrame para actualizar el mixer
+  // Usar useFrame para actualizar el mixer y mantener la posición
   useFrame((state, delta) => {
     if (mixer) {
       mixer.update(delta)
     }
-  })
-
-  const playAnimation = (index: number) => {
-    if (!mixer || animations.length === 0) return
-
-    // Detener todas las animaciones actuales
-    mixer.stopAllAction()
-
-    // Encontrar la animación por nombre exacto
-    const animationName = animationSequence[index]
-    const animation = animations.find(anim => anim.name === animationName)
-
-    console.log("Intentando reproducir:", animationName)
-    console.log("Animación encontrada:", animation?.name)
-
-    if (animation) {
-      const action = mixer.clipAction(animation)
-      action.reset()
-      action.clampWhenFinished = true
-      action.loop = THREE.LoopOnce
-      
-      // Configurar el callback para cuando termine la animación
-      const onFinished = () => {
-        // Pasar a la siguiente animación
-        const nextIndex = (index + 1) % animationSequence.length
-        setCurrentAnimation(nextIndex)
-        
-        // Remover el listener actual para evitar duplicados
-        action.getMixer().removeEventListener('finished', onFinished)
-        
-        // Reproducir la siguiente animación después de un pequeño delay
-        setTimeout(() => playAnimation(nextIndex), 100)
-      }
-      
-      // Agregar el listener
-      action.getMixer().addEventListener('finished', onFinished)
-      
-      // Reproducir la animación
-      action.play()
-    } else {
-      // Si no se encuentra la animación, pasar a la siguiente
-      const nextIndex = (index + 1) % animationSequence.length
-      setCurrentAnimation(nextIndex)
-      setTimeout(() => playAnimation(nextIndex), 100)
+    // Asegurar que el modelo se mantenga en la posición correcta
+    if (scene) {
+      scene.position.set(INITIAL_POSITION[0], INITIAL_POSITION[1], INITIAL_POSITION[2])
     }
-  }
+  })
 
   return (
     <group ref={modelRef}>
       <primitive 
         object={scene} 
-        scale={6}
-        position={[0, -2, 0]}
-        rotation={[0, Math.PI, 0]}
+        scale={5}
+        position={INITIAL_POSITION}
+        rotation={[0, 0, 0]}
         dispose={null}
       />
     </group>
@@ -118,39 +91,48 @@ export default function RobotProductoModel() {
   return (
     <div className="w-full h-[500px] rounded-lg overflow-hidden">
       <Canvas
-        camera={{ position: [0, 1, 5], fov: 45 }}
+        camera={{ 
+          position: [0, 0, 5],
+          fov: 50,
+          near: 0.1,
+          far: 1000
+        }}
         style={{ background: "transparent" }}
+        shadows={false}
       >
         <Stage
           intensity={0.5}
           environment="city"
           adjustCamera={false}
           preset="rembrandt"
+          shadows={false}
         >
-          <ambientLight intensity={0.8} />
+          <ambientLight intensity={1} />
           <spotLight 
             position={[10, 10, 10]} 
             angle={0.3} 
             penumbra={1} 
-            intensity={1.5}
-            castShadow
+            intensity={2}
+            castShadow={false}
           />
           <spotLight 
             position={[-10, -10, -10]} 
             angle={0.3} 
             penumbra={1} 
-            intensity={0.5}
-            castShadow
+            intensity={1}
+            castShadow={false}
           />
-          <pointLight position={[0, 5, 0]} intensity={0.5} />
+          <pointLight position={[0, 5, 0]} intensity={1} />
           <Suspense fallback={null}>
             <Model />
           </Suspense>
         </Stage>
         <OrbitControls 
-          enableZoom={true} 
+          enableZoom={false}
+          enableRotate={false}
+          enablePan={false}
           autoRotate={false}
-          target={[0, 0, 0]}
+          target={[0, -2, 0]}
           maxPolarAngle={Math.PI / 2}
           minPolarAngle={0}
         />
