@@ -1,0 +1,11 @@
+Model Information:
+* title:	Robot Dog
+* source:	https://sketchfab.com/3d-models/robot-dog-d832131d7c3943999a2643e749f085af
+* author:	alekseewa (https://sketchfab.com/alekseewa)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Robot Dog" (https://sketchfab.com/3d-models/robot-dog-d832131d7c3943999a2643e749f085af) by alekseewa (https://sketchfab.com/alekseewa) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
