@@ -10,60 +10,71 @@ import * as THREE from 'three'
 useGLTF.preload('/robot_producto/source/ROBOT_ANIM_C.glb')
 
 const INITIAL_POSITION = [0, -1.9, 0] as const
+
+// Secuencia de animaciones con sus configuraciones
+const ANIMATION_SEQUENCE = [
+  { name: 'Saludo', duration: 3 },
+  { name: 'Idle', duration: 2 },
+  { name: 'Hablando', duration: 3 },
+  { name: 'Idle1', duration: 2 },
+  { name: 'Salto_Giro', duration: 2 },
+  { name: 'Idle2', duration: 2 },
+  { name: 'Despedida', duration: 3 }
+]
+
 function Model() {
   const modelRef = useRef<THREE.Group>(null)
   const [mixer, setMixer] = useState<THREE.AnimationMixer | null>(null)
-  const currentActionRef = useRef<THREE.AnimationAction | null>(null)
+  const [currentAnimationIndex, setCurrentAnimationIndex] = useState(0)
 
   // Cargar el modelo
   const { scene, animations } = useGLTF('/robot_producto/source/ROBOT_ANIM_C.glb', true)
 
   useEffect(() => {
-    // Asegurar que el modelo siempre comience en la posición inicial
-    if (scene) {
-      scene.position.set(INITIAL_POSITION[0], INITIAL_POSITION[1], INITIAL_POSITION[2])
-    }
-
     if (scene && animations.length > 0) {
-      console.log("Animaciones disponibles:", animations.map(a => a.name))
+      console.log("Todas las animaciones disponibles:", animations.map(a => ({
+        nombre: a.name,
+        duración: a.duration.toFixed(2)
+      })))
+      
       const newMixer = new THREE.AnimationMixer(scene)
       setMixer(newMixer)
-
-      // Encontrar la animación "Idle"
-      const idleAnimation = animations.find(anim => anim.name === 'Idle')
-      
-      if (idleAnimation) {
-        const action = newMixer.clipAction(idleAnimation)
-        currentActionRef.current = action
-        
-        // Configurar la animación para bucle infinito
-        action.reset()
-        action.clampWhenFinished = false
-        action.loop = THREE.LoopRepeat
-        action.play()
-      }
-    }
-
-    return () => {
-      if (mixer) {
-        mixer.stopAllAction()
-        mixer.uncacheRoot(scene)
-      }
-      if (currentActionRef.current) {
-        currentActionRef.current.stop()
-      }
     }
   }, [scene, animations])
 
-  // Usar useFrame para actualizar el mixer y mantener la posición
+  useEffect(() => {
+    if (!mixer || animations.length === 0) return
+
+    // Detener todas las animaciones actuales
+    mixer.stopAllAction()
+
+    const animationConfig = ANIMATION_SEQUENCE[currentAnimationIndex]
+    const animation = animations.find(anim => anim.name === animationConfig.name)
+
+    if (animation) {
+      console.log(`Iniciando animación: ${animationConfig.name}`)
+      const action = mixer.clipAction(animation)
+      action.reset()
+      action.setLoop(THREE.LoopOnce, 1)
+      action.clampWhenFinished = true
+      action.play()
+
+      // Programar la siguiente animación
+      const duration = animation.duration * 1000 // Convertir a milisegundos
+      setTimeout(() => {
+        const nextIndex = (currentAnimationIndex + 1) % ANIMATION_SEQUENCE.length
+        setCurrentAnimationIndex(nextIndex)
+      }, duration)
+    }
+
+    return () => {
+      mixer.stopAllAction()
+    }
+  }, [currentAnimationIndex, mixer, animations])
+
+  // Actualizar el mixer
   useFrame((state, delta) => {
-    if (mixer) {
-      mixer.update(delta)
-    }
-    // Asegurar que el modelo se mantenga en la posición correcta
-    if (scene) {
-      scene.position.set(INITIAL_POSITION[0], INITIAL_POSITION[1], INITIAL_POSITION[2])
-    }
+    mixer?.update(delta)
   })
 
   return (
