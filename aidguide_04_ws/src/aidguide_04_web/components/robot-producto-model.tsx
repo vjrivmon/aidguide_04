@@ -31,14 +31,27 @@ function Model() {
   const { scene, animations } = useGLTF('/robot_producto/source/ROBOT_ANIM_C.glb', true)
 
   useEffect(() => {
-    if (scene && animations.length > 0) {
-      console.log("Todas las animaciones disponibles:", animations.map(a => ({
-        nombre: a.name,
-        duración: a.duration.toFixed(2)
-      })))
-      
-      const newMixer = new THREE.AnimationMixer(scene)
-      setMixer(newMixer)
+    if (scene) {
+      // Asegurar que los materiales se carguen correctamente
+      scene.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          object.frustumCulled = false // Evita que partes del modelo desaparezcan
+          if (object.material) {
+            object.material.needsUpdate = true
+            object.material.side = THREE.DoubleSide // Renderiza ambos lados de las caras
+          }
+        }
+      })
+
+      if (animations.length > 0) {
+        console.log("Todas las animaciones disponibles:", animations.map(a => ({
+          nombre: a.name,
+          duración: a.duration.toFixed(2)
+        })))
+        
+        const newMixer = new THREE.AnimationMixer(scene)
+        setMixer(newMixer)
+      }
     }
   }, [scene, animations])
 
@@ -85,6 +98,7 @@ function Model() {
         position={INITIAL_POSITION}
         rotation={[0, 0, 0]}
         dispose={null}
+        frustumCulled={false}
       />
     </group>
   )
@@ -110,6 +124,11 @@ export default function RobotProductoModel() {
         }}
         style={{ background: "transparent" }}
         shadows={false}
+        gl={{ 
+          antialias: true,
+          alpha: true,
+          preserveDrawingBuffer: true
+        }}
       >
         <Stage
           intensity={0.5}
