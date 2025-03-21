@@ -249,9 +249,9 @@ export default function Product() {
                 </li>
               </ul>
               <div className="text-center">
-                <Link href="/contact" className="btn-secondary w-full block">
+                <button className="btn-secondary w-full block cursor-pointer">
                   Solicitar información
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -290,9 +290,9 @@ export default function Product() {
                 </li>
               </ul>
               <div className="text-center">
-                <Link href="/contact" className="btn-primary w-full block">
+                <button className="btn-primary w-full block cursor-pointer">
                   Solicitar información
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -331,9 +331,9 @@ export default function Product() {
                 </li>
               </ul>
               <div className="text-center">
-                <Link href="/contact" className="btn-secondary w-full block">
+                <button className="btn-secondary w-full block cursor-pointer">
                   Contactar con ventas
-                </Link>
+                </button>
               </div>
             </div>
           </div>
