@@ -1,0 +1,40 @@
+slam_toolbox:
+  ros__parameters:
+    # Parámetros generales de SLAM
+    use_sim_time: false
+    map_frame: map
+    base_frame: base_footprint
+    odom_frame: odom
+    scan_topic: /scan
+    mode: mapping  # mapping, localization, etc.
+
+    # Parámetros del mapa
+    map_update_interval: 5.0
+    resolution: 0.05
+    max_laser_range: 20.0
+    minimum_time_interval: 0.5
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.
+    stack_size_to_use: 40000000  # 40 MB de memoria stack
+
+    # Parámetros de escaneo láser
+    minimum_travel_distance: 0.5
+    minimum_travel_heading: 0.5
+    scan_buffer_size: 10
+    scan_buffer_maximum_scan_distance: 10.0
+    use_pose_extrapolator: false
+    ceres_loss_function: HuberLoss
+    
+    # Parámetros del algoritmo de optimización
+    ceres_linear_solver: SPARSE_NORMAL_CHOLESKY
+    ceres_preconditioner: SCHUR_JACOBI
+    ceres_trust_strategy: LEVENBERG_MARQUARDT
+    ceres_dogleg_type: TRADITIONAL_DOGLEG
+    ceres_loss_function_scale: 1.0
+
+    # Parámetros del mapa actualizado
+    max_laser_range: 20.0
+    max_iterations: 1000
+    max_iterations_final: 100000
+    max_time_optimization: 1.0
+    max_distance_between_scans: 0.5 
