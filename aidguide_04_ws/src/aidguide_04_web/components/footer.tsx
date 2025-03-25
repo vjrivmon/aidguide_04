@@ -12,19 +12,20 @@ export default function Footer() {
               <span className="ml-2 text-xl font-bold">AidGuide</span>
             </Link>
             <p className="mt-4 text-sm">
-              Robot guía para personas invidentes utilizando tecnologías avanzadas, inteligencia artificial y visión en
-              tiempo real.
+            Innovación que guía, accesibilidad que transforma.
             </p>
           </div>
 
           <div>
             <h4 className="font-semibold mb-4">Enlaces</h4>
             <ul className="space-y-2">
-              <li>
+
+            {/*}  <li>
                 <Link href="/" className="hover:underline">
                   Inicio
                 </Link>
-              </li>
+              </li>*/}
+
               <li>
                 <Link href="/about" className="hover:underline">
                   Quiénes Somos
@@ -35,9 +36,14 @@ export default function Footer() {
                   Producto
                 </Link>
               </li>
-              <li>
+              {/*<li>
                 <Link href="/routes" className="hover:underline">
                   Rutas
+                </Link>
+              </li>*/}
+              <li>
+                <Link href="/faq" className="hover:underline">
+                  FAQ
                 </Link>
               </li>
             </ul>
@@ -46,11 +52,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Soporte</h4>
             <ul className="space-y-2">
-              <li>
-                <Link href="/faq" className="hover:underline">
-                  FAQ
-                </Link>
-              </li>
+              
               <li>
                 <Link href="/contact" className="hover:underline">
                   Contacto
@@ -74,8 +76,8 @@ export default function Footer() {
             <address className="not-italic">
               <p>Email: info@aidguide.com</p>
               <p>Teléfono: +34 123 456 789</p>
-              <p>Dirección: Calle Ejemplo, 123</p>
-              <p>Valencia, España</p>
+              <p>Dirección: C/ Paranimf, 1</p>
+              <p>Gandía, Valencia, España</p>
             </address>
           </div>
         </div>
@@ -83,8 +85,7 @@ export default function Footer() {
         <div className="border-t border-white/20 mt-8 pt-6 text-center text-sm">
           <p>&copy; {new Date().getFullYear()} AidGuide. Todos los derechos reservados.</p>
           <p className="mt-2">
-            Desarrollado por el equipo de AidGuide: Vicente Rivas, Irene Medina, Mimi Vladeva, Hugo Belda, Marc
-            Vilagrosa
+            Desarrollado por: Vicente Rivas, Irene Medina, Mimi Vladeva, Hugo Belda, Marc Vilagrosa
           </p>
         </div>
       </div>
