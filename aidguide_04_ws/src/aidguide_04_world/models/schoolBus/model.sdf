@@ -6,7 +6,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-           <scale>0.6 0.6 0.6</scale>
+           <scale>0.45 0.45 0.45</scale>
             <uri>model://schoolBus/meshes/schoolBus.dae</uri>
           </mesh>
         </geometry>
