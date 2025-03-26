@@ -57,19 +57,23 @@
       <uri>model://street_environment</uri>
     </include>
      <include>
-      <pose>15.25 -2.0 0 0.0 0.0 0.0</pose>      <!-- Ajusta la posición si es necesario -->
+      <pose>8.25 -0.56 0 0.0 0.0 0.0</pose>      <!-- Ajusta la posición si es necesario -->
       <uri>model://car</uri>
-    </include>
-    <include>
-      <pose> 7.04 -5.9 5.69 -3.0 -0.05 1.57</pose>      <!-- Ajusta la posición si es necesario -->
-      <uri>model://semaforo_verde</uri>
     </include>
 
      <include>
-      <pose> 4.26 -7.60 5.69 -3.09 -0.05 3.13</pose>      <!-- Ajusta la posición si es necesario -->
+      <pose> 2.26 -3.60 0.4 -3.09 -0.05 3.13</pose>      <!-- Ajusta la posición si es necesario -->
       <uri>model://semaforo_rojo</uri>
     </include>
-
+     <include>
+      <pose> -3 5.0 0.4 -3.09 0.14 0.0</pose>      <!-- Ajusta la posición si es necesario -->
+      <uri>model://semaforo_verde</uri>
+    </include>
+       <include>
+      <pose> -3.46 9.37 0.4 0.0 0.0 0.0</pose>      <!-- Ajusta la posición si es necesario -->
+      <uri>model://schoolBus</uri>
+    </include>
+  
     <include>
        <pose>-2.0 -0.5 0.4 0.0 0.0 0.0</pose>  <!-- Aumenta el tercer valor para elevarlo -->
       <uri>model://turtlebot3_burger_pi</uri>

@@ -13,7 +13,8 @@ TURTLEBOT3_MODEL = os.getenv('TURTLEBOT3_MODEL', 'burger_pi')
 
 def generate_launch_description():
     # Obtener la ruta del paquete `world`
-    pkg_share = FindPackageShare(package='aidguide_04_world').find('world')
+    #pkg_share = FindPackageShare(package='aidguide_04_world').find('world')
+    pkg_share = FindPackageShare(package='aidguide_04_world').find('aidguide_04_world')
 
     # Asegurar que se carga `burger_pi.model`
     world_file_name = 'world/burger_pi.model'  
