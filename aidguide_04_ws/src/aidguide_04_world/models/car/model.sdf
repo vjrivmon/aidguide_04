@@ -8,7 +8,7 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <scale>0.7 0.7 0.7</scale>
+            <scale>0.35 0.35 0.35</scale>
             <uri>model://car/meshes/Car.dae</uri>
           </mesh>
         </geometry>
@@ -18,7 +18,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <scale>0.7 0.7 0.7</scale>
+            <scale>0.35 0.35 0.35</scale>
             <uri>model://car/meshes/Car.dae</uri>
           </mesh>
         </geometry>
