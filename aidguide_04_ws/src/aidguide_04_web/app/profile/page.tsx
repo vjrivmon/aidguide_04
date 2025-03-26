@@ -103,10 +103,10 @@ export default function Profile() {
       {/* Título y subtítulo */}
       <div className="text-center mb-12">
         <h1 className="text-4xl md:text-4xl font-bold mb-4">
-          ¡Hola, {user?.name}!
+          Éste es tu perfil
         </h1>
         <h2 className="text-2xl text-text">
-          Tu perfil
+          Aquí podrás consultar tu actividad, preferencias y notificaciones
         </h2>
       </div>
 

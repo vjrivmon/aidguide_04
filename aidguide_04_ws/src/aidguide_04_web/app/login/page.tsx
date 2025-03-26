@@ -47,7 +47,7 @@ export default function Login() {
         if (formData.email === "admin@aidguide.com") {
           router.push("/admin/dashboard")
         } else {
-          router.push("/profile")
+          router.push("/welcome")
         }
       } else {
         setError("Credenciales incorrectas. Por favor, inténtalo de nuevo.")
