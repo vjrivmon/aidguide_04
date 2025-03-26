@@ -46,6 +46,19 @@ colcon build
 ### Frontend Web
 El frontend se puede iniciar de dos maneras:
 
+#### Usuarios y contraseñas:
+Para el usuario ciego: 
+- email: user@aidguide.com
+- pass: user123
+
+Para el familiar del usuario ciego: 
+- email: family@aidguide.com
+- pass: family123
+
+Para el admin: 
+- email: admin@aidguide.com
+- pass: admin123
+
 #### Usando los scripts de automatización:
 
 Para Windows:

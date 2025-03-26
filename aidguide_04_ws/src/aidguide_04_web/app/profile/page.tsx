@@ -4,9 +4,11 @@ import type React from "react"
 
 import { useState } from "react"
 import Image from "next/image"
-import { User, Settings, MapPin, Bell, Clock, LogOut, Edit2, Save, X } from "lucide-react"
+import { User, Settings, MapPin, Bell, Clock, LogOut, Edit2, Save, X, History, Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench } from "lucide-react"
+import { useAuth } from "@/context/auth-context"
 
 export default function Profile() {
+  const { user } = useAuth()
   const [editing, setEditing] = useState(false)
   const [userData, setUserData] = useState({
     name: "María García",
@@ -23,7 +25,7 @@ export default function Profile() {
     },
   })
 
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("activity")
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -97,432 +99,260 @@ export default function Profile() {
   ]
 
   return (
-    <div className="bg-background min-h-screen py-16">
-      <div className="container-custom">
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Profile Header */}
-          <div className="bg-button text-white p-6">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="w-24 h-24 bg-white rounded-full overflow-hidden mb-4 md:mb-0 md:mr-6">
-                <Image
-                  src="/placeholder.svg?height=200&width=200"
-                  alt="Foto de perfil"
-                  width={96}
-                  height={96}
-                  className="object-cover w-full h-full"
-                />
+    <div className="container-custom py-14">
+      {/* Título y subtítulo */}
+      <div className="text-center mb-12">
+        <h1 className="text-4xl md:text-4xl font-bold mb-4">
+          Éste es tu perfil
+        </h1>
+        <h2 className="text-2xl text-text">
+          Aquí podrás consultar tu actividad, preferencias y notificaciones
+        </h2>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Panel izquierdo - Navegación */}
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-button mb-6">Menú</h2>
+          <nav className="space-y-2">
+            <button
+              onClick={() => setActiveTab("activity")}
+              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "activity"
+                  ? "bg-button text-white"
+                  : "text-text hover:bg-gray-50"
+              }`}
+            >
+              <History size={20} className="mr-3" />
+              Actividad
+            </button>
+            <button
+              onClick={() => setActiveTab("images")}
+              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "images"
+                  ? "bg-button text-white"
+                  : "text-text hover:bg-gray-50"
+              }`}
+            >
+              
+              <Bell size={20} className="mr-3" />
+              Notificaciones
+            </button>
+            <button
+              onClick={() => setActiveTab("preferences")}
+              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "preferences"
+                  ? "bg-button text-white"
+                  : "text-text hover:bg-gray-50"
+              }`}
+            >
+              <Settings size={20} className="mr-3" />
+              Preferencias
+            </button>
+          </nav>
+        </div>
+
+        {/* Panel central - Contenido */}
+        <div className="md:col-span-2 bg-white rounded-lg shadow-md p-6">
+          {activeTab === "activity" && (
+            <div>
+              <h2 className="text-2xl font-bold text-button mb-6">Actividad reciente</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <History size={20} className="text-button mr-3" />
+                    <div>
+                      <p className="font-medium">Ruta completada</p>
+                      <p className="text-sm text-gray-500">Desde: Casa - Hasta: Supermercado</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">Hace 2 horas</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <History size={20} className="text-button mr-3" />
+                    <div>
+                      <p className="font-medium">Ruta completada</p>
+                      <p className="text-sm text-gray-500">Desde: Supermercado - Hasta: Casa</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">Hace 3 horas</span>
+                </div>
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">{userData.name}</h1>
-                <p className="text-button-secondary">Usuario desde enero 2023</p>
+            </div>
+          )}
+
+          {activeTab === "images" && (
+            <div>
+              <h2 className="text-2xl font-bold text-button mb-6">Imágenes detectadas</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Señales de tráfico */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <TrafficCone size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Señales de tráfico</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Señal de tráfico"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:30</p>
+                </div>
+
+                {/* Personas */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Users size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Personas</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Personas"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:35</p>
+                </div>
+
+                {/* Parada de autobús */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Bus size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Parada de autobús</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Parada de autobús"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:40</p>
+                </div>
+
+                {/* Paso de peatones */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Footprints size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Paso de peatones</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Paso de peatones"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:45</p>
+                </div>
+
+                {/* Obras */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Wrench size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Obras</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Obras"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:50</p>
+                </div>
+
+                {/* Calle cortada */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="flex items-center mb-3">
+                    <Signpost size={20} className="text-button mr-2" />
+                    <h3 className="font-medium">Calle cortada</h3>
+                  </div>
+                  <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
+                    <Image
+                      src="/placeholder.svg?height=200&width=200"
+                      alt="Calle cortada"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:55</p>
+                </div>
               </div>
-              {!editing ? (
-                <button
-                  className="ml-auto bg-white text-button py-2 px-4 rounded-md flex items-center"
-                  onClick={() => setEditing(true)}
-                >
-                  <Edit2 size={18} className="mr-2" />
-                  Editar Perfil
+            </div>
+          )}
+
+          {activeTab === "notifications" && (
+            <div>
+              <h2 className="text-2xl font-bold text-button mb-6">Notificaciones</h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <Bell size={20} className="text-button mr-3" />
+                    <div>
+                      <p className="font-medium">Nueva actualización</p>
+                      <p className="text-sm text-gray-500">El robot ha sido actualizado con nuevas funcionalidades</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">Hace 1 día</span>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <Bell size={20} className="text-button mr-3" />
+                    <div>
+                      <p className="font-medium">Mantenimiento programado</p>
+                      <p className="text-sm text-gray-500">El robot necesita una revisión programada</p>
+                    </div>
+                  </div>
+                  <span className="text-sm text-gray-500">Hace 2 días</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === "preferences" && (
+            <div>
+              <h2 className="text-2xl font-bold text-button mb-6">Preferencias</h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-text mb-2">Idioma preferido</label>
+                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-button">
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-text mb-2">Velocidad de navegación</label>
+                  <select className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-button">
+                    <option value="slow">Lenta</option>
+                    <option value="medium">Media</option>
+                    <option value="fast">Rápida</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-text mb-2">Volumen de voz</label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    className="w-full"
+                  />
+                </div>
+                <button className="w-full bg-button text-white py-3 rounded-lg hover:opacity-90 transition-colors">
+                  Guardar cambios
                 </button>
-              ) : (
-                <div className="ml-auto flex gap-2">
-                  <button
-                    className="bg-white text-green-600 py-2 px-4 rounded-md flex items-center"
-                    onClick={handleSave}
-                  >
-                    <Save size={18} className="mr-2" />
-                    Guardar
-                  </button>
-                  <button
-                    className="bg-white text-red-600 py-2 px-4 rounded-md flex items-center"
-                    onClick={handleCancel}
-                  >
-                    <X size={18} className="mr-2" />
-                    Cancelar
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="border-b">
-            <div className="flex overflow-x-auto">
-              <button
-                className={`py-4 px-6 font-medium ${
-                  activeTab === "profile" ? "border-b-2 border-button text-button" : "text-gray-500 hover:text-button"
-                }`}
-                onClick={() => setActiveTab("profile")}
-              >
-                <User size={18} className="inline mr-2" />
-                Perfil
-              </button>
-              <button
-                className={`py-4 px-6 font-medium ${
-                  activeTab === "preferences"
-                    ? "border-b-2 border-button text-button"
-                    : "text-gray-500 hover:text-button"
-                }`}
-                onClick={() => setActiveTab("preferences")}
-              >
-                <Settings size={18} className="inline mr-2" />
-                Preferencias
-              </button>
-              <button
-                className={`py-4 px-6 font-medium ${
-                  activeTab === "activity" ? "border-b-2 border-button text-button" : "text-gray-500 hover:text-button"
-                }`}
-                onClick={() => setActiveTab("activity")}
-              >
-                <Clock size={18} className="inline mr-2" />
-                Actividad
-              </button>
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="p-6">
-            {/* Profile Tab */}
-            {activeTab === "profile" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h2 className="text-xl font-bold mb-4">Información Personal</h2>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
-                      {editing ? (
-                        <input
-                          type="text"
-                          name="name"
-                          value={userData.name}
-                          onChange={handleChange}
-                          className="form-input"
-                        />
-                      ) : (
-                        <p className="text-gray-900">{userData.name}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
-                      {editing ? (
-                        <input
-                          type="email"
-                          name="email"
-                          value={userData.email}
-                          onChange={handleChange}
-                          className="form-input"
-                        />
-                      ) : (
-                        <p className="text-gray-900">{userData.email}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                      {editing ? (
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={userData.phone}
-                          onChange={handleChange}
-                          className="form-input"
-                        />
-                      ) : (
-                        <p className="text-gray-900">{userData.phone}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-                      {editing ? (
-                        <textarea
-                          name="address"
-                          value={userData.address}
-                          onChange={handleChange}
-                          className="form-input"
-                          rows={2}
-                        />
-                      ) : (
-                        <p className="text-gray-900">{userData.address}</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold mb-4">Información de Emergencia</h2>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Contacto de emergencia</label>
-                      {editing ? (
-                        <input
-                          type="text"
-                          name="emergencyContact"
-                          value={userData.emergencyContact}
-                          onChange={handleChange}
-                          className="form-input"
-                        />
-                      ) : (
-                        <p className="text-gray-900">{userData.emergencyContact}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <h2 className="text-xl font-bold mt-8 mb-4">Seguridad</h2>
-
-                  <div className="space-y-4">
-                    <button className="btn-secondary">Cambiar contraseña</button>
-
-                    <button className="text-red-600 hover:underline flex items-center">
-                      <LogOut size={18} className="mr-2" />
-                      Cerrar sesión en todos los dispositivos
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Preferences Tab */}
-            {activeTab === "preferences" && (
-              <div>
-                <h2 className="text-xl font-bold mb-4">Preferencias del Robot</h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="font-bold mb-4">Configuración de Audio</h3>
-
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Volumen de voz: {userData.preferences.voiceVolume}%
-                        </label>
-                        <input
-                          type="range"
-                          name="voiceVolume"
-                          min="0"
-                          max="100"
-                          value={userData.preferences.voiceVolume}
-                          onChange={handlePreferenceChange}
-                          className="w-full"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Velocidad de habla: {userData.preferences.speechRate}%
-                        </label>
-                        <input
-                          type="range"
-                          name="speechRate"
-                          min="0"
-                          max="100"
-                          value={userData.preferences.speechRate}
-                          onChange={handlePreferenceChange}
-                          className="w-full"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="font-bold mb-4">Configuración de Accesibilidad</h3>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="notificationsEnabled"
-                          name="notificationsEnabled"
-                          checked={userData.preferences.notificationsEnabled}
-                          onChange={handlePreferenceChange}
-                          className="h-4 w-4 rounded border-gray-300 text-button focus:ring-button"
-                        />
-                        <label htmlFor="notificationsEnabled" className="ml-2 block text-sm text-gray-900">
-                          Activar notificaciones de voz
-                        </label>
-                      </div>
-
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="highContrastMode"
-                          name="highContrastMode"
-                          checked={userData.preferences.highContrastMode}
-                          onChange={handlePreferenceChange}
-                          className="h-4 w-4 rounded border-gray-300 text-button focus:ring-button"
-                        />
-                        <label htmlFor="highContrastMode" className="ml-2 block text-sm text-gray-900">
-                          Modo de alto contraste
-                        </label>
-                      </div>
-
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="largeText"
-                          name="largeText"
-                          checked={userData.preferences.largeText}
-                          onChange={handlePreferenceChange}
-                          className="h-4 w-4 rounded border-gray-300 text-button focus:ring-button"
-                        />
-                        <label htmlFor="largeText" className="ml-2 block text-sm text-gray-900">
-                          Texto grande
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <h3 className="font-bold mb-4">Configuración de Navegación</h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="card">
-                      <h4 className="font-medium mb-2">Velocidad de desplazamiento</h4>
-                      <select className="form-input">
-                        <option>Lenta</option>
-                        <option selected>Media</option>
-                        <option>Rápida</option>
-                      </select>
-                    </div>
-
-                    <div className="card">
-                      <h4 className="font-medium mb-2">Distancia de detección de obstáculos</h4>
-                      <select className="form-input">
-                        <option>Corta (1m)</option>
-                        <option selected>Media (2m)</option>
-                        <option>Larga (3m)</option>
-                      </select>
-                    </div>
-
-                    <div className="card">
-                      <h4 className="font-medium mb-2">Frecuencia de actualización de ruta</h4>
-                      <select className="form-input">
-                        <option>Baja (cada 10s)</option>
-                        <option selected>Media (cada 5s)</option>
-                        <option>Alta (cada 2s)</option>
-                      </select>
-                    </div>
-
-                    <div className="card">
-                      <h4 className="font-medium mb-2">Tipo de indicaciones</h4>
-                      <select className="form-input">
-                        <option>Básicas</option>
-                        <option selected>Detalladas</option>
-                        <option>Muy detalladas</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 flex justify-end">
-                  <button className="btn-primary">Guardar Preferencias</button>
-                </div>
-              </div>
-            )}
-
-            {/* Activity Tab */}
-            {activeTab === "activity" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h2 className="text-xl font-bold mb-4">Actividad Reciente</h2>
-
-                  <div className="space-y-4">
-                    {recentActivities.map((activity, index) => (
-                      <div key={index} className="flex items-start p-3 bg-gray-50 rounded-lg">
-                        <div
-                          className={`p-2 rounded-full mr-3 flex-shrink-0 ${
-                            activity.type === "route"
-                              ? "bg-green-100 text-green-600"
-                              : activity.type === "settings"
-                                ? "bg-blue-100 text-blue-600"
-                                : "bg-yellow-100 text-yellow-600"
-                          }`}
-                        >
-                          {activity.icon}
-                        </div>
-                        <div>
-                          <p className="font-medium">{activity.description}</p>
-                          <p className="text-sm text-gray-500">{activity.date}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <button className="text-button hover:underline mt-4 flex items-center">
-                    <Clock className="mr-1" size={16} />
-                    Ver historial completo
-                  </button>
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold mb-4">Próximas Citas</h2>
-
-                  {upcomingAppointments.length > 0 ? (
-                    <div className="space-y-4">
-                      {upcomingAppointments.map((appointment, index) => (
-                        <div key={index} className="p-4 border rounded-lg">
-                          <h3 className="font-bold">{appointment.title}</h3>
-                          <div className="mt-2 grid grid-cols-2 gap-2 text-sm">
-                            <div>
-                              <span className="text-gray-500">Fecha:</span>
-                              <span className="ml-1">{appointment.date}</span>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">Hora:</span>
-                              <span className="ml-1">{appointment.time}</span>
-                            </div>
-                            <div className="col-span-2">
-                              <span className="text-gray-500">Ubicación:</span>
-                              <span className="ml-1">{appointment.location}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500">No tienes citas programadas.</p>
-                  )}
-
-                  <div className="mt-6">
-                    <h2 className="text-xl font-bold mb-4">Estado del Robot</h2>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <h3 className="font-medium text-gray-500">Batería</h3>
-                        <div className="flex items-center mt-1">
-                          <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                            <div className="bg-green-600 h-2.5 rounded-full" style={{ width: "85%" }}></div>
-                          </div>
-                          <span className="text-sm font-medium">85%</span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <h3 className="font-medium text-gray-500">Conectividad</h3>
-                        <p className="text-green-600 font-medium">Conectado (4G)</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <h3 className="font-medium text-gray-500">Versión de Software</h3>
-                        <p>v2.3.5</p>
-                      </div>
-
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <h3 className="font-medium text-gray-500">Último Mantenimiento</h3>
-                        <p>15/02/2023</p>
-                      </div>
-                    </div>
-
-                    <button className="btn-secondary mt-4 w-full">Solicitar Mantenimiento</button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
