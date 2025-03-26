@@ -58,6 +58,18 @@ export default function Header() {
               </>
             )}
 
+            {/* Enlaces para familiares */}
+            {user && user.role === "family" && (
+              <>
+                <Link href="/family" className="text-text hover:text-button transition-colors">
+                  Inicio
+                </Link>
+                <Link href="/family/profile" className="text-text hover:text-button transition-colors">
+                  Perfil
+                </Link>
+              </>
+            )}
+
             {/* Enlaces para administradores */}
             {user && user.role === "admin" && (
               <Link href="/admin/dashboard" className="text-text hover:text-button transition-colors">
@@ -165,6 +177,26 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/profile"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Perfil
+                </Link>
+              </>
+            )}
+
+            {/* Enlaces para familiares */}
+            {user && user.role === "family" && (
+              <>
+                <Link
+                  href="/family"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Inicio
+                </Link>
+                <Link
+                  href="/family/profile"
                   className="text-text hover:text-button transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >

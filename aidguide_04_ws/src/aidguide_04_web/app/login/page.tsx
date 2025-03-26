@@ -44,8 +44,11 @@ export default function Login() {
       const success = await login(formData.email, formData.password)
 
       if (success) {
-        if (formData.email === "admin@aidguide.com") {
+        const user = JSON.parse(localStorage.getItem("aidguide-user") || "{}")
+        if (user.role === "admin") {
           router.push("/admin/dashboard")
+        } else if (user.role === "family") {
+          router.push("/family")
         } else {
           router.push("/welcome")
         }
