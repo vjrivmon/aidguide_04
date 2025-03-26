@@ -6,7 +6,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-           <scale>0.6 0.6 0.6</scale>
+           <scale>0.3 0.3 0.3</scale>
             <uri>model://street_environment/meshes/Street_environment_V01.dae</uri>
           </mesh>
         </geometry>
