@@ -11,7 +11,7 @@ export default function Header() {
   const { user, logout } = useAuth()
 
   return (
-    <header className="bg-white shadow-md">
+    <header className="bg-white">
       <div className="container-custom py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center">
@@ -26,7 +26,7 @@ export default function Header() {
             </Link>*/}
 
             {/* Enlaces para todos los usuarios */}
-            {(!user || user.role === "user") && (
+            {!user && (
               <>
                 <Link href="/about" className="text-text hover:text-button transition-colors">
                   Quiénes Somos
@@ -43,10 +43,28 @@ export default function Header() {
             {/* Enlaces para usuarios autenticados */}
             {user && user.role === "user" && (
               <>
+                <Link href="/welcome" className="text-text hover:text-button transition-colors">
+                  Inicio
+                </Link>
                 <Link href="/routes" className="text-text hover:text-button transition-colors">
                   Rutas
                 </Link>
+                <Link href="/robot-feed" className="text-text hover:text-button transition-colors">
+                  Imágenes
+                </Link>
                 <Link href="/profile" className="text-text hover:text-button transition-colors">
+                  Perfil
+                </Link>
+              </>
+            )}
+
+            {/* Enlaces para familiares */}
+            {user && user.role === "family" && (
+              <>
+                <Link href="/family" className="text-text hover:text-button transition-colors">
+                  Inicio
+                </Link>
+                <Link href="/family/profile" className="text-text hover:text-button transition-colors">
                   Perfil
                 </Link>
               </>
@@ -107,7 +125,7 @@ export default function Header() {
             </Link>*/}
 
             {/* Enlaces para todos los usuarios */}
-            {(!user || user.role === "user") && (
+            {!user && (
               <>
                 <Link
                   href="/about"
@@ -137,6 +155,13 @@ export default function Header() {
             {user && user.role === "user" && (
               <>
                 <Link
+                  href="/welcome"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Inicio
+                </Link>
+                <Link
                   href="/routes"
                   className="text-text hover:text-button transition-colors"
                   onClick={() => setIsMenuOpen(false)}
@@ -144,7 +169,34 @@ export default function Header() {
                   Rutas
                 </Link>
                 <Link
+                  href="/robot-feed"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Imágenes
+                </Link>
+                <Link
                   href="/profile"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Perfil
+                </Link>
+              </>
+            )}
+
+            {/* Enlaces para familiares */}
+            {user && user.role === "family" && (
+              <>
+                <Link
+                  href="/family"
+                  className="text-text hover:text-button transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Inicio
+                </Link>
+                <Link
+                  href="/family/profile"
                   className="text-text hover:text-button transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >

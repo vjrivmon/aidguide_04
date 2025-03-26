@@ -7,7 +7,7 @@ type User = {
   id: string
   name: string
   email: string
-  role: "user" | "admin"
+  role: "user" | "admin" | "family"
 }
 
 type AuthContextType = {
@@ -59,7 +59,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(regularUser)
           localStorage.setItem("aidguide-user", JSON.stringify(regularUser))
           resolve(true)
-        } else {
+        } else if (email === "family@aidguide.com" && password === "family123") {
+          const regularUser = {
+            id: "user-2",
+            name: "Juana García",
+            email: "family@aidguide.com",
+            role: "family" as const,
+          }
+          setUser(regularUser)
+          localStorage.setItem("aidguide-user", JSON.stringify(regularUser))
+          resolve(true)
+        }
+        
+        
+        else {
           resolve(false)
         }
         setIsLoading(false)

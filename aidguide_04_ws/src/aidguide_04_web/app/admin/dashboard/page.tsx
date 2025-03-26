@@ -136,8 +136,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold">Panel de Administración</h1>
             <div className="flex items-center gap-4">
-              <span>Admin</span>
-              <div className="w-8 h-8 bg-white rounded-full"></div>
+              
             </div>
           </div>
         </div>
