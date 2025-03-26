@@ -92,8 +92,8 @@ newmtl orig_orig_orig_17___Default
 	Kd 0.5880 0.5880 0.5880
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
-	map_Ka E:\Work\Sale\3D\Building\City_Building\textures\building 01_c.png
-	map_Kd E:\Work\Sale\3D\Building\City_Building\textures\building 01_c.png
+	map_Ka E:\Work\Sale\3D\Building\City_Building\textures\building_01_c.png
+	map_Kd E:\Work\Sale\3D\Building\City_Building\textures\building_01_c.png
 
 newmtl 3db___building_06
 	Ns 44.0000
@@ -106,8 +106,8 @@ newmtl 3db___building_06
 	Kd 0.5880 0.5880 0.5880
 	Ks 0.3240 0.3240 0.3240
 	Ke 0.0000 0.0000 0.0000
-	map_Ka E:\Work\Sale\3D\Building\City_Building\textures\building 06_ c.png
-	map_Kd E:\Work\Sale\3D\Building\City_Building\textures\building 06_ c.png
+	map_Ka E:\Work\Sale\3D\Building\City_Building\textures\building_06_c.png
+	map_Kd E:\Work\Sale\3D\Building\City_Building\textures\building_06_c.png
 
 newmtl 09___Default
 	Ns 10.0000
