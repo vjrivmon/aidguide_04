@@ -1,0 +1,21 @@
+# Comandos para lanzar la cámara y visualizarla en RViz - Proyecto AidGuide 04
+
+# 1. Construir el paquete
+colcon build --packages-select aidguide_04_world
+
+# 2. Cargar el entorno de trabajo
+source install/setup.bash
+
+# 3. Lanzar el mundo de AidGuide
+ros2 launch aidguide_04_world world.launch.py
+
+# 4. Establecer el modelo del Turtlebot3
+export TURTLEBOT3_MODEL=burger_pi
+
+# 5. Lanzar RViz 
+rviz2 --ros-args --remap use_sim_time:=True
+
+# 6. Una vez abierto RViz:
+#    - En la sección "Displays", pulsar "Add"
+#    - Seleccionar "By topic" y elegir el topic de tipo "Image" 
+#    - Cambiar la "Reliability Policy" a "Best Effort" 
