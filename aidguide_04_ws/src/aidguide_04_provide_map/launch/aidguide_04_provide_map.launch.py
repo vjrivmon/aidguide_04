@@ -8,7 +8,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    rviz_config_dir = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'rviz', 'aidguide_config2.rviz')
+    rviz_config_dir = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'rviz', 'aidguide_config_robot.rviz')
     map_file = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'map', 'aidguide_04_map.yaml')
 
     return LaunchDescription([
@@ -29,6 +29,13 @@ def generate_launch_description():
             parameters=[{'use_sim_time': True}],
             output='screen'
             ),
+        Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name='static_tf_map_to_odom',
+            arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+            output='screen'
+        ),
 
         Node(
             package='nav2_lifecycle_manager',

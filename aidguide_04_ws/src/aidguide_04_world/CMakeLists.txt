@@ -62,13 +62,9 @@ install(TARGETS ${EXEC_NAME}
   DESTINATION lib/${PROJECT_NAME}
 )
 
-install(DIRECTORY launch models world urdf
-  DESTINATION share/${PROJECT_NAME}/
-)
 
-install(DIRECTORY include/
-  DESTINATION include/
-)
+
+
 
 ################################################################################
 # Macro for ament package

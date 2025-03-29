@@ -1,0 +1,50 @@
+### 🚀 Instrucciones para arrancar el sistema aidguide_04
+
+1. **Construir el paquete**
+
+colcon build --packages-select aidguide_04_provide_map
+
+2. **Cargar el entorno**
+
+source install/setup.bash
+
+3. **Lanzar el mapa y RViz**
+
+ros2 launch aidguide_04_provide_map aidguide_04_provide_map.launch.py
+
+4. **Cargar el mapa manualmente (si fuera necesario)**
+
+En otra terminal:
+
+
+ros2 service call /map_server/load_map nav2_msgs/srv/LoadMap "{map_url: '/home/hugo/aidguide_04/aidguide_04_ws/src/aidguide_04_provide_map/map/aidguide_04_map.yaml'}"
+
+*(Tendrás que poner tu path)*
+
+5. **Lanzar el mundo (simulación)**
+
+En una nueva terminal:
+
+ros2 launch aidguide_04_world world.launch.py
+
+
+6. **Mover el robot con teclado**
+
+En otra terminal:
+
+cd ~/aidguide_04/
+ros2 run turtlebot3_teleop teleop_keyboard
+
+
+7. **Configurar RViz (solo la primera vez)**
+
+En RViz, ir al panel **RobotModel → Description File** y cambiar el path por:
+
+```
+/tu ruta------/aidguide_04/aidguide_04_ws/install/aidguide_04_description/share/aidguide_04_description/urdf/aidguide_04_robot.urdf
+```
+
+---
+
+
+
