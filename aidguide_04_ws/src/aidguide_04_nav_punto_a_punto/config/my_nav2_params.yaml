@@ -39,21 +39,12 @@ amcl:
     z_short: 0.05
     scan_topic: scan
 
-amcl_map_client:
-  ros__parameters:
-    use_sim_time: True
-
-amcl_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
-
 bt_navigator:
   ros__parameters:
     use_sim_time: True
     global_frame: map
     robot_base_frame: base_link
     odom_topic: /odom
-   # default_nav_to_pose_bt_xml: "/home/W/turtlebot3_ws/src/my_nav2_system/config/navigate_w_replanning_and_recovery.xml"
     plugin_lib_names:
     - nav2_compute_path_to_pose_action_bt_node
     - nav2_compute_path_through_poses_action_bt_node
@@ -83,10 +74,6 @@ bt_navigator:
     - nav2_navigate_through_poses_action_bt_node
     - nav2_navigate_to_pose_action_bt_node
     - nav2_remove_passed_goals_action_bt_node
-
-bt_navigator_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
 
 controller_server:
   ros__parameters:
@@ -122,8 +109,6 @@ controller_server:
       min_speed_xy: 0.0
       max_speed_xy: 0.26
       min_speed_theta: 0.0
-      # Add high threshold velocity for turtlebot 3 issue.
-      # https://github.com/ROBOTIS-GIT/turtlebot3_simulations/issues/75
       acc_lim_x: 2.5
       acc_lim_y: 0.0
       acc_lim_theta: 3.2
@@ -152,10 +137,6 @@ controller_server:
       RotateToGoal.scale: 32.0
       RotateToGoal.slowing_factor: 5.0
       RotateToGoal.lookahead_time: -1.0
-
-controller_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
 
 local_costmap:
   local_costmap:
@@ -194,12 +175,6 @@ local_costmap:
       static_layer:
         map_subscribe_transient_local: True
       always_send_full_costmap: True
-  local_costmap_client:
-    ros__parameters:
-      use_sim_time: True
-  local_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: True
 
 global_costmap:
   global_costmap:
@@ -231,25 +206,11 @@ global_costmap:
         cost_scaling_factor: 3.0
         inflation_radius: 0.55
       always_send_full_costmap: True
-  global_costmap_client:
-    ros__parameters:
-      use_sim_time: True
-  global_costmap_rclcpp_node:
-    ros__parameters:
-      use_sim_time: True
 
 map_server:
   ros__parameters:
     use_sim_time: True
     yaml_filename: "aidguide_04_map.yaml"
-
-map_saver:
-  ros__parameters:
-    use_sim_time: True
-    save_map_timeout: 5000
-    free_thresh_default: 0.25
-    occupied_thresh_default: 0.65
-    
 
 planner_server:
   ros__parameters:
@@ -261,10 +222,6 @@ planner_server:
       tolerance: 0.5
       use_astar: false
       allow_unknown: true
-
-planner_server_rclcpp_node:
-  ros__parameters:
-    use_sim_time: True
 
 recoveries_server:
   ros__parameters:
@@ -285,8 +242,4 @@ recoveries_server:
     simulate_ahead_time: 2.0
     max_rotational_vel: 1.0
     min_rotational_vel: 0.4
-    rotational_acc_lim: 3.2
-
-robot_state_publisher:
-  ros__parameters:
-    use_sim_time: True
+    rotational_acc_lim: 3.2 
