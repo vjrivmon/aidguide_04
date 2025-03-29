@@ -2,8 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-
-package_name = 'aidguide_04_my_nav2_system'
+package_name = 'aidguide_04_nav_punto_a_punto'
 
 setup(
     name=package_name,
@@ -15,19 +14,19 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'), glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
-        (os.path.join('share', package_name, 'config'), glob('config/*.rviz')),
         (os.path.join('share', package_name, 'config'), glob('config/*.pgm')),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='mimivladeva',
-    maintainer_email='mvladev@epsg.upv.es',
+    maintainer='mvilcat',
+    maintainer_email='mvilcat@todo.todo',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'punto_inicial = aidguide_04_my_nav2_system.punto_inicial:main'
+            'punto_a_punto_node = aidguide_04_nav_punto_a_punto.aidguide_04_nav_punto_a_punto:main'
         ],
     },
 )
+

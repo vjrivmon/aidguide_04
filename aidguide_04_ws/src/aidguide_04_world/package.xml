@@ -4,25 +4,24 @@
   <name>aidguide_04_world</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="mimivladeva@todo.todo">mimivladeva</maintainer>
+  <maintainer email="mvilcat@todo.todo">mvilcat</maintainer>
   <license>TODO: License declaration</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
-  <depend>gazebo_ros_pkgs</depend>
+  <depend>gazebo_ros</depend>
   <depend>geometry_msgs</depend>
   <depend>nav_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>tf2</depend>
-  <depend>turtlebot3_gazebo</depend>
-  <exec_depend>turtlebot3_description</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
+    <gazebo_ros gazebo_model_path="${prefix}/models"/>
   </export>
 </package>
 
