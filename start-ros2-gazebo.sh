@@ -39,13 +39,15 @@ get_workspace_path() {
     echo "$WORKSPACE_PATH"
 }
 
-# Función para reemplazar usuario en archivos de configuración
-replace_user_in_files() {
-    local old_user="visi02"
-    local new_user="$1"
-    local workspace_path="$2"
+# Función para reemplazar rutas en archivos de configuración
+replace_paths_in_files() {
+    local old_base_path="$1"
+    local new_base_path="$2"
+    local workspace_path="$3"
     
-    echo -e "${CYAN}🔧 Adaptando archivos de configuración para el usuario: ${YELLOW}$new_user${NC}"
+    echo -e "${CYAN}🔧 Adaptando archivos de configuración${NC}"
+    echo -e "${CYAN}   De: ${YELLOW}$old_base_path${NC}"
+    echo -e "${CYAN}   A:  ${GREEN}$new_base_path${NC}"
     
     # Crear copias temporales de archivos antes de modificarlos
     echo -e "${BLUE}📝 Haciendo copias de seguridad de los archivos...${NC}"
@@ -63,8 +65,12 @@ replace_user_in_files() {
             # Crear copia de seguridad
             cp "$file" "${file}.bak"
             
-            # Reemplazar las rutas de usuario en el archivo
-            sed -i "s|/home/$old_user/|/home/$new_user/|g" "$file"
+            # Escapar caracteres especiales para sed
+            local escaped_old_path=$(echo "$old_base_path" | sed 's/\//\\\//g')
+            local escaped_new_path=$(echo "$new_base_path" | sed 's/\//\\\//g')
+            
+            # Reemplazar las rutas en el archivo
+            sed -i "s/$escaped_old_path/$escaped_new_path/g" "$file"
             echo -e "${GREEN}✅ Modificado: $file${NC}"
         else
             echo -e "${YELLOW}⚠️ Archivo no encontrado: $file${NC}"
@@ -98,6 +104,22 @@ restore_original_files() {
     echo -e "${GREEN}✅ Archivos originales restaurados${NC}"
 }
 
+# Extraer la ruta base actual de los archivos
+extract_base_path() {
+    local workspace_path="$1"
+    local file="$workspace_path/src/aidguide_04_provide_map/map/aidguide_04_map.yaml"
+    
+    if [ -f "$file" ]; then
+        # Extraer la ruta hasta aidguide_04_ws
+        local current_path=$(grep "image:" "$file" | sed 's/image: //g')
+        # Obtener la ruta base (hasta aidguide_04/)
+        local base_path=$(echo "$current_path" | sed 's/\(\/home\/[^\/]*\/[^\/]*\/\).*/\1/')
+        echo "$base_path"
+    else
+        echo "/home/visi02/aidguide_04/"
+    fi
+}
+
 # Mostrar cabecera del script
 clear
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -117,21 +139,38 @@ WORKSPACE_PATH=$(get_workspace_path)
 echo -e "${YELLOW}📂 Workspace detectado en: ${CYAN}$WORKSPACE_PATH${NC}"
 cd "$WORKSPACE_PATH" || exit 1
 
-# Preguntar por el nombre de usuario
+# Extraer la ruta base actual
+CURRENT_BASE_PATH=$(extract_base_path "$WORKSPACE_PATH")
+echo -e "${YELLOW}📂 Ruta base actual en archivos de configuración: ${CYAN}$CURRENT_BASE_PATH${NC}"
+
+# Preguntar por la ruta base a utilizar
 current_user=$(whoami)
+default_base_path="$HOME/aidguide_04/"
+
 echo -e "${CYAN}👤 Usuario actual: ${YELLOW}$current_user${NC}"
-echo -e "${CYAN}❓ ¿Deseas usar este usuario o especificar otro? (Enter para usar $current_user / o escribe otro nombre de usuario)${NC}"
-read -p "> " custom_user
-if [ -z "$custom_user" ]; then
-    user_name="$current_user"
+echo -e "${CYAN}❓ ¿Deseas configurar una ruta base personalizada?${NC}"
+echo -e "${CYAN}   1) Usar ruta por defecto: ${GREEN}$default_base_path${NC}"
+echo -e "${CYAN}   2) Especificar otra ruta${NC}"
+read -p "> " path_option
+
+if [ "$path_option" = "2" ]; then
+    echo -e "${CYAN}📂 Introduce la ruta base donde se encuentra el proyecto (incluyendo /aidguide_04/ al final):${NC}"
+    read -p "> " custom_base_path
+    
+    # Asegurar que la ruta termine con /
+    if [[ "$custom_base_path" != */ ]]; then
+        custom_base_path="$custom_base_path/"
+    fi
+    
+    NEW_BASE_PATH="$custom_base_path"
 else
-    user_name="$custom_user"
+    NEW_BASE_PATH="$default_base_path"
 fi
 
-echo -e "${GREEN}✅ Usando el usuario: ${YELLOW}$user_name${NC}"
+echo -e "${GREEN}✅ Usando la ruta base: ${YELLOW}$NEW_BASE_PATH${NC}"
 
-# Adaptar archivos para el usuario actual
-replace_user_in_files "$user_name" "$WORKSPACE_PATH"
+# Adaptar archivos con la nueva ruta base
+replace_paths_in_files "$CURRENT_BASE_PATH" "$NEW_BASE_PATH" "$WORKSPACE_PATH"
 
 # Configurar una trampa para restaurar archivos al salir
 trap 'echo -e "${YELLOW}🔄 Limpiando archivos temporales...${NC}"; restore_original_files "$WORKSPACE_PATH"; exit' EXIT
@@ -265,7 +304,7 @@ TERMINAL5_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                      ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Se abrirán 5 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
@@ -299,7 +338,7 @@ echo -e "${YELLOW}📝 Para interactuar con la navegación, utiliza RViz y las h
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Sistema completo en funcionamiento                      ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Sistema completo en funcionamiento                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}" 
 
