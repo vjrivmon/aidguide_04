@@ -17,7 +17,7 @@ ros2 launch aidguide_04_provide_map aidguide_04_provide_map.launch.py
 En otra terminal:
 
 
-ros2 service call /map_server/load_map nav2_msgs/srv/LoadMap "{map_url: '/home/hugo/aidguide_04/aidguide_04_ws/src/aidguide_04_provide_map/map/aidguide_04_map.yaml'}"
+ros2 service call /map_server/load_map nav2_msgs/srv/LoadMap "{map_url: '/home/vis02/aidguide_04/aidguide_04_ws/src/aidguide_04_provide_map/map/aidguide_04_map.yaml'}"
 
 *(Tendrás que poner tu path)*
 
