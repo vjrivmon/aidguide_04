@@ -8,7 +8,6 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     
-    rviz_config_dir = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'rviz', 'aidguide_config_robot.rviz')
     map_file = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'map', 'aidguide_04_map.yaml')
 
     return LaunchDescription([
@@ -21,14 +20,6 @@ def generate_launch_description():
                         {'yaml_filename':map_file} 
                        ]),
 
-        Node(
-            package='rviz2',
-            executable='rviz2',
-            name='rviz2',
-            arguments=['-d', rviz_config_dir],
-            parameters=[{'use_sim_time': True}],
-            output='screen'
-            ),
         Node(
             package='tf2_ros',
             executable='static_transform_publisher',

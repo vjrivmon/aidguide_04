@@ -1,4 +1,4 @@
-image: /home/mimivladeva/Desktop/aidguide_04/aidguide_04_ws/src/aidguide_04_my_nav2_system/config/aidguide_04_map.pgm
+image: /home/visi02/aidguide_04/aidguide_04_ws/src/aidguide_04_my_nav2_system/config/aidguide_04_map.pgm
 mode: trinary
 resolution: 0.05
 origin: [-8.16, -8.97, 0]
