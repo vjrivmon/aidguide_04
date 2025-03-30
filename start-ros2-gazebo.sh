@@ -39,6 +39,65 @@ get_workspace_path() {
     echo "$WORKSPACE_PATH"
 }
 
+# Función para reemplazar usuario en archivos de configuración
+replace_user_in_files() {
+    local old_user="visi02"
+    local new_user="$1"
+    local workspace_path="$2"
+    
+    echo -e "${CYAN}🔧 Adaptando archivos de configuración para el usuario: ${YELLOW}$new_user${NC}"
+    
+    # Crear copias temporales de archivos antes de modificarlos
+    echo -e "${BLUE}📝 Haciendo copias de seguridad de los archivos...${NC}"
+    
+    # Lista de archivos a modificar
+    local files_to_modify=(
+        "$workspace_path/src/aidguide_04_provide_map/map/aidguide_04_map.yaml"
+        "$workspace_path/src/aidguide_04_nav_punto_a_punto/config/aidguide_04_map.yaml"
+        "$workspace_path/src/aidguide_04_my_nav2_system/config/aidguide_config_robot.rviz"
+    )
+    
+    # Crear copias de seguridad y modificar archivos
+    for file in "${files_to_modify[@]}"; do
+        if [ -f "$file" ]; then
+            # Crear copia de seguridad
+            cp "$file" "${file}.bak"
+            
+            # Reemplazar las rutas de usuario en el archivo
+            sed -i "s|/home/$old_user/|/home/$new_user/|g" "$file"
+            echo -e "${GREEN}✅ Modificado: $file${NC}"
+        else
+            echo -e "${YELLOW}⚠️ Archivo no encontrado: $file${NC}"
+        fi
+    done
+    
+    echo -e "${GREEN}✅ Archivos modificados correctamente${NC}"
+}
+
+# Función para restaurar archivos originales
+restore_original_files() {
+    local workspace_path="$1"
+    
+    echo -e "${CYAN}🔄 Restaurando archivos originales...${NC}"
+    
+    # Lista de archivos a restaurar
+    local files_to_restore=(
+        "$workspace_path/src/aidguide_04_provide_map/map/aidguide_04_map.yaml"
+        "$workspace_path/src/aidguide_04_nav_punto_a_punto/config/aidguide_04_map.yaml"
+        "$workspace_path/src/aidguide_04_my_nav2_system/config/aidguide_config_robot.rviz"
+    )
+    
+    # Restaurar archivos originales
+    for file in "${files_to_restore[@]}"; do
+        if [ -f "${file}.bak" ]; then
+            mv "${file}.bak" "$file"
+            echo -e "${GREEN}✅ Restaurado: $file${NC}"
+        fi
+    done
+    
+    echo -e "${GREEN}✅ Archivos originales restaurados${NC}"
+}
+
 # Mostrar cabecera del script
 clear
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -57,6 +116,25 @@ echo -e "${GREEN}✅ ROS2 está correctamente instalado${NC}"
 WORKSPACE_PATH=$(get_workspace_path)
 echo -e "${YELLOW}📂 Workspace detectado en: ${CYAN}$WORKSPACE_PATH${NC}"
 cd "$WORKSPACE_PATH" || exit 1
+
+# Preguntar por el nombre de usuario
+current_user=$(whoami)
+echo -e "${CYAN}👤 Usuario actual: ${YELLOW}$current_user${NC}"
+echo -e "${CYAN}❓ ¿Deseas usar este usuario o especificar otro? (Enter para usar $current_user / o escribe otro nombre de usuario)${NC}"
+read -p "> " custom_user
+if [ -z "$custom_user" ]; then
+    user_name="$current_user"
+else
+    user_name="$custom_user"
+fi
+
+echo -e "${GREEN}✅ Usando el usuario: ${YELLOW}$user_name${NC}"
+
+# Adaptar archivos para el usuario actual
+replace_user_in_files "$user_name" "$WORKSPACE_PATH"
+
+# Configurar una trampa para restaurar archivos al salir
+trap 'echo -e "${YELLOW}🔄 Limpiando archivos temporales...${NC}"; restore_original_files "$WORKSPACE_PATH"; exit' EXIT
 
 # Función para iniciar terminal con comandos
 start_terminal() {
@@ -187,7 +265,7 @@ TERMINAL5_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                      ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Se abrirán 5 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
@@ -221,6 +299,9 @@ echo -e "${YELLOW}📝 Para interactuar con la navegación, utiliza RViz y las h
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Sistema completo en funcionamiento                     ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Sistema completo en funcionamiento                      ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}" 
+
+# Nota: Los archivos originales se restaurarán automáticamente cuando se cierre el script
+# gracias al comando trap configurado anteriormente 
