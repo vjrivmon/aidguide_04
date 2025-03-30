@@ -41,7 +41,7 @@ ros2 run turtlebot3_teleop teleop_keyboard
 En RViz, ir al panel **RobotModel → Description File** y cambiar el path por:
 
 ```
-/tu ruta------/aidguide_04/aidguide_04_ws/install/aidguide_04_description/share/aidguide_04_description/urdf/aidguide_04_robot.urdf
+/home/mimivladeva/Desktop/aidguide_04/aidguide_04_ws/src/aidguide_04_world/urdf/turtlebot3_burger_pi.urdf
 ```
 
 ---
