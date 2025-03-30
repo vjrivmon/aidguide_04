@@ -49,8 +49,8 @@ def generate_launch_description():
         ),
         Node(
     package='aidguide_04_my_nav2_system',
-    executable='initial_pose_pub',
-    name='initial_pose_pub',
+    executable='punto_inicial',
+    name='punto_inicial',
     output='screen',
     parameters=[{'use_sim_time': True}]
 )
