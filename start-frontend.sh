@@ -103,35 +103,57 @@ cd ./aidguide_04_ws/src/aidguide_04_web || {
     exit 1
 }
 
-# Limpiar instalación anterior si existe
-echo -e "${YELLOW}🧹 Limpiando instalación anterior...${NC}"
-rm -rf node_modules package-lock.json .next
-npm cache clean --force
-
-# Instalar dependencias
-echo -e "${YELLOW}📦 Instalando dependencias...${NC}"
-# Intentar diferentes estrategias de instalación
-npm install --legacy-peer-deps || {
-    echo -e "${YELLOW}⚠️ Primer intento fallido, intentando con --force...${NC}"
-    npm install --force || {
-        echo -e "${YELLOW}⚠️ Segundo intento fallido, intentando limpiar caché...${NC}"
-        npm cache clean --force
-        npm install --legacy-peer-deps --no-package-lock || {
-            echo -e "${RED}❌ Error al instalar las dependencias${NC}"
-            echo -e "${YELLOW}📝 Por favor, intenta los siguientes pasos manualmente:${NC}"
-            echo -e "${YELLOW}1. Ejecuta: nvm use 18${NC}"
-            echo -e "${YELLOW}2. Ejecuta: npm cache clean --force${NC}"
-            echo -e "${YELLOW}3. Ejecuta: npm install --legacy-peer-deps${NC}"
-            exit 1
+# Verificar si las dependencias ya están instaladas
+if [ -d "node_modules" ] && [ -f "package-lock.json" ]; then
+    echo -e "${GREEN}✅ Dependencias ya instaladas. Verificando integridad...${NC}"
+    
+    # Verificar si hay algún problema con las dependencias instaladas
+    if npm ls --depth=0 2>/dev/null | grep -q "ERR!"; then
+        echo -e "${YELLOW}⚠️ Se detectaron problemas en las dependencias instaladas${NC}"
+        echo -e "${YELLOW}📝 ¿Deseas reinstalar las dependencias? (s/n)${NC}"
+        read -r respuesta
+        if [[ "$respuesta" =~ ^[Ss]$ ]]; then
+            echo -e "${YELLOW}🧹 Reinstalando dependencias...${NC}"
+            rm -rf node_modules package-lock.json
+            npm cache clean --force
+            npm install --legacy-peer-deps
+        fi
+    else
+        echo -e "${GREEN}✅ Las dependencias están correctamente instaladas${NC}"
+    fi
+else
+    echo -e "${YELLOW}📦 Instalando dependencias por primera vez...${NC}"
+    # Intentar diferentes estrategias de instalación
+    npm install --legacy-peer-deps || {
+        echo -e "${YELLOW}⚠️ Primer intento fallido, intentando con --force...${NC}"
+        npm install --force || {
+            echo -e "${YELLOW}⚠️ Segundo intento fallido, intentando limpiar caché...${NC}"
+            npm cache clean --force
+            npm install --legacy-peer-deps --no-package-lock || {
+                echo -e "${RED}❌ Error al instalar las dependencias${NC}"
+                echo -e "${YELLOW}📝 Por favor, intenta los siguientes pasos manualmente:${NC}"
+                echo -e "${YELLOW}1. Ejecuta: nvm use 18${NC}"
+                echo -e "${YELLOW}2. Ejecuta: npm cache clean --force${NC}"
+                echo -e "${YELLOW}3. Ejecuta: npm install --legacy-peer-deps${NC}"
+                exit 1
+            }
         }
     }
-}
+fi
 
 # Verificar que next está instalado correctamente
 if ! npm list next | grep -q "next@"; then
     echo -e "${RED}❌ Next.js no se instaló correctamente${NC}"
     echo -e "${YELLOW}📝 Intentando instalar Next.js específicamente...${NC}"
     npm install next@latest react@latest react-dom@latest
+fi
+
+# Instalar tipos de d3 y resolver conflictos de dependencias
+if ! npm list @types/d3 &> /dev/null; then
+    echo -e "${YELLOW}📦 Instalando tipos de D3...${NC}"
+    npm install --save-dev @types/d3 --legacy-peer-deps
+    # Corregir versión de date-fns para compatibilidad
+    npm install date-fns@^3.0.0 --legacy-peer-deps
 fi
 
 # Iniciar el servidor de desarrollo
