@@ -1,8 +1,19 @@
 FROM node:18
 
 WORKDIR /app
-COPY . .
-RUN npm install
 
+# Copia primero los archivos de dependencias
+COPY package*.json ./
+
+# Instala las dependencias
+RUN npm install
+RUN npm install dotenv --save
+
+# Copia el resto de los archivos
+COPY . .
+
+# Expone el puerto 3000
 EXPOSE 3000
+
+# Inicia la aplicación
 CMD ["node", "app.js"]
