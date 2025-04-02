@@ -23,7 +23,7 @@ aidguide_04_backend/
 ├── init/                    # Scripts de inicialización para la base de datos
 │   ├── 01-aidguide_db_schema.sql    # Definición del esquema de la BD
 │   └── 02-aidguide_fake_data.sql    # Datos de ejemplo para desarrollo
-└── docker-compose.yml       # Configuración de despliegue con Docker Compose
+└── docker-compose.yml       # Configuración de despliegue con Docker Compose (incluye frontend)
 ```
 
 ## Características Principales
@@ -62,14 +62,16 @@ Toda la API está documentada utilizando Swagger, accesible en **/api-docs**, lo
 - Obtener información detallada sobre parámetros y respuestas
 - Generar clientes automáticamente para diferentes lenguajes
 
-### 4. Contenerización con Docker
+### 4. Contenerización Completa del Sistema
 
-El backend está completamente contenerizado utilizando Docker y Docker Compose:
+El sistema completo está contenerizado utilizando Docker y Docker Compose:
 
 - **Servicio MySQL**: Base de datos MySQL 8.0 con persistencia de datos
 - **Servicio API**: Servidor Node.js con Express
+- **Servicio Frontend**: Aplicación web Next.js con interfaz de usuario
 - Redes y volúmenes configurados para desarrollo y producción
 - Scripts de inicialización automática
+- Healthchecks para garantizar la disponibilidad de los servicios
 
 ## Requisitos
 
@@ -91,6 +93,7 @@ docker-compose up -d
 ```
 
 La API estará disponible en http://localhost:3000 y la documentación en http://localhost:3000/api-docs
+El frontend estará disponible en http://localhost:3001
 
 ### Desarrollo Local
 
@@ -123,9 +126,24 @@ La comunicación con el frontend se realiza a través de la API REST, utilizando
 
 El backend está diseñado para integrarse con el sistema ROS2 Galactic mediante el uso de interfaces de comunicación específicas:
 
-1. El backend actúa como intermediario entre la aplicación y los nodos ROS2
-2. Traduce las solicitudes REST a mensajes y servicios ROS2
-3. Almacena el estado del sistema y su historial en la base de datos
+1. **Comunicación bidireccional**: 
+   - El backend recibe actualizaciones de estado en tiempo real de los robots
+   - Envía comandos de navegación y control al sistema ROS2
+
+2. **Mensajes y servicios ROS2**:
+   - Utiliza mensajes personalizados para datos de estado del robot
+   - Implementa servicios para solicitar operaciones específicas
+   - Soporta topics para actualizaciones asíncronas
+
+3. **Almacenamiento y persistencia**:
+   - Almacena el historial de ubicaciones para análisis
+   - Registra todas las interacciones en la base de datos
+   - Mantiene un log detallado de eventos y alertas
+
+4. **Arquitectura modular**:
+   - Permite agregar nuevos tipos de robots sin modificar la estructura base
+   - Soporta distintos protocolos de comunicación según el tipo de robot
+   - Facilita la implementación de nuevas funcionalidades mediante plugins
 
 ## Desarrollo y Contribución
 
@@ -147,6 +165,16 @@ docker-compose down -v
 docker-compose up -d
 ```
 
+### Actualizar el README
+
+Es importante mantener este documento actualizado cuando se implementen cambios significativos:
+
+1. **Nuevos endpoints**: Agrega cualquier endpoint nuevo a la sección "API RESTful Completa"
+2. **Cambios en el modelo de datos**: Actualiza la sección "Modelo de Datos Completo"
+3. **Nuevas dependencias**: Refleja las nuevas dependencias en la sección "Requisitos"
+4. **Cambios en la estructura**: Actualiza el diagrama de la estructura del proyecto
+5. **Nuevas funcionalidades**: Marca las nuevas características en "Estado Actual y Próximos Pasos"
+
 ## Seguridad
 
 - La API utiliza MySQL con autenticación nativa
@@ -159,10 +187,14 @@ docker-compose up -d
 - [x] Implementación del CRUD básico para todas las entidades
 - [x] Documentación con Swagger
 - [x] Contenerización completa con Docker
+- [x] Integración con frontend mediante docker-compose
+- [x] Configuración de redes Docker para comunicación entre servicios
 - [ ] Implementación de autenticación JWT
 - [ ] Integración directa con nodos ROS2
 - [ ] Implementación de WebSockets para comunicación en tiempo real
 - [ ] Pruebas automatizadas para todos los endpoints
+- [ ] Implementación de sistema de logs centralizado
+- [ ] Monitorización de servicios con Prometheus y Grafana
 
 ## Contacto
 
