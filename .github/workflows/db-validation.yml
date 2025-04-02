@@ -1,0 +1,63 @@
+name: Validación de Conexión a Base de Datos
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  test-db-connection:
+    runs-on: ubuntu-latest
+
+    # Configuración de servicios para CI/CD
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
+          MYSQL_USER: ${{ secrets.DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: aidguide_04_ws/src/aidguide_04_backend/package-lock.json
+
+      - name: Instalar dependencias
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          npm install
+
+      - name: Configurar variables de entorno
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          echo "DB_HOST=localhost" > .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+
+      - name: Esperar que MySQL esté listo
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" -P"3306" --silent; do
+            echo "Esperando que MySQL esté disponible..."
+            sleep 2
+          done
+          echo "MySQL está disponible"
+
+      - name: Ejecutar verificación de conexión a DB
+        run: node aidguide_04_ws/src/aidguide_04_backend/scripts/verify-db-connection.js 
