@@ -36,5 +36,15 @@ app.get('/api/status', (req, res) => {
   res.json({ status: 'online', message: 'API AidGuide funcionando correctamente' });
 });
 
+// Ruta de health check para Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Ruta raíz - redirige a la documentación
+app.get('/', (req, res) => {
+  res.redirect('/api-docs');
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`API corriendo en http://localhost:${PORT}/api-docs`));

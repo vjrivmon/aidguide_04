@@ -97,10 +97,51 @@ cd "$BACKEND_PATH" || { echo -e "${RED}${ICON_ERROR} Error: No se pudo acceder a
 
 # Comprobamos si Docker está en ejecución
 echo -ne "${YELLOW}${ICON_INFO} Comprobando estado de Docker... ${NC}"
-if ! docker info > /dev/null 2>&1; then
+if ! sudo docker info > /dev/null 2>&1; then
     echo -e "${RED}${ICON_ERROR} No en ejecución${NC}"
-    echo -e "${RED}${BOLD}Docker no está en ejecución. Por favor, inicie Docker e intente nuevamente.${NC}"
-    exit 1
+    echo -e "${YELLOW}${ICON_INFO} Intentando iniciar Docker...${NC}"
+    
+    # Intentar diferentes métodos para iniciar Docker
+    DOCKER_STARTED=false
+    
+    # Método 1: systemctl
+    if sudo systemctl start docker; then
+        echo -e "${CYAN}${ICON_LOADING} Esperando que Docker se inicie (systemctl)...${NC}"
+        sleep 8
+        if sudo docker info > /dev/null 2>&1; then
+            DOCKER_STARTED=true
+            echo -e "${GREEN}${ICON_CHECK} Docker iniciado correctamente${NC}"
+        fi
+    fi
+    
+    # Método 2: service
+    if [ "$DOCKER_STARTED" = false ] && sudo service docker start; then
+        echo -e "${CYAN}${ICON_LOADING} Esperando que Docker se inicie (service)...${NC}"
+        sleep 8
+        if sudo docker info > /dev/null 2>&1; then
+            DOCKER_STARTED=true
+            echo -e "${GREEN}${ICON_CHECK} Docker iniciado correctamente${NC}"
+        fi
+    fi
+    
+    # Si no se pudo iniciar Docker
+    if [ "$DOCKER_STARTED" = false ]; then
+        echo -e "${RED}${BOLD}Docker no se pudo iniciar automáticamente.${NC}"
+        echo -e "${YELLOW}${ICON_INFO} Para iniciar Docker manualmente, prueba uno de estos comandos:${NC}"
+        echo -e "${CYAN}   1. sudo systemctl start docker${NC}"
+        echo -e "${CYAN}   2. sudo service docker start${NC}"
+        echo -e "${CYAN}   3. sudo /etc/init.d/docker start${NC}"
+        echo -e "${YELLOW}${ICON_INFO} Y luego vuelve a ejecutar este script.${NC}"
+        
+        # Preguntar si desea continuar sin Docker
+        echo -e "${YELLOW}${ICON_INFO} ¿Deseas continuar sin Docker? (s/n)${NC}"
+        read -r respuesta
+        if [[ "$respuesta" =~ ^[Ss]$ ]]; then
+            echo -e "${YELLOW}${ICON_WARNING} Continuando sin Docker. Algunas funciones no estarán disponibles.${NC}"
+        else
+            exit 1
+        fi
+    fi
 else
     echo -e "${GREEN}${ICON_CHECK} En ejecución${NC}"
 fi
@@ -119,11 +160,11 @@ echo
 # Limpiar todos los contenedores relacionados con el proyecto
 echo -e "${CYAN}${BOLD}▶ PREPARANDO CONTENEDORES${NC}"
 echo -e "${YELLOW}${ICON_CLEANING} Limpiando contenedores existentes...${NC}"
-docker-compose down > /dev/null 2>&1
-containers=$(docker ps -a --filter "name=aidguide" --format "{{.Names}}")
+sudo docker-compose down > /dev/null 2>&1
+containers=$(sudo docker ps -a --filter "name=aidguide" --format "{{.Names}}")
 if [ ! -z "$containers" ]; then
     echo -e "  ${YELLOW}${ICON_INFO} Eliminando contenedores adicionales...${NC}"
-    docker rm -f $containers > /dev/null 2>&1
+    sudo docker rm -f $containers > /dev/null 2>&1
 fi
 show_progress 1 "${ICON_LOADING} Limpieza en progreso..."
 echo
@@ -131,11 +172,12 @@ echo
 # Función para iniciar los contenedores y manejar reintentos
 start_containers() {
     local retry=${1:-0}
+    local retry_num=$((retry+1))
     
     # Iniciamos los contenedores con docker-compose
-    echo -e "${CYAN}${BOLD}▶ INICIANDO SERVICIOS (Intento ${retry+1}/${MAX_RETRIES+1})${NC}"
+    echo -e "${CYAN}${BOLD}▶ INICIANDO SERVICIOS (Intento ${retry_num}/${MAX_RETRIES+1})${NC}"
     echo -e "${YELLOW}${ICON_DOCKER} Creando y arrancando contenedores...${NC}"
-    docker-compose up -d --build
+    sudo docker-compose up -d --build
     
     # Mostramos una barra de progreso mientras los contenedores se inician
     show_progress 3 "${ICON_LOADING} Inicializando servicios..."
@@ -143,20 +185,20 @@ start_containers() {
     # Verificamos el estado de los contenedores
     echo -e "\n${MAGENTA}${BOLD}${ICON_INFO} ESTADO DE LOS SERVICIOS:${NC}"
     echo -e "${CYAN}╭───────────────────────────────────────────────────────────╮${NC}"
-    docker-compose ps
+    sudo docker-compose ps
     echo -e "${CYAN}╰───────────────────────────────────────────────────────────╯${NC}"
     
     # Verificar si el frontend está en ejecución
-    if ! docker ps --filter "name=aidguide_frontend" --format "{{.Names}}" | grep -q "aidguide_frontend"; then
+    if ! sudo docker ps --filter "name=aidguide_frontend" --format "{{.Names}}" | grep -q "aidguide_frontend"; then
         echo -e "\n${YELLOW}${ICON_WARNING} El contenedor del frontend no se inició correctamente.${NC}"
         echo -e "${YELLOW}${ICON_INFO} Revisando los logs del frontend:${NC}"
         echo -e "${CYAN}╭───────────────────────────────────────────────────────────╮${NC}"
-        docker-compose logs frontend
+        sudo docker-compose logs frontend
         echo -e "${CYAN}╰───────────────────────────────────────────────────────────╯${NC}"
         
         if [ $retry -lt $MAX_RETRIES ]; then
             echo -e "\n${YELLOW}${ICON_RETRY} Reintentando iniciar los contenedores...${NC}"
-            docker-compose down > /dev/null 2>&1
+            sudo docker-compose down > /dev/null 2>&1
             sleep 2
             start_containers $((retry + 1))
             return $?
@@ -164,7 +206,7 @@ start_containers() {
             echo -e "\n${RED}${ICON_WARNING} No se pudo iniciar el frontend después de $((MAX_RETRIES+1)) intentos.${NC}"
             echo -e "${YELLOW}${ICON_INFO} El servicio API y MySQL están disponibles, pero el frontend podría no funcionar correctamente.${NC}"
             return 1
-        }
+        fi
     fi
     
     return 0
@@ -173,6 +215,18 @@ start_containers() {
 # Iniciar los contenedores
 start_containers
 success=$?
+
+# Si no se pudieron iniciar los contenedores, ofrecer alternativas
+if [ $success -ne 0 ]; then
+    echo -e "\n${YELLOW}${ICON_WARNING} No se pudieron iniciar todos los contenedores correctamente.${NC}"
+    echo -e "${YELLOW}${ICON_INFO} ¿Deseas intentar iniciar solo la base de datos? (s/n)${NC}"
+    read -r respuesta
+    if [[ "$respuesta" =~ ^[Ss]$ ]]; then
+        echo -e "${CYAN}${ICON_LOADING} Iniciando solo la base de datos...${NC}"
+        sudo docker-compose up -d mysql
+        show_progress 2 "${ICON_LOADING} Inicializando base de datos..."
+    fi
+fi
 
 # Resumen final con URLs y estado
 echo -e "\n${CYAN}${BOLD}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -186,14 +240,14 @@ else
 fi
 
 echo -e "${CYAN}${BOLD}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${CYAN}${BOLD}║${NC} ${ICON_WEB} ${BOLD}Frontend:${NC}        http://localhost:3001           ${CYAN}${BOLD}║${NC}"
-echo -e "${CYAN}${BOLD}║${NC} ${ICON_WEB} ${BOLD}Backend API:${NC}     http://localhost:3000           ${CYAN}${BOLD}║${NC}"
-echo -e "${CYAN}${BOLD}║${NC} ${ICON_DOCS} ${BOLD}Documentación:${NC}  http://localhost:3000/api-docs  ${CYAN}${BOLD}║${NC}"
+echo -e "${CYAN}${BOLD}║${NC} ${ICON_WEB} ${BOLD}Frontend:${NC}        http://localhost:3334           ${CYAN}${BOLD}║${NC}"
+echo -e "${CYAN}${BOLD}║${NC} ${ICON_WEB} ${BOLD}Backend API:${NC}     http://localhost:3333           ${CYAN}${BOLD}║${NC}"
+echo -e "${CYAN}${BOLD}║${NC} ${ICON_DOCS} ${BOLD}Documentación:${NC}  http://localhost:3333/api-docs  ${CYAN}${BOLD}║${NC}"
 echo -e "${CYAN}${BOLD}║${NC} ${ICON_DATABASE} ${BOLD}MySQL:${NC}          localhost:3306              ${CYAN}${BOLD}║${NC}"
 echo -e "${CYAN}${BOLD}╚════════════════════════════════════════════════════════════╝${NC}"
 
 echo -e "\n${GREEN}${BOLD}¡Listo para comenzar a trabajar con AidGuide!${NC}"
-echo -e "${YELLOW}${ICON_INFO} Para detener los servicios, ejecute: ${CYAN}docker-compose down${NC} en el directorio del backend\n"
+echo -e "${YELLOW}${ICON_INFO} Para detener los servicios, ejecute: ${CYAN}sudo docker-compose down${NC} en el directorio del backend\n"
 
 # Volvemos al directorio original
 cd "$SCRIPT_DIR" || exit 
