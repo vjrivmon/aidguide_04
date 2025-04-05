@@ -4,11 +4,15 @@ import type React from "react"
 
 import { useState } from "react"
 import Image from "next/image"
-import { User, Settings, MapPin, Bell, Clock, LogOut, Edit2, Save, X, History, Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Trophy, Award, Gift, Target } from "lucide-react"
+import { User, Settings, MapPin, Bell, Cloud, CloudRain, Thermometer, Clock, LogOut, Edit2, Save, X, History, Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Trophy, Award, Gift, Target } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useRobot } from "@/context/robot-context"
+import { format, formatDistance } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 export default function Profile() {
   const { user } = useAuth()
+  const { notifications, markNotificationAsRead } = useRobot()
   const [editing, setEditing] = useState(false)
   const [userData, setUserData] = useState({
     name: "María García",
@@ -158,6 +162,27 @@ export default function Profile() {
     },
   ]
 
+  // Función para renderizar el icono según el tipo de notificación
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'weather':
+        if (notifications.find(n => n.type === 'weather' && n.message.toLowerCase().includes('lluvia')))
+          return <CloudRain size={20} className="text-blue-500" />
+        else if (notifications.find(n => n.type === 'weather' && n.message.toLowerCase().includes('calor')))
+          return <Thermometer size={20} className="text-red-500" />
+        else
+          return <Cloud size={20} className="text-button" />
+      case 'battery':
+        return <Bell size={20} className="text-yellow-500" />
+      case 'system':
+        return <Bell size={20} className="text-green-500" />
+      case 'maintenance':
+        return <Wrench size={20} className="text-purple-500" />
+      default:
+        return <Bell size={20} className="text-button" />
+    }
+  }
+
   return (
     <div className="container-custom py-14">
       {/* Título y subtítulo */}
@@ -187,15 +212,20 @@ export default function Profile() {
               Actividad
             </button>
             <button
-              onClick={() => setActiveTab("images")}
+              onClick={() => setActiveTab("notifications")}
               className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "images"
+                activeTab === "notifications"
                   ? "bg-button text-white"
                   : "text-text hover:bg-gray-50"
               }`}
             >
               <Bell size={20} className="mr-3" />
               Notificaciones
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {notifications.filter(n => !n.read).length}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setActiveTab("gamification")}
@@ -206,7 +236,7 @@ export default function Profile() {
               }`}
             >
               <Trophy size={20} className="mr-3" />
-              Gamificación
+              Recompensas
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
@@ -364,34 +394,53 @@ export default function Profile() {
           {activeTab === "notifications" && (
             <div>
               <h2 className="text-2xl font-bold text-button mb-6">Notificaciones</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Bell size={20} className="text-button mr-3" />
-                    <div>
-                      <p className="font-medium">Nueva actualización</p>
-                      <p className="text-sm text-gray-500">El robot ha sido actualizado con nuevas funcionalidades</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">Hace 1 día</span>
+              {notifications.length === 0 ? (
+                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                  <Bell size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">No tienes notificaciones en este momento</p>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Bell size={20} className="text-button mr-3" />
-                    <div>
-                      <p className="font-medium">Mantenimiento programado</p>
-                      <p className="text-sm text-gray-500">El robot necesita una revisión programada</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">Hace 2 días</span>
+              ) : (
+                <div className="space-y-4">
+                  {/* Mostrar primero las alertas del clima, ordenadas por fecha más reciente */}
+                  {notifications
+                    .map((notification, index) => (
+                      <div 
+                        key={notification.id} 
+                        className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                          notification.read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'
+                        }`}
+                        onClick={() => markNotificationAsRead(notification.id)}
+                      >
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-white mr-3">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {notification.type === 'weather' && '⚠️ Alerta meteorológica'}
+                              {notification.type === 'battery' && 'Estado de batería'}
+                              {notification.type === 'system' && 'Información del sistema'}
+                              {notification.type === 'maintenance' && 'Mantenimiento programado'}
+                            </p>
+                            <p className="text-sm text-gray-700">{notification.message}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
+                          {formatDistance(notification.timestamp, new Date(), { 
+                            addSuffix: true,
+                            locale: es
+                          })}
+                        </span>
+                      </div>
+                    ))}
                 </div>
-              </div>
+              )}
             </div>
           )}
 
           {activeTab === "gamification" && (
             <div>
-              <h2 className="text-2xl font-bold text-button mb-6">Gamificación</h2>
+              <h2 className="text-2xl font-bold text-button mb-6">Recompensas</h2>
               
               {/* Resumen de puntos y nivel */}
               <div className="bg-gradient-to-r from-button to-blue-600 rounded-lg p-6 text-white mb-6">

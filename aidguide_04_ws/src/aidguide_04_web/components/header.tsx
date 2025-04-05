@@ -54,7 +54,7 @@ export default function Header() {
                 </Link>
                 <Link href="/profile/gamification" className="text-text hover:text-button transition-colors flex items-center">
                   <Trophy size={18} className="mr-1" />
-                  Gamificación
+                  Recompensas
                 </Link>
                 <Link href="/profile" className="text-text hover:text-button transition-colors">
                   Perfil
@@ -185,7 +185,7 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <Trophy size={18} className="mr-1" />
-                  Gamificación
+                  Recompensas
                 </Link>
                 <Link
                   href="/profile"

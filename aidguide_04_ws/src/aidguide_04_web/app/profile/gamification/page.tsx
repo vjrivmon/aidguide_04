@@ -5,10 +5,36 @@ import Image from "next/image"
 import Link from "next/link"
 import { Trophy, Target, Gift, Award, Footprints, MapPin, Bus, Users, ArrowLeft, Clock, Star, Shield, Sparkles, Zap } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import dynamic from 'next/dynamic'
+
+// Importación dinámica para evitar errores de SSR
+const ReactConfetti = dynamic(() => import('react-confetti'), {
+  ssr: false
+})
 
 export default function GamificationPage() {
   const { user } = useAuth()
   const [activeTab, setActiveTab] = useState("challenges")
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [confettiOpacity, setConfettiOpacity] = useState(1)
+  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+  const [claimedRewards, setClaimedRewards] = useState<number[]>([])
+  
+  // Efecto para obtener el tamaño de la ventana para el confeti
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      })
+    }
+    
+    // Establecer tamaño inicial
+    handleResize()
+    
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
   
   // Datos simulados del usuario
   const [userData, setUserData] = useState({
@@ -79,7 +105,7 @@ export default function GamificationPage() {
       points: 500,
       provider: "Metro Valencia",
       icon: <Bus size={24} className="text-button" />,
-      expiry: "31/12/2024",
+      expiry: "31/12/2025",
     },
     {
       id: 2,
@@ -88,7 +114,7 @@ export default function GamificationPage() {
       points: 300,
       provider: "Café Central",
       icon: <Gift size={24} className="text-button" />,
-      expiry: "30/06/2024",
+      expiry: "30/06/2025",
     },
     {
       id: 3,
@@ -97,7 +123,7 @@ export default function GamificationPage() {
       points: 750,
       provider: "Museos Municipales",
       icon: <Award size={24} className="text-button" />,
-      expiry: "31/12/2024",
+      expiry: "31/12/2025",
     },
     {
       id: 4,
@@ -106,7 +132,7 @@ export default function GamificationPage() {
       points: 600,
       provider: "Decathlon",
       icon: <Footprints size={24} className="text-button" />,
-      expiry: "30/09/2024",
+      expiry: "30/09/2025",
     },
   ]
 
@@ -138,8 +164,55 @@ export default function GamificationPage() {
     },
   ]
 
+  // Función para canjear recompensa
+  const claimReward = (reward: any) => {
+    if (userData.totalPoints >= reward.points) {
+      // Mostrar confeti con opacidad completa
+      setConfettiOpacity(1)
+      setShowConfetti(true)
+      
+      // Actualizar puntos del usuario
+      setUserData({
+        ...userData,
+        totalPoints: userData.totalPoints - reward.points
+      })
+      
+      // Añadir a la lista de recompensas canjeadas
+      setClaimedRewards([...claimedRewards, reward.id])
+      
+      // Iniciar el desvanecimiento después de 2 segundos
+      setTimeout(() => {
+        // Desvanecimiento gradual durante 2 segundos
+        const fadeInterval = setInterval(() => {
+          setConfettiOpacity((prevOpacity) => {
+            const newOpacity = prevOpacity - 0.05;
+            if (newOpacity <= 0) {
+              clearInterval(fadeInterval);
+              setShowConfetti(false);
+              return 0;
+            }
+            return newOpacity;
+          });
+        }, 100);
+      }, 2000);
+    }
+  }
+
   return (
     <div className="container-custom py-10">
+      {/* Componente Confetti con transición de opacidad */}
+      {showConfetti && (
+        <div className="fixed inset-0 z-50 pointer-events-none transition-opacity duration-300 ease-out"
+             style={{ opacity: confettiOpacity }}>
+          <ReactConfetti
+            width={windowSize.width}
+            height={windowSize.height}
+            recycle={true}
+            numberOfPieces={500}
+            gravity={0.15}
+          />
+        </div>
+      )}
       {/* Cabecera de la página */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center">
@@ -147,7 +220,7 @@ export default function GamificationPage() {
             <ArrowLeft size={24} className="text-button" />
           </Link>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold">Gamificación</h1>
+            <h1 className="text-3xl md:text-4xl font-bold">Recompensas</h1>
             <p className="text-gray-600">Completa retos y canjea puntos por recompensas</p>
           </div>
         </div>
@@ -319,7 +392,7 @@ export default function GamificationPage() {
             
             {/* Lista de recompensas */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {rewards.map((reward) => (
+              {rewards.filter(reward => !claimedRewards.includes(reward.id)).map((reward) => (
                 <div key={reward.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                   <div className="p-4">
                     <div className="flex items-start gap-3">
@@ -347,6 +420,7 @@ export default function GamificationPage() {
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
                       disabled={userData.totalPoints < reward.points}
+                      onClick={() => claimReward(reward)}
                     >
                       {userData.totalPoints >= reward.points 
                         ? "Canjear recompensa" 
@@ -355,6 +429,17 @@ export default function GamificationPage() {
                   </div>
                 </div>
               ))}
+              
+              {/* Mensaje cuando no hay recompensas disponibles */}
+              {rewards.length > 0 && claimedRewards.length === rewards.length && (
+                <div className="col-span-full bg-gray-50 p-6 rounded-lg text-center">
+                  <div className="flex justify-center mb-4">
+                    <Trophy size={40} className="text-button" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">¡Has canjeado todas las recompensas disponibles!</h3>
+                  <p className="text-gray-600">Vuelve pronto para descubrir nuevas recompensas.</p>
+                </div>
+              )}
             </div>
           </div>
         )}

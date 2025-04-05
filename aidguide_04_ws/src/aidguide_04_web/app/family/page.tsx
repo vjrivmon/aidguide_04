@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import ROSLIB from "roslib";
+import { useRobot } from "@/context/robot-context"
 
 export default function FamilyPage() {
   const { user } = useAuth();
@@ -14,6 +15,12 @@ export default function FamilyPage() {
   const [ros, setRos] = useState<ROSLIB.Ros | null>(null);
   const [cameraSrc, setCameraSrc] = useState("");
   const rosbridgeAddress = "ws://127.0.0.1:9090/"; // Dirección del servidor ROS
+  const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected } = useRobot()
+
+  // Actualizar connectionStatus basado en isConnected
+  useEffect(() => {
+    setConnectionStatus(isConnected ? "Conectado" : "Desconectado")
+  }, [isConnected]);
 
   // Conexión automática a ROS y actualización del feed de la cámara
   useEffect(() => {
@@ -87,12 +94,25 @@ export default function FamilyPage() {
                   <Battery className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Batería</span>
                 </div>
-                <span className="text-text font-medium">75%</span>
+                <span className="text-text font-medium">{batteryPercentage}%</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="w-3/4 h-full bg-green-500 rounded-full"></div>
+                <div 
+                  className={`h-full rounded-full ${
+                    batteryPercentage > 60 
+                      ? 'bg-green-500' 
+                      : batteryPercentage > 20 
+                        ? 'bg-yellow-500' 
+                        : 'bg-red-500'
+                  }`} 
+                  style={{ width: `${batteryPercentage}%` }}
+                ></div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">Tiempo estimado restante: 4 horas</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {batteryStatus === 'charging' 
+                  ? `Cargando - ${estimatedTimeRemaining}` 
+                  : `Tiempo estimado restante: ${estimatedTimeRemaining}`}
+              </p>
             </div>
 
             {/* Estado de conexión */}
