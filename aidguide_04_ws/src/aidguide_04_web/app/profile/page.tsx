@@ -206,7 +206,7 @@ export default function Profile() {
               }`}
             >
               <Trophy size={20} className="mr-3" />
-              Gamificación
+              Recompensas
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
@@ -391,7 +391,7 @@ export default function Profile() {
 
           {activeTab === "gamification" && (
             <div>
-              <h2 className="text-2xl font-bold text-button mb-6">Gamificación</h2>
+              <h2 className="text-2xl font-bold text-button mb-6">Recompensas</h2>
               
               {/* Resumen de puntos y nivel */}
               <div className="bg-gradient-to-r from-button to-blue-600 rounded-lg p-6 text-white mb-6">
