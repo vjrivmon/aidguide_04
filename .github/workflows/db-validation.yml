@@ -38,38 +38,70 @@ jobs:
           cache: 'npm'
           cache-dependency-path: aidguide_04_ws/src/aidguide_04_backend/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias básicas
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
-          npm install
-          npm install dotenv --save
+          npm install --no-save mysql2
 
-      - name: Verificar instalación de dependencias
+      - name: Crear package-lock.json si no existe
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
-          if [ ! -d "node_modules/dotenv" ]; then
-            echo "La carpeta node_modules/dotenv no existe!"
-            npm install dotenv --save
-            ls -la node_modules
+          if [ ! -f "package-lock.json" ]; then
+            echo "Creando package-lock.json"
+            npm install --package-lock-only
+          fi
+      
+      - name: Limpiar e instalar dependencias
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          rm -rf node_modules
+          npm cache clean --force
+          npm install --legacy-peer-deps
+
+      - name: Verificar instalación de mysql2
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          if [ ! -d "node_modules/mysql2" ]; then
+            echo "La carpeta node_modules/mysql2 no existe!"
+            npm install --no-save mysql2
           else
-            echo "Dependencia dotenv instalada correctamente"
+            echo "Dependencia mysql2 instalada correctamente"
           fi
 
       - name: Configurar variables de entorno
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
-          echo "DB_HOST=localhost" > .env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          cat > .env << EOF
+          DB_HOST=localhost
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          EOF
+          
+          # Mostrar contenido del archivo .env (sin mostrar valores)
+          echo "Archivo .env creado con las siguientes variables:"
+          grep -v "PASSWORD" .env | cat -n
 
       - name: Esperar que MySQL esté listo
         run: |
-          while ! mysqladmin ping -h"127.0.0.1" -P"3306" --silent; do
-            echo "Esperando que MySQL esté disponible..."
+          echo "Esperando que MySQL esté disponible..."
+          for i in {1..30}; do
+            if mysqladmin ping -h"127.0.0.1" -P"3306" --silent; then
+              echo "MySQL está disponible"
+              break
+            fi
+            echo "Intento $i: MySQL aún no está disponible, esperando..."
             sleep 2
           done
-          echo "MySQL está disponible"
+
+      - name: Verificar script antes de ejecución
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          echo "Contenido del script verify-db-connection.js:"
+          cat scripts/verify-db-connection.js | head -n 20
+          echo "..."
+          echo "Archivos en carpeta scripts:"
+          ls -la scripts/
 
       - name: Ejecutar verificación de conexión a DB
         run: |

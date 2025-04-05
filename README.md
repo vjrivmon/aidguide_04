@@ -102,6 +102,37 @@ Una vez iniciado el proyecto, puedes acceder a los siguientes servicios:
 - **"Command not found: ros2"**: Asegúrate de tener ROS2 Galactic instalado y haber ejecutado `source /opt/ros/galactic/setup.bash`
 - **Paquetes no encontrados**: Ejecuta `rosdep install --from-paths src --ignore-src -r -y` en el workspace
 
+## 🧪 Pruebas y CI/CD
+
+El proyecto utiliza GitHub Actions para realizar pruebas automáticas:
+
+### Validación de Base de Datos
+Este workflow verifica que la conexión a la base de datos funcione correctamente:
+
+```yaml
+# .github/workflows/db-validation.yml
+name: Validación de Conexión a Base de Datos
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+```
+
+Para que los tests funcionen correctamente, asegúrate de:
+
+1. Configurar los siguientes secretos en GitHub:
+   - `DB_USER`: Usuario de la base de datos
+   - `DB_PASSWORD`: Contraseña de la base de datos 
+   - `DB_NAME`: Nombre de la base de datos
+
+2. Verificar que el archivo `verify-db-connection.js` esté actualizado en el repositorio.
+
+Si encuentras errores en los tests de GitHub Actions:
+- Verifica que todas las dependencias estén correctamente especificadas en `package.json`
+- Asegúrate de que los scripts de prueba funcionan localmente antes de hacer push
+
 ## 🤝 Contribución
 
 1. Asegúrate de tener la última versión del repositorio
