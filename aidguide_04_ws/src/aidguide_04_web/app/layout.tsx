@@ -5,6 +5,7 @@ import "./globals.css"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { AuthProvider } from "@/context/auth-context"
+import { RobotProvider } from "@/context/robot-context"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -27,9 +28,11 @@ export default function RootLayout({
     <html lang="es">
       <body className={`${montserrat.className} min-h-screen flex flex-col`}>
         <AuthProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
+          <RobotProvider>
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </RobotProvider>
         </AuthProvider>
       </body>
     </html>
