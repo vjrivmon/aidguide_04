@@ -3,11 +3,22 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react"
 import ROSLIB from 'roslib'
 
+// Interfaz para las notificaciones
+interface Notification {
+  id: string;
+  message: string;
+  type: 'weather' | 'battery' | 'system' | 'maintenance';
+  timestamp: Date;
+  read: boolean;
+}
+
 interface RobotContextType {
   batteryPercentage: number
   batteryStatus: string // 'charging' | 'discharging'
   estimatedTimeRemaining: string
   isConnected: boolean
+  notifications: Notification[]
+  markNotificationAsRead: (id: string) => void
   reconnect: () => void
 }
 
@@ -16,6 +27,8 @@ const defaultContext: RobotContextType = {
   batteryStatus: 'discharging',
   estimatedTimeRemaining: '4 horas',
   isConnected: false,
+  notifications: [],
+  markNotificationAsRead: () => {},
   reconnect: () => {}
 }
 
@@ -27,6 +40,16 @@ export function RobotProvider({ children }: { children: ReactNode }) {
   const [batteryPercentage, setBatteryPercentage] = useState(75)
   const [batteryStatus, setBatteryStatus] = useState('discharging')
   const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState('4 horas')
+  const [notifications, setNotifications] = useState<Notification[]>([])
+
+  // Marcar una notificación como leída
+  const markNotificationAsRead = (id: string) => {
+    setNotifications(prevNotifications => 
+      prevNotifications.map(notification => 
+        notification.id === id ? { ...notification, read: true } : notification
+      )
+    )
+  }
 
   // Calcular el tiempo estimado basado en el porcentaje de batería y estado
   const calculateEstimatedTime = (percentage: number, status: string): string => {
@@ -120,8 +143,30 @@ export function RobotProvider({ children }: { children: ReactNode }) {
       setEstimatedTimeRemaining(calculateEstimatedTime(percentage, status))
     })
 
+    // Suscribirse al tema de alertas del clima
+    const weatherTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: '/weather_alert',
+      messageType: 'std_msgs/String'
+    })
+
+    weatherTopic.subscribe((message: any) => {
+      // Crear una nueva notificación de clima
+      const weatherNotification: Notification = {
+        id: Date.now().toString(),
+        message: message.data,
+        type: 'weather',
+        timestamp: new Date(),
+        read: false
+      }
+      
+      // Añadir la notificación al principio de la lista (más reciente primero)
+      setNotifications(prev => [weatherNotification, ...prev])
+    })
+
     return () => {
       batteryTopic.unsubscribe()
+      weatherTopic.unsubscribe()
     }
   }, [ros, isConnected])
 
@@ -132,6 +177,8 @@ export function RobotProvider({ children }: { children: ReactNode }) {
         batteryStatus,
         estimatedTimeRemaining,
         isConnected,
+        notifications,
+        markNotificationAsRead,
         reconnect
       }}
     >
