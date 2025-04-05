@@ -23,6 +23,66 @@ check_ros() {
     fi
 }
 
+# Función para verificar e instalar un paquete ROS2
+check_ros_package() {
+    local package=$1
+    local apt_package=$2
+    local is_optional=${3:-false}
+    
+    echo -e "${YELLOW}🔍 Verificando paquete ROS2: ${CYAN}$package${NC}"
+    
+    # Verificar si el paquete está instalado
+    if ! ros2 pkg list | grep -q "$package"; then
+        if [ "$is_optional" = true ]; then
+            echo -e "${YELLOW}⚠️ El paquete opcional '$package' no está instalado${NC}"
+            echo -e "${YELLOW}📝 Este paquete es opcional, el sistema funcionará sin él${NC}"
+            return 1
+        else
+            echo -e "${YELLOW}⚠️ El paquete '$package' no está instalado${NC}"
+            echo -e "${CYAN}❓ ¿Deseas instalar el paquete '$apt_package'? (s/n)${NC}"
+            read -p "> " install_pkg
+            
+            if [ "$install_pkg" = "s" ] || [ "$install_pkg" = "S" ]; then
+                echo -e "${YELLOW}📦 Intentando instalar $apt_package...${NC}"
+                if sudo apt update && sudo apt install -y "$apt_package"; then
+                    # Verificar si se instaló correctamente
+                    if ros2 pkg list | grep -q "$package"; then
+                        echo -e "${GREEN}✅ Paquete '$package' instalado correctamente${NC}"
+                        return 0
+                    else
+                        echo -e "${RED}❌ Error al instalar el paquete '$package'${NC}"
+                        if [ "$package" = "web_video_server" ]; then
+                            echo -e "${YELLOW}📝 Nota: El paquete web_video_server podría tener otro nombre en tu distribución${NC}"
+                            echo -e "${YELLOW}📝 Intenta buscar el paquete correcto con: apt search web_video_server${NC}"
+                            echo -e "${YELLOW}📝 La aplicación puede funcionar sin este paquete${NC}"
+                        fi
+                        return 1
+                    fi
+                else
+                    echo -e "${RED}❌ Error al instalar el paquete '$apt_package'${NC}"
+                    if [ "$package" = "web_video_server" ]; then
+                        echo -e "${YELLOW}📝 Nota: El paquete podría no estar disponible para tu versión de ROS2${NC}"
+                        echo -e "${YELLOW}📝 Prueba con: sudo apt install ros-\$(rosversion -d)-web-video-server${NC}"
+                        echo -e "${YELLOW}📝 O busca el paquete correcto con: apt search web_video_server${NC}"
+                        echo -e "${YELLOW}📝 La aplicación puede funcionar sin este paquete${NC}"
+                    fi
+                    return 1
+                fi
+            else
+                if [ "$package" = "web_video_server" ]; then
+                    echo -e "${YELLOW}📝 La aplicación puede funcionar sin este paquete${NC}"
+                else
+                    echo -e "${RED}❌ Se requiere el paquete '$package' para esta funcionalidad${NC}"
+                fi
+                return 1
+            fi
+        fi
+    else
+        echo -e "${GREEN}✅ Paquete '$package' ya está instalado${NC}"
+        return 0
+    fi
+}
+
 # Determinar la ruta del workspace
 get_workspace_path() {
     WORKSPACE_PATH="$(pwd)"
@@ -133,6 +193,14 @@ echo ""
 echo -e "${YELLOW}🔍 Verificando instalación de ROS2...${NC}"
 check_ros
 echo -e "${GREEN}✅ ROS2 está correctamente instalado${NC}"
+
+# Verificar paquetes ROS2 necesarios
+echo -e "${YELLOW}🔍 Verificando paquetes ROS2 necesarios...${NC}"
+check_ros_package "rosbridge_server" "ros-galactic-rosbridge-server"
+ROSBRIDGE_OK=$?
+check_ros_package "web_video_server" "ros-galactic-web-video-server" true
+WEB_VIDEO_OK=$?
+echo
 
 # Obtener la ruta del workspace
 WORKSPACE_PATH=$(get_workspace_path)
@@ -301,12 +369,67 @@ TERMINAL5_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     ros2 launch nav2_bringup navigation_launch.py use_sim_time:=true; \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
+# Terminal 6: ROS Bridge Server
+TERMINAL6_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${MAGENTA}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${MAGENTA}║  TERMINAL 6: ROS BRIDGE SERVER         ║${NC}\" && \
+    echo -e \"${MAGENTA}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${CYAN}🌉 Lanzando ROS Bridge Server...${NC}\" && \
+    if ros2 pkg list | grep -q \"rosbridge_server\"; then \
+        ros2 launch rosbridge_server rosbridge_websocket_launch.xml; \
+    else \
+        echo -e \"${RED}❌ El paquete 'rosbridge_server' no está instalado.${NC}\" && \
+        echo -e \"${YELLOW}📝 Instálalo con: sudo apt install ros-galactic-rosbridge-server${NC}\" && \
+        echo -e \"${YELLOW}📝 Este paquete es necesario para la comunicación entre ROS2 y el navegador.${NC}\" && \
+        echo -e \"${YELLOW}📝 Sin este paquete, la interfaz web no podrá comunicarse con ROS2.${NC}\"; \
+    fi && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
+# Terminal 7: Web Video Server
+TERMINAL7_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${BLUE}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${BLUE}║  TERMINAL 7: WEB VIDEO SERVER          ║${NC}\" && \
+    echo -e \"${BLUE}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${CYAN}🎥 Lanzando Web Video Server...${NC}\" && \
+    if ros2 pkg list | grep -q \"web_video_server\"; then \
+        ros2 run web_video_server web_video_server; \
+    else \
+        ROS_DISTRO=\$(rosversion -d 2>/dev/null || echo \"galactic\") && \
+        echo -e \"${YELLOW}⚠️ El paquete 'web_video_server' no está instalado.${NC}\" && \
+        echo -e \"${YELLOW}📝 Puedes intentar instalarlo con uno de estos comandos:${NC}\" && \
+        echo -e \"${YELLOW}   sudo apt install ros-\$ROS_DISTRO-web-video-server${NC}\" && \
+        echo -e \"${YELLOW}   sudo apt install ros-\$ROS_DISTRO-web-video-server-dbgsym${NC}\" && \
+        echo -e \"${CYAN}ℹ️ NOTA: No te preocupes, la cámara puede funcionar a través de otros métodos:${NC}\" && \
+        echo -e \"${CYAN}   - A través de rosbridge_server (websockets)${NC}\" && \
+        echo -e \"${CYAN}   - Usando la implementación propia del frontend${NC}\" && \
+        echo -e \"${CYAN}   - O mediante otras bibliotecas JavaScript como roslibjs${NC}\" && \
+        echo -e \"${GREEN}✅ El sistema seguirá funcionando sin este componente${NC}\"; \
+    fi && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
+# Terminal 8: Install ROS Libraries for Web
+TERMINAL8_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${YELLOW}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${YELLOW}║  TERMINAL 8: INSTALAR ROSLIB           ║${NC}\" && \
+    echo -e \"${YELLOW}╚════════════════════════════════════════╝${NC}\" && \
+    if [ -d \"$WORKSPACE_PATH/src/aidguide_04_web\" ]; then \
+        echo -e \"${CYAN}📦 Navegando al directorio del frontend...${NC}\" && \
+        cd \"$WORKSPACE_PATH/src/aidguide_04_web\" && \
+        echo -e \"${CYAN}📦 Instalando roslib...${NC}\" && \
+        npm install roslib --save; \
+    else \
+        echo -e \"${YELLOW}⚠️ Directorio del frontend no encontrado en $WORKSPACE_PATH/src/aidguide_04_web${NC}\" && \
+        echo -e \"${CYAN}📦 Instalando roslib globalmente...${NC}\" && \
+        npm install -g roslib; \
+    fi && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 5 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 8 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -329,12 +452,27 @@ sleep 3
 start_terminal "Terminal 4: Navegación" "$TERMINAL5_COMMANDS" "${RED}"
 sleep 3
 
+# Iniciamos los servicios web
+start_terminal "Terminal 5: ROS Bridge Server" "$TERMINAL6_COMMANDS" "${MAGENTA}"
+sleep 3
+
+start_terminal "Terminal 6: Web Video Server" "$TERMINAL7_COMMANDS" "${BLUE}"
+sleep 3
+
+start_terminal "Terminal 7: Instalar ROSLIB" "$TERMINAL8_COMMANDS" "${YELLOW}"
+sleep 3
+
 # Gazebo es el último en iniciarse
-start_terminal "Terminal 5: Gazebo" "$TERMINAL1_COMMANDS" "${BLUE}"
+start_terminal "Terminal 8: Gazebo" "$TERMINAL1_COMMANDS" "${BLUE}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
 echo -e "${YELLOW}📝 Para interactuar con la navegación, utiliza RViz y las herramientas proporcionadas${NC}"
+if [ $ROSBRIDGE_OK -eq 0 ]; then
+    echo -e "${CYAN}🌐 Puedes acceder a la interfaz web a través del navegador cuando el frontend esté iniciado${NC}"
+else
+    echo -e "${YELLOW}⚠️ La comunicación con el navegador (frontend) no estará disponible hasta que instales rosbridge_server${NC}"
+fi
 echo ""
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
