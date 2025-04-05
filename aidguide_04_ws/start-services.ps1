@@ -23,6 +23,7 @@ $ICON_RETRY = "🔄"
 $ICON_WEB = "🌐"
 $ICON_DATABASE = "🗄️"
 $ICON_DOCS = "📚"
+$ICON_API = "🔌"
 
 # Función para mostrar una barra de progreso
 function Show-Progress {
@@ -145,8 +146,31 @@ function Start-Containers {
     docker-compose ps
     Write-Host "╰───────────────────────────────────────────────────────────╯" -ForegroundColor Cyan
     
-    # Verificar si el frontend está en ejecución
+    # Verificar si los servicios están en ejecución
+    $apiRunning = docker ps --filter "name=aidguide_api" --format "{{.Names}}" | Select-String -Pattern "aidguide_api"
     $frontendRunning = docker ps --filter "name=aidguide_frontend" --format "{{.Names}}" | Select-String -Pattern "aidguide_frontend"
+    
+    if (-Not $apiRunning) {
+        Write-Host ""
+        Write-Host "$ICON_WARNING El contenedor de la API no se inició correctamente." -ForegroundColor Yellow
+        Write-Host "$ICON_INFO  Revisando los logs de la API:" -ForegroundColor Yellow
+        Write-Host "╭───────────────────────────────────────────────────────────╮" -ForegroundColor Cyan
+        docker-compose logs api
+        Write-Host "╰───────────────────────────────────────────────────────────╯" -ForegroundColor Cyan
+        
+        if ($Retry -lt $MAX_RETRIES) {
+            Write-Host ""
+            Write-Host "$ICON_RETRY Reintentando iniciar los contenedores..." -ForegroundColor Yellow
+            docker-compose down | Out-Null
+            Start-Sleep -Seconds 2
+            return Start-Containers -Retry ($Retry + 1)
+        } else {
+            Write-Host ""
+            Write-Host "$ICON_WARNING No se pudo iniciar la API después de $($MAX_RETRIES+1) intentos." -ForegroundColor Red
+            return $false
+        }
+    }
+    
     if (-Not $frontendRunning) {
         Write-Host ""
         Write-Host "$ICON_WARNING El contenedor del frontend no se inició correctamente." -ForegroundColor Yellow
@@ -189,7 +213,7 @@ if ($success) {
 
 Write-Host "╠════════════════════════════════════════════════════════════╣" -ForegroundColor Cyan
 Write-Host "║ $ICON_WEB Frontend:        http://localhost:3001                  ║" -ForegroundColor Green
-Write-Host "║ $ICON_WEB Backend API:     http://localhost:3000                  ║" -ForegroundColor Green
+Write-Host "║ $ICON_API API:             http://localhost:3000                  ║" -ForegroundColor Green
 Write-Host "║ $ICON_DOCS Documentación:  http://localhost:3000/api-docs          ║" -ForegroundColor Green
 Write-Host "║ $ICON_DATABASE MySQL:          localhost:3306                           ║" -ForegroundColor Green
 Write-Host "╚════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan

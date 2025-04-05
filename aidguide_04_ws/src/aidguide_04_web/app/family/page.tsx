@@ -1,19 +1,73 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2 } from "lucide-react"
-import { useAuth } from "@/context/auth-context"
+import { useState, useEffect } from "react";
+import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2 } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import ROSLIB from "roslib";
+import { useRobot } from "@/context/robot-context"
 
 export default function FamilyPage() {
-  const { user } = useAuth()
-  const [fromLocation, setFromLocation] = useState("")
-  const [toLocation, setToLocation] = useState("")
-  const [stopLocation, setStopLocation] = useState("")
+  const { user } = useAuth();
+  const [fromLocation, setFromLocation] = useState("");
+  const [toLocation, setToLocation] = useState("");
+  const [stopLocation, setStopLocation] = useState("");
+  const [connectionStatus, setConnectionStatus] = useState("Not connected");
+  const [ros, setRos] = useState<ROSLIB.Ros | null>(null);
+  const [cameraSrc, setCameraSrc] = useState("");
+  const rosbridgeAddress = "ws://127.0.0.1:9090/"; // Dirección del servidor ROS
+  const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected } = useRobot()
+
+  // Actualizar connectionStatus basado en isConnected
+  useEffect(() => {
+    setConnectionStatus(isConnected ? "Conectado" : "Desconectado")
+  }, [isConnected]);
+
+  // Conexión automática a ROS y actualización del feed de la cámara
+  useEffect(() => {
+    console.log("Page loaded");
+
+    // Conectar a ROS
+    const rosInstance = new ROSLIB.Ros({
+      url: rosbridgeAddress,
+    });
+
+    rosInstance.on("connection", () => {
+      setRos(rosInstance);
+      setConnectionStatus("Connected");
+      console.log("Connection to ROSBridge successful");
+    });
+
+    rosInstance.on("error", (error) => {
+      setConnectionStatus("Connection error");
+      console.log("Connection error:", error);
+    });
+
+    rosInstance.on("close", () => {
+      setRos(null);
+      setConnectionStatus("Not connected");
+      console.log("Connection to ROSBridge closed");
+    });
+
+    // Actualizar el feed de la cámara cada segundo
+    const updateCameraFeed = () => {
+      const timestamp = new Date().getTime();
+      setCameraSrc(`http://0.0.0.0:8080/stream?topic=/camera/image_raw&t=${timestamp}`);
+    };
+    updateCameraFeed(); // Llamada inicial
+    const interval = setInterval(updateCameraFeed, 1000); // Actualiza cada segundo
+
+    // Limpiar al desmontar
+    return () => {
+      rosInstance.close();
+      clearInterval(interval);
+      setRos(null);
+      setConnectionStatus("Not connected");
+    };
+  }, []);
 
   const handleStartRoute = () => {
-    // Aquí iría la lógica para iniciar la ruta
-    console.log("Iniciando ruta desde:", fromLocation, "hasta:", toLocation, "con parada en:", stopLocation)
-  }
+    console.log("Iniciando ruta desde:", fromLocation, "hasta:", toLocation, "con parada en:", stopLocation);
+  };
 
   return (
     <div className="container-custom py-14">
@@ -40,12 +94,25 @@ export default function FamilyPage() {
                   <Battery className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Batería</span>
                 </div>
-                <span className="text-text font-medium">75%</span>
+                <span className="text-text font-medium">{batteryPercentage}%</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="w-3/4 h-full bg-green-500 rounded-full"></div>
+                <div 
+                  className={`h-full rounded-full ${
+                    batteryPercentage > 60 
+                      ? 'bg-green-500' 
+                      : batteryPercentage > 20 
+                        ? 'bg-yellow-500' 
+                        : 'bg-red-500'
+                  }`} 
+                  style={{ width: `${batteryPercentage}%` }}
+                ></div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">Tiempo estimado restante: 4 horas</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {batteryStatus === 'charging' 
+                  ? `Cargando - ${estimatedTimeRemaining}` 
+                  : `Tiempo estimado restante: ${estimatedTimeRemaining}`}
+              </p>
             </div>
 
             {/* Estado de conexión */}
@@ -55,7 +122,9 @@ export default function FamilyPage() {
                   <Wifi className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Conexión</span>
                 </div>
-                <span className="text-green-500 font-medium">Excelente</span>
+                <span className={`font-medium ${connectionStatus === "Connected" ? "text-green-500" : "text-red-500"}`}>
+                  {connectionStatus}
+                </span>
               </div>
             </div>
 
@@ -199,12 +268,20 @@ export default function FamilyPage() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-button mb-6">Cámara del robot en tiempo real</h2>
           <div className="relative h-[600px] bg-gray-100 rounded-lg">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-gray-500">Vídeo de la cámara en tiempo real</p>
-            </div>
+            {cameraSrc ? (
+              <img
+                src={cameraSrc}
+                alt="Camera Feed"
+                className="w-full h-full object-cover rounded-lg"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <p className="text-gray-500">Cargando vídeo de la cámara...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
-  )
-} 
+  );
+}

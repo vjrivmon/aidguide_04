@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react"
 import { Mic, MicOff, MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useRobot } from "@/context/robot-context"
 
 export default function WelcomePage() {
   const { user } = useAuth()
+  const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected } = useRobot()
   const [isRecording, setIsRecording] = useState(false)
   const [fromLocation, setFromLocation] = useState("")
   const [toLocation, setToLocation] = useState("")
@@ -72,12 +74,25 @@ export default function WelcomePage() {
                   <Battery className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Batería</span>
                 </div>
-                <span className="text-text font-medium">75%</span>
+                <span className="text-text font-medium">{batteryPercentage}%</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div className="w-3/4 h-full bg-green-500 rounded-full"></div>
+                <div 
+                  className={`h-full rounded-full ${
+                    batteryPercentage > 60 
+                      ? 'bg-green-500' 
+                      : batteryPercentage > 20 
+                        ? 'bg-yellow-500' 
+                        : 'bg-red-500'
+                  }`} 
+                  style={{ width: `${batteryPercentage}%` }}
+                ></div>
               </div>
-              <p className="text-sm text-gray-500 mt-2">Tiempo estimado restante: 4 horas</p>
+              <p className="text-sm text-gray-500 mt-2">
+                {batteryStatus === 'charging' 
+                  ? `Cargando - ${estimatedTimeRemaining}` 
+                  : `Tiempo estimado restante: ${estimatedTimeRemaining}`}
+              </p>
             </div>
 
             {/* Estado de conexión */}
@@ -87,7 +102,9 @@ export default function WelcomePage() {
                   <Wifi className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Conexión</span>
                 </div>
-                <span className="text-green-500 font-medium">Excelente</span>
+                <span className={`font-medium ${isConnected ? 'text-green-500' : 'text-red-500'}`}>
+                  {isConnected ? 'Excelente' : 'Desconectado'}
+                </span>
               </div>
             </div>
 

@@ -4,11 +4,15 @@ import type React from "react"
 
 import { useState } from "react"
 import Image from "next/image"
-import { User, Settings, MapPin, Bell, Clock, LogOut, Edit2, Save, X, History, Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench } from "lucide-react"
+import { User, Settings, MapPin, Bell, Cloud, CloudRain, Thermometer, Clock, LogOut, Edit2, Save, X, History, Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Trophy, Award, Gift, Target } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
+import { useRobot } from "@/context/robot-context"
+import { format, formatDistance } from 'date-fns'
+import { es } from 'date-fns/locale'
 
 export default function Profile() {
   const { user } = useAuth()
+  const { notifications, markNotificationAsRead } = useRobot()
   const [editing, setEditing] = useState(false)
   const [userData, setUserData] = useState({
     name: "María García",
@@ -23,6 +27,12 @@ export default function Profile() {
       highContrastMode: false,
       largeText: true,
     },
+    gamification: {
+      totalPoints: 1250,
+      level: 3,
+      completedChallenges: 8,
+      availableDiscounts: 2,
+    }
   })
 
   const [activeTab, setActiveTab] = useState("activity")
@@ -98,6 +108,81 @@ export default function Profile() {
     },
   ]
 
+  const challenges = [
+    {
+      id: 1,
+      title: "Caminante diario",
+      description: "Completa 15.000 pasos en un día",
+      points: 150,
+      progress: 65,
+      icon: <Footprints size={24} className="text-button" />,
+    },
+    {
+      id: 2,
+      title: "Explorador urbano",
+      description: "Completa 3 rutas diferentes en una semana",
+      points: 200,
+      progress: 33,
+      icon: <MapPin size={24} className="text-button" />,
+    },
+    {
+      id: 3,
+      title: "Amante de la tecnología",
+      description: "Usa la aplicación durante 7 días consecutivos",
+      points: 100,
+      progress: 85,
+      icon: <Target size={24} className="text-button" />,
+    },
+  ]
+
+  const availableRewards = [
+    {
+      id: 1,
+      title: "10% de descuento en transporte público",
+      description: "Vale válido para un viaje en cualquier transporte público",
+      points: 500,
+      provider: "Metro Valencia",
+      icon: <Bus size={24} className="text-button" />,
+    },
+    {
+      id: 2,
+      title: "5€ en tu cafetería favorita",
+      description: "Descuento aplicable en cualquier compra superior a 10€",
+      points: 300,
+      provider: "Café Central",
+      icon: <Gift size={24} className="text-button" />,
+    },
+    {
+      id: 3,
+      title: "Entrada gratuita al museo",
+      description: "Visita cualquier museo de la ciudad sin coste",
+      points: 750,
+      provider: "Museos Municipales",
+      icon: <Award size={24} className="text-button" />,
+    },
+  ]
+
+  // Función para renderizar el icono según el tipo de notificación
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'weather':
+        if (notifications.find(n => n.type === 'weather' && n.message.toLowerCase().includes('lluvia')))
+          return <CloudRain size={20} className="text-blue-500" />
+        else if (notifications.find(n => n.type === 'weather' && n.message.toLowerCase().includes('calor')))
+          return <Thermometer size={20} className="text-red-500" />
+        else
+          return <Cloud size={20} className="text-button" />
+      case 'battery':
+        return <Bell size={20} className="text-yellow-500" />
+      case 'system':
+        return <Bell size={20} className="text-green-500" />
+      case 'maintenance':
+        return <Wrench size={20} className="text-purple-500" />
+      default:
+        return <Bell size={20} className="text-button" />
+    }
+  }
+
   return (
     <div className="container-custom py-14">
       {/* Título y subtítulo */}
@@ -127,16 +212,31 @@ export default function Profile() {
               Actividad
             </button>
             <button
-              onClick={() => setActiveTab("images")}
+              onClick={() => setActiveTab("notifications")}
               className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "images"
+                activeTab === "notifications"
                   ? "bg-button text-white"
                   : "text-text hover:bg-gray-50"
               }`}
             >
-              
               <Bell size={20} className="mr-3" />
               Notificaciones
+              {notifications.filter(n => !n.read).length > 0 && (
+                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                  {notifications.filter(n => !n.read).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab("gamification")}
+              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
+                activeTab === "gamification"
+                  ? "bg-button text-white"
+                  : "text-text hover:bg-gray-50"
+              }`}
+            >
+              <Trophy size={20} className="mr-3" />
+              Recompensas
             </button>
             <button
               onClick={() => setActiveTab("preferences")}
@@ -294,26 +394,157 @@ export default function Profile() {
           {activeTab === "notifications" && (
             <div>
               <h2 className="text-2xl font-bold text-button mb-6">Notificaciones</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Bell size={20} className="text-button mr-3" />
-                    <div>
-                      <p className="font-medium">Nueva actualización</p>
-                      <p className="text-sm text-gray-500">El robot ha sido actualizado con nuevas funcionalidades</p>
-                    </div>
-                  </div>
-                  <span className="text-sm text-gray-500">Hace 1 día</span>
+              {notifications.length === 0 ? (
+                <div className="text-center p-8 bg-gray-50 rounded-lg">
+                  <Bell size={48} className="mx-auto text-gray-400 mb-4" />
+                  <p className="text-gray-500">No tienes notificaciones en este momento</p>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Bell size={20} className="text-button mr-3" />
-                    <div>
-                      <p className="font-medium">Mantenimiento programado</p>
-                      <p className="text-sm text-gray-500">El robot necesita una revisión programada</p>
-                    </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Mostrar primero las alertas del clima, ordenadas por fecha más reciente */}
+                  {notifications
+                    .map((notification, index) => (
+                      <div 
+                        key={notification.id} 
+                        className={`flex items-center justify-between p-4 rounded-lg transition-all ${
+                          notification.read ? 'bg-gray-50' : 'bg-blue-50 border-l-4 border-blue-500'
+                        }`}
+                        onClick={() => markNotificationAsRead(notification.id)}
+                      >
+                        <div className="flex items-center">
+                          <div className="p-2 rounded-full bg-white mr-3">
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {notification.type === 'weather' && '⚠️ Alerta meteorológica'}
+                              {notification.type === 'battery' && 'Estado de batería'}
+                              {notification.type === 'system' && 'Información del sistema'}
+                              {notification.type === 'maintenance' && 'Mantenimiento programado'}
+                            </p>
+                            <p className="text-sm text-gray-700">{notification.message}</p>
+                          </div>
+                        </div>
+                        <span className="text-sm text-gray-500 whitespace-nowrap ml-4">
+                          {formatDistance(notification.timestamp, new Date(), { 
+                            addSuffix: true,
+                            locale: es
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "gamification" && (
+            <div>
+              <h2 className="text-2xl font-bold text-button mb-6">Recompensas</h2>
+              
+              {/* Resumen de puntos y nivel */}
+              <div className="bg-gradient-to-r from-button to-blue-600 rounded-lg p-6 text-white mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-xl font-bold mb-1">Nivel {userData.gamification.level}</h3>
+                    <p className="text-sm opacity-80">Has completado {userData.gamification.completedChallenges} retos</p>
                   </div>
-                  <span className="text-sm text-gray-500">Hace 2 días</span>
+                  <div className="flex items-center bg-white/20 p-3 rounded-full">
+                    <Trophy size={24} className="mr-2" />
+                    <span className="text-xl font-bold">{userData.gamification.totalPoints} pts</span>
+                  </div>
+                </div>
+                
+                {/* Barra de progreso para el siguiente nivel */}
+                <div>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span>Nivel {userData.gamification.level}</span>
+                    <span>Nivel {userData.gamification.level + 1}</span>
+                  </div>
+                  <div className="w-full bg-white/30 rounded-full h-3">
+                    <div 
+                      className="bg-white h-3 rounded-full" 
+                      style={{ width: '65%' }}
+                    ></div>
+                  </div>
+                  <p className="text-xs mt-1 text-center">350 puntos más para subir al siguiente nivel</p>
+                </div>
+              </div>
+              
+              {/* Retos actuales */}
+              <div className="mb-8">
+                <h3 className="text-xl font-bold mb-4 flex items-center">
+                  <Target size={20} className="mr-2 text-button" />
+                  Retos Actuales
+                </h3>
+                <div className="space-y-4">
+                  {challenges.map((challenge) => (
+                    <div key={challenge.id} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gray-100 rounded-full">
+                          {challenge.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <h4 className="font-medium">{challenge.title}</h4>
+                            <span className="font-bold text-button">{challenge.points} pts</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2">{challenge.description}</p>
+                          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-1">
+                            <div 
+                              className="bg-button h-2.5 rounded-full" 
+                              style={{ width: `${challenge.progress}%` }}
+                            ></div>
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-500">
+                            <span>Progreso: {challenge.progress}%</span>
+                            <span>{Math.round(challenge.progress * 0.01 * challenge.points)} / {challenge.points} pts</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Recompensas disponibles */}
+              <div>
+                <h3 className="text-xl font-bold mb-4 flex items-center">
+                  <Gift size={20} className="mr-2 text-button" />
+                  Recompensas Disponibles
+                </h3>
+                <div className="space-y-4">
+                  {availableRewards.map((reward) => (
+                    <div key={reward.id} className="bg-gray-50 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-gray-100 rounded-full">
+                          {reward.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between">
+                            <h4 className="font-medium">{reward.title}</h4>
+                            <span className="font-bold text-button">{reward.points} pts</span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-1">{reward.description}</p>
+                          <p className="text-xs text-gray-500">Proveedor: {reward.provider}</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex justify-end">
+                        <button 
+                          className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                            userData.gamification.totalPoints >= reward.points
+                              ? "bg-button text-white hover:bg-opacity-90"
+                              : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          }`}
+                          disabled={userData.gamification.totalPoints < reward.points}
+                        >
+                          {userData.gamification.totalPoints >= reward.points 
+                            ? "Canjear recompensa" 
+                            : `Necesitas ${reward.points - userData.gamification.totalPoints} pts más`}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
