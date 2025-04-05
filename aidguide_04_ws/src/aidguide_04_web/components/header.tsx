@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, User, LogOut } from "lucide-react"
+import { Menu, X, User, LogOut, Trophy } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 export default function Header() {
@@ -51,6 +51,10 @@ export default function Header() {
                 </Link>
                 <Link href="/robot-feed" className="text-text hover:text-button transition-colors">
                   Imágenes
+                </Link>
+                <Link href="/profile/gamification" className="text-text hover:text-button transition-colors flex items-center">
+                  <Trophy size={18} className="mr-1" />
+                  Gamificación
                 </Link>
                 <Link href="/profile" className="text-text hover:text-button transition-colors">
                   Perfil
@@ -174,6 +178,14 @@ export default function Header() {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Imágenes
+                </Link>
+                <Link
+                  href="/profile/gamification"
+                  className="text-text hover:text-button transition-colors flex items-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Trophy size={18} className="mr-1" />
+                  Gamificación
                 </Link>
                 <Link
                   href="/profile"
