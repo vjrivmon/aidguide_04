@@ -8,6 +8,110 @@ Sistema de guiado asistido para robots móviles basado en ROS2 Galactic con inte
   <img src="https://img.shields.io/badge/Next.js-Frontend-black?style=for-the-badge" alt="Next.js"/>
 </div>
 
+## 🚀 Descripción del Proyecto
+AidGuide 04 es un sistema robótico basado en ROS2 Galactic que integra simulación en Gazebo, backend con API REST y frontend web para control y visualización.
+
+## 📋 Requisitos Previos
+
+### Software Requerido
+- **ROS2 Galactic**: Entorno de desarrollo para robótica
+- **Gazebo**: Simulador 3D para robots
+- **Docker & Docker Compose**: Para servicios de backend
+- **Node.js** (v14 o superior): Para desarrollo frontend
+
+### Paquetes ROS2 Adicionales
+```bash
+sudo apt install ros-galactic-rosbridge-server ros-galactic-web-video-server
+```
+
+## 🛠️ Estructura del Proyecto
+```
+aidguide_04/
+├── aidguide_04_ws/            # Espacio de trabajo ROS2
+│   ├── src/
+│   │   ├── aidguide_04/               # Paquete principal
+│   │   ├── aidguide_04_nav/           # Navegación
+│   │   ├── aidguide_04_slam/          # SLAM
+│   │   ├── aidguide_04_backend/       # Backend API REST
+│   │   └── aidguide_04_web/           # Frontend
+│   └── start-services.sh       # Script para iniciar servicios backend
+├── start-project.sh           # Script principal (inicia todo)
+├── start-ros2-gazebo.sh       # Inicia ROS2 y Gazebo
+└── start-frontend.sh          # Inicia la aplicación frontend
+```
+
+## 🚀 Ejecución del Proyecto
+
+### Método 1: Ejecución Completa Automatizada
+El script principal inicia todos los componentes del proyecto en un solo paso:
+
+```bash
+# Dar permisos de ejecución si es necesario
+chmod +x start-project.sh
+
+# Ejecutar el script principal
+./start-project.sh
+```
+
+Este script:
+1. Verifica e inicia Docker si es necesario
+2. Inicia el backend (MySQL, API) con Docker
+3. Inicia ROS2 y Gazebo
+4. Inicia la aplicación frontend
+
+### Método 2: Ejecución por Componentes
+
+Si prefieres iniciar componentes individualmente:
+
+1. **Backend (API + Base de datos)**:
+```bash
+cd aidguide_04_ws
+chmod +x start-services.sh
+./start-services.sh
+```
+
+2. **ROS2 y Gazebo**:
+```bash
+chmod +x start-ros2-gazebo.sh
+./start-ros2-gazebo.sh
+```
+
+3. **Frontend**:
+```bash
+chmod +x start-frontend.sh
+./start-frontend.sh
+```
+
+## 🔗 Acceso a los Servicios
+
+Una vez iniciado el proyecto, puedes acceder a los siguientes servicios:
+
+- **Frontend**: http://localhost:3334
+- **Backend API**: http://localhost:3333/api
+- **Documentación API**: http://localhost:3333/api-docs
+- **MySQL**: localhost:3306 (usuario: aiduser, contraseña: password123)
+
+## 🔧 Solución de Problemas Comunes
+
+### Problemas con Docker
+- **Error "Docker daemon no está en ejecución"**: Asegúrate de iniciar Docker con `sudo systemctl start docker`
+- **Error de permisos**: Añade tu usuario al grupo docker con `sudo usermod -aG docker $USER` y reinicia la sesión
+- **Conflicto de puertos**: Si recibes errores sobre puertos ya en uso, verifica qué procesos están utilizando los puertos 3333 y 3334 con `sudo lsof -i :<puerto>`
+
+### Problemas con ROS2
+- **"Command not found: ros2"**: Asegúrate de tener ROS2 Galactic instalado y haber ejecutado `source /opt/ros/galactic/setup.bash`
+- **Paquetes no encontrados**: Ejecuta `rosdep install --from-paths src --ignore-src -r -y` en el workspace
+
+## 🤝 Contribución
+
+1. Asegúrate de tener la última versión del repositorio
+2. Crea una rama para tu característica (`git checkout -b feature/nueva-caracteristica`)
+3. Haz tus cambios y pruébalos localmente
+4. Envía un pull request a la rama `develop`
+
+## 📄 Licencia
+[MIT License](LICENSE)
+
 ## 📑 Contenidos
 
 - [🌟 Descripción General](#-descripción-general)

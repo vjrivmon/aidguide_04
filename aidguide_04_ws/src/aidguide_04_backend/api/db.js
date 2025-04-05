@@ -1,5 +1,27 @@
 const mysql = require('mysql2');
-require('dotenv').config();
+const path = require('path');
+const fs = require('fs');
+
+// Intentar cargar dotenv desde múltiples ubicaciones para mayor robustez
+const envPaths = [
+  path.resolve(__dirname, '../.env'),
+  path.resolve(process.cwd(), '.env')
+];
+
+let envLoaded = false;
+for (const envPath of envPaths) {
+  if (fs.existsSync(envPath)) {
+    require('dotenv').config({ path: envPath });
+    console.log(`Variables de entorno cargadas desde: ${envPath}`);
+    envLoaded = true;
+    break;
+  }
+}
+
+if (!envLoaded) {
+  console.warn('No se encontró archivo .env. Usando valores por defecto.');
+  require('dotenv').config();
+}
 
 /**
  * Configuración del pool de conexiones a la base de datos MySQL
