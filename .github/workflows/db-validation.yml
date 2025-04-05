@@ -42,6 +42,18 @@ jobs:
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
           npm install
+          npm install dotenv --save
+
+      - name: Verificar instalación de dependencias
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          if [ ! -d "node_modules/dotenv" ]; then
+            echo "La carpeta node_modules/dotenv no existe!"
+            npm install dotenv --save
+            ls -la node_modules
+          else
+            echo "Dependencia dotenv instalada correctamente"
+          fi
 
       - name: Configurar variables de entorno
         run: |
@@ -60,4 +72,6 @@ jobs:
           echo "MySQL está disponible"
 
       - name: Ejecutar verificación de conexión a DB
-        run: node aidguide_04_ws/src/aidguide_04_backend/scripts/verify-db-connection.js 
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          node scripts/verify-db-connection.js 

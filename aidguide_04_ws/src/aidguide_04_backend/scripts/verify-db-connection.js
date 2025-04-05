@@ -2,10 +2,12 @@
  * Script para verificar la conexión a la base de datos
  * Utilizado por el workflow de GitHub Actions para validar la configuración
  */
+require('dotenv').config(); // Cargar variables de entorno primero
 const pool = require('../api/db');
 
 async function verifyDatabaseConnection() {
   console.log('🔍 Iniciando verificación de conexión a la base de datos...');
+  console.log(`🔧 Configuración: HOST=${process.env.DB_HOST}, DB=${process.env.DB_NAME}, USER=${process.env.DB_USER}`);
   
   try {
     // Realizamos una consulta simple para verificar la conexión
