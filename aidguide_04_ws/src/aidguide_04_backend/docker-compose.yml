@@ -1,0 +1,47 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_aidguide
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: AidGuide
+      MYSQL_USER: aiduser
+      MYSQL_PASSWORD: password123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot123"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  api:
+    build: ./api
+    container_name: aidguide_api
+    depends_on:
+      - mysql
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+  frontend:
+    build:
+      context: ../aidguide_04_web
+      dockerfile: Dockerfile
+    container_name: aidguide_frontend
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://api:3000
+    depends_on:
+      - api
+
+
+volumes:
+  mysql_data:

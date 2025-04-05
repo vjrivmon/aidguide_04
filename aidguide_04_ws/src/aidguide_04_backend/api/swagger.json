@@ -1,0 +1,1054 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "AidGuide API",
+      "description": "API para la aplicación AidGuide que permite la gestión de usuarios, robots, rutas y más",
+      "version": "1.0.0",
+      "contact": {
+        "email": "contacto@aidguide.com"
+      }
+    },
+    "basePath": "/api",
+    "schemes": ["http", "https"],
+    "consumes": ["application/json"],
+    "produces": ["application/json"],
+    "tags": [
+      {
+        "name": "usuarios",
+        "description": "Operaciones relacionadas con usuarios"
+      },
+      {
+        "name": "roles",
+        "description": "Operaciones relacionadas con roles de usuario"
+      },
+      {
+        "name": "lugares",
+        "description": "Operaciones relacionadas con lugares"
+      },
+      {
+        "name": "robots",
+        "description": "Operaciones relacionadas con robots"
+      },
+      {
+        "name": "rutas",
+        "description": "Operaciones relacionadas con rutas"
+      },
+      {
+        "name": "estado",
+        "description": "Operaciones relacionadas con el estado del servidor"
+      }
+    ],
+    "paths": {
+      "/status": {
+        "get": {
+          "tags": ["estado"],
+          "summary": "Obtiene el estado del servidor",
+          "operationId": "getStatus",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Estado del servidor",
+              "schema": {
+                "$ref": "#/definitions/ApiStatus"
+              }
+            }
+          }
+        }
+      },
+      "/usuarios": {
+        "get": {
+          "tags": ["usuarios"],
+          "summary": "Obtiene todos los usuarios",
+          "operationId": "getUsuarios",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Lista de usuarios",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Usuario"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["usuarios"],
+          "summary": "Crea un nuevo usuario",
+          "operationId": "createUsuario",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "usuario",
+              "description": "Datos del usuario a crear",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Usuario"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Usuario creado",
+              "schema": {
+                "$ref": "#/definitions/Usuario"
+              }
+            },
+            "400": {
+              "description": "Datos de entrada inválidos",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/usuarios/{id}": {
+        "get": {
+          "tags": ["usuarios"],
+          "summary": "Obtiene un usuario por ID",
+          "operationId": "getUsuarioById",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Usuario encontrado",
+              "schema": {
+                "$ref": "#/definitions/Usuario"
+              }
+            },
+            "404": {
+              "description": "Usuario no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["usuarios"],
+          "summary": "Actualiza un usuario existente",
+          "operationId": "updateUsuario",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario a actualizar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "usuario",
+              "description": "Datos actualizados del usuario",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Usuario"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Usuario actualizado",
+              "schema": {
+                "$ref": "#/definitions/Usuario"
+              }
+            },
+            "404": {
+              "description": "Usuario no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": ["usuarios"],
+          "summary": "Elimina un usuario",
+          "operationId": "deleteUsuario",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario a eliminar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Usuario eliminado",
+              "schema": {
+                "$ref": "#/definitions/DeleteResponse"
+              }
+            },
+            "404": {
+              "description": "Usuario no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/roles": {
+        "get": {
+          "tags": ["roles"],
+          "summary": "Obtiene todos los roles",
+          "operationId": "getRoles",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Lista de roles",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Rol"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["roles"],
+          "summary": "Crea un nuevo rol",
+          "operationId": "createRol",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "rol",
+              "description": "Datos del rol a crear",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Rol"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Rol creado",
+              "schema": {
+                "$ref": "#/definitions/Rol"
+              }
+            },
+            "400": {
+              "description": "Datos de entrada inválidos",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/roles/{id}": {
+        "get": {
+          "tags": ["roles"],
+          "summary": "Obtiene un rol por ID",
+          "operationId": "getRolById",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del rol",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Rol encontrado",
+              "schema": {
+                "$ref": "#/definitions/Rol"
+              }
+            },
+            "404": {
+              "description": "Rol no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["roles"],
+          "summary": "Actualiza un rol existente",
+          "operationId": "updateRol",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del rol a actualizar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "rol",
+              "description": "Datos actualizados del rol",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Rol"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Rol actualizado",
+              "schema": {
+                "$ref": "#/definitions/Rol"
+              }
+            },
+            "404": {
+              "description": "Rol no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": ["roles"],
+          "summary": "Elimina un rol",
+          "operationId": "deleteRol",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del rol a eliminar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Rol eliminado",
+              "schema": {
+                "$ref": "#/definitions/DeleteResponse"
+              }
+            },
+            "404": {
+              "description": "Rol no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/lugares": {
+        "get": {
+          "tags": ["lugares"],
+          "summary": "Obtiene todos los lugares",
+          "operationId": "getLugares",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Lista de lugares",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Lugar"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["lugares"],
+          "summary": "Crea un nuevo lugar",
+          "operationId": "createLugar",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "lugar",
+              "description": "Datos del lugar a crear",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Lugar"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Lugar creado",
+              "schema": {
+                "$ref": "#/definitions/Lugar"
+              }
+            },
+            "400": {
+              "description": "Datos de entrada inválidos",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/lugares/{id}": {
+        "get": {
+          "tags": ["lugares"],
+          "summary": "Obtiene un lugar por ID",
+          "operationId": "getLugarById",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del lugar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lugar encontrado",
+              "schema": {
+                "$ref": "#/definitions/Lugar"
+              }
+            },
+            "404": {
+              "description": "Lugar no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["lugares"],
+          "summary": "Actualiza un lugar existente",
+          "operationId": "updateLugar",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del lugar a actualizar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "lugar",
+              "description": "Datos actualizados del lugar",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Lugar"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lugar actualizado",
+              "schema": {
+                "$ref": "#/definitions/Lugar"
+              }
+            },
+            "404": {
+              "description": "Lugar no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": ["lugares"],
+          "summary": "Elimina un lugar",
+          "operationId": "deleteLugar",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del lugar a eliminar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lugar eliminado",
+              "schema": {
+                "$ref": "#/definitions/DeleteResponse"
+              }
+            },
+            "404": {
+              "description": "Lugar no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/lugares/usuario/{id}": {
+        "get": {
+          "tags": ["lugares"],
+          "summary": "Obtiene todos los lugares de un usuario",
+          "operationId": "getLugaresByUsuario",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lista de lugares del usuario",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Lugar"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/lugares/favoritos/{id}": {
+        "get": {
+          "tags": ["lugares"],
+          "summary": "Obtiene todos los lugares favoritos de un usuario",
+          "operationId": "getLugaresFavoritosByUsuario",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lista de lugares favoritos del usuario",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Lugar"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/robots": {
+        "get": {
+          "tags": ["robots"],
+          "summary": "Obtiene todos los robots",
+          "operationId": "getRobots",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Lista de robots",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Robot"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["robots"],
+          "summary": "Crea un nuevo robot",
+          "operationId": "createRobot",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "robot",
+              "description": "Datos del robot a crear",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Robot"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Robot creado",
+              "schema": {
+                "$ref": "#/definitions/Robot"
+              }
+            },
+            "400": {
+              "description": "Datos de entrada inválidos",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/robots/{id}": {
+        "get": {
+          "tags": ["robots"],
+          "summary": "Obtiene un robot por ID",
+          "operationId": "getRobotById",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del robot",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Robot encontrado",
+              "schema": {
+                "$ref": "#/definitions/Robot"
+              }
+            },
+            "404": {
+              "description": "Robot no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "put": {
+          "tags": ["robots"],
+          "summary": "Actualiza un robot existente",
+          "operationId": "updateRobot",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del robot a actualizar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            },
+            {
+              "in": "body",
+              "name": "robot",
+              "description": "Datos actualizados del robot",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Robot"
+              }
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Robot actualizado",
+              "schema": {
+                "$ref": "#/definitions/Robot"
+              }
+            },
+            "404": {
+              "description": "Robot no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "delete": {
+          "tags": ["robots"],
+          "summary": "Elimina un robot",
+          "operationId": "deleteRobot",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del robot a eliminar",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Robot eliminado",
+              "schema": {
+                "$ref": "#/definitions/DeleteResponse"
+              }
+            },
+            "404": {
+              "description": "Robot no encontrado",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/robots/usuario/{id}": {
+        "get": {
+          "tags": ["robots"],
+          "summary": "Obtiene todos los robots de un usuario",
+          "operationId": "getRobotsByUsuario",
+          "produces": ["application/json"],
+          "parameters": [
+            {
+              "name": "id",
+              "in": "path",
+              "description": "ID del usuario",
+              "required": true,
+              "type": "integer",
+              "format": "int64"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Lista de robots del usuario",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Robot"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      },
+      "/rutas": {
+        "get": {
+          "tags": ["rutas"],
+          "summary": "Obtiene todas las rutas",
+          "operationId": "getRutas",
+          "produces": ["application/json"],
+          "responses": {
+            "200": {
+              "description": "Lista de rutas",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/Ruta"
+                }
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        },
+        "post": {
+          "tags": ["rutas"],
+          "summary": "Crea una nueva ruta",
+          "operationId": "createRuta",
+          "produces": ["application/json"],
+          "consumes": ["application/json"],
+          "parameters": [
+            {
+              "in": "body",
+              "name": "ruta",
+              "description": "Datos de la ruta a crear",
+              "required": true,
+              "schema": {
+                "$ref": "#/definitions/Ruta"
+              }
+            }
+          ],
+          "responses": {
+            "201": {
+              "description": "Ruta creada",
+              "schema": {
+                "$ref": "#/definitions/Ruta"
+              }
+            },
+            "400": {
+              "description": "Datos de entrada inválidos",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            },
+            "500": {
+              "description": "Error del servidor",
+              "schema": {
+                "$ref": "#/definitions/Error"
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Usuario": {
+        "type": "object",
+        "required": ["nombre", "correo", "contrasena", "id_rol"],
+        "properties": {
+          "id_usuario": { "type": "integer", "format": "int64", "description": "Identificador único del usuario" },
+          "nombre": { "type": "string", "description": "Nombre del usuario" },
+          "apellidos": { "type": "string", "description": "Apellidos del usuario" },
+          "correo": { "type": "string", "format": "email", "description": "Correo electrónico del usuario" },
+          "telefono": { "type": "string", "description": "Número de teléfono del usuario" },
+          "huella": { "type": "string", "description": "Huella digital para autenticación biométrica" },
+          "contrasena": { "type": "string", "format": "password", "description": "Contraseña del usuario" },
+          "notificaciones": { "type": "boolean", "description": "Indica si el usuario recibe notificaciones" },
+          "idioma": { "type": "string", "description": "Idioma preferido del usuario" },
+          "volumen": { "type": "integer", "format": "int32", "minimum": 0, "maximum": 100, "description": "Volumen preferido para alertas (0-100)" },
+          "activo": { "type": "boolean", "description": "Indica si la cuenta del usuario está activa" },
+          "foto_perfil": { "type": "string", "description": "URL de la foto de perfil del usuario" },
+          "id_rol": { "type": "integer", "format": "int64", "description": "ID del rol asignado al usuario" }
+        }
+      },
+      "Rol": {
+        "type": "object",
+        "required": ["nombre"],
+        "properties": {
+          "id_rol": { "type": "integer", "format": "int64", "description": "Identificador único del rol" },
+          "nombre": { "type": "string", "description": "Nombre del rol" }
+        }
+      },
+      "Lugar": {
+        "type": "object",
+        "required": ["id_usuario", "nombre", "direccion"],
+        "properties": {
+          "id_lugar": { "type": "integer", "format": "int64", "description": "Identificador único del lugar" },
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario propietario del lugar" },
+          "nombre": { "type": "string", "description": "Nombre del lugar" },
+          "direccion": { "type": "string", "description": "Dirección del lugar" },
+          "favorito": { "type": "boolean", "description": "Indica si el lugar está marcado como favorito" },
+          "latitud": { "type": "number", "format": "float", "description": "Latitud geográfica del lugar" },
+          "longitud": { "type": "number", "format": "float", "description": "Longitud geográfica del lugar" }
+        }
+      },
+      "Robot": {
+        "type": "object",
+        "required": ["nombre", "modelo", "id_usuario"],
+        "properties": {
+          "id_robot": { "type": "integer", "format": "int64", "description": "Identificador único del robot" },
+          "nombre": { "type": "string", "description": "Nombre del robot" },
+          "modelo": { "type": "string", "description": "Modelo del robot" },
+          "version_firmware": { "type": "string", "description": "Versión de firmware del robot" },
+          "bateria": { "type": "integer", "format": "int32", "minimum": 0, "maximum": 100, "description": "Nivel de batería del robot (0-100)" },
+          "conexion": { "type": "string", "description": "Estado de conexión del robot" },
+          "estado": { "type": "string", "description": "Estado operativo del robot" },
+          "averias": { "type": "string", "description": "Información sobre averías del robot" },
+          "ubicacion": { "type": "string", "description": "Ubicación actual del robot" },
+          "velocidad_navegacion": { "type": "string", "description": "Velocidad de navegación configurada" },
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario propietario del robot" }
+        }
+      },
+      "Ruta": {
+        "type": "object",
+        "required": ["id_origen", "id_destino", "id_usuario"],
+        "properties": {
+          "id_ruta": { "type": "integer", "format": "int64", "description": "Identificador único de la ruta" },
+          "fecha": { "type": "string", "format": "date-time", "description": "Fecha de creación de la ruta" },
+          "id_origen": { "type": "integer", "format": "int64", "description": "ID del lugar de origen" },
+          "id_destino": { "type": "integer", "format": "int64", "description": "ID del lugar de destino" },
+          "duracion": { "type": "integer", "format": "int32", "description": "Duración estimada de la ruta en segundos" },
+          "mapa": { "type": "string", "description": "URL o referencia al mapa de la ruta" },
+          "ultimo_uso": { "type": "string", "format": "date-time", "description": "Fecha del último uso de la ruta" },
+          "descripcion": { "type": "string", "description": "Descripción de la ruta" },
+          "completada": { "type": "boolean", "description": "Indica si la ruta ha sido completada" },
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario propietario de la ruta" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "description": "Mensaje de error" }
+        }
+      },
+      "ApiStatus": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string", "description": "Estado de la API" },
+          "message": { "type": "string", "description": "Mensaje descriptivo del estado" }
+        }
+      },
+      "DeleteResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "description": "Mensaje de confirmación" }
+        }
+      }
+    }
+  }
+  
