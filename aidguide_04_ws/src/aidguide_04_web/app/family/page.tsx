@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import ROSLIB from "roslib";
 import { useRobot } from "@/context/robot-context"
@@ -14,6 +14,8 @@ export default function FamilyPage() {
   const [connectionStatus, setConnectionStatus] = useState("Not connected");
   const [ros, setRos] = useState<ROSLIB.Ros | null>(null);
   const [cameraSrc, setCameraSrc] = useState("");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
   const rosbridgeAddress = "ws://127.0.0.1:9090/"; // Dirección del servidor ROS
   const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected } = useRobot()
 
@@ -56,14 +58,42 @@ export default function FamilyPage() {
     updateCameraFeed(); // Llamada inicial
     const interval = setInterval(updateCameraFeed, 1000); // Actualiza cada segundo
 
+    // Escuchar cambios en el estado de pantalla completa
+    const handleFullscreenChange = () => {
+      setIsFullscreen(
+        document.fullscreenElement === videoContainerRef.current
+      );
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+
     // Limpiar al desmontar
     return () => {
       rosInstance.close();
       clearInterval(interval);
       setRos(null);
       setConnectionStatus("Not connected");
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
     };
   }, []);
+
+  // Función para entrar en modo pantalla completa
+  const enterFullscreen = () => {
+    if (videoContainerRef.current) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen();
+      }
+    }
+  };
+
+  // Función para salir del modo pantalla completa
+  const exitFullscreen = () => {
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  };
 
   const handleStartRoute = () => {
     console.log("Iniciando ruta desde:", fromLocation, "hasta:", toLocation, "con parada en:", stopLocation);
@@ -267,13 +297,42 @@ export default function FamilyPage() {
         {/* Vídeo en tiempo real */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-button mb-6">Cámara del robot en tiempo real</h2>
-          <div className="relative h-[600px] bg-gray-100 rounded-lg">
+          <div 
+            ref={videoContainerRef}
+            className="relative h-[600px] bg-gray-100 rounded-lg overflow-hidden"
+          >
             {cameraSrc ? (
-              <img
-                src={cameraSrc}
-                alt="Camera Feed"
-                className="w-full h-full object-cover rounded-lg"
-              />
+              <div className="relative h-full">
+                <img
+                  src={cameraSrc}
+                  alt="Camera Feed"
+                  className="w-full h-full object-cover rounded-lg"
+                />
+                <div className="absolute bottom-3 right-3 bg-black/60 text-white px-3 py-1 rounded-full text-xs">
+                  Estado: {connectionStatus}
+                </div>
+                
+                {/* Botón de pantalla completa */}
+                <div className="absolute top-3 right-3 flex gap-2">
+                  {!isFullscreen ? (
+                    <button
+                      onClick={enterFullscreen}
+                      className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                      title="Pantalla completa"
+                    >
+                      <Maximize2 size={18} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={exitFullscreen}
+                      className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                      title="Salir de pantalla completa"
+                    >
+                      <Minimize2 size={18} />
+                    </button>
+                  )}
+                </div>
+              </div>
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">
                 <p className="text-gray-500">Cargando vídeo de la cámara...</p>

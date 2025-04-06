@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
-import { Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Video } from "lucide-react"
+import { Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Video, Maximize2, Minimize2 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import ROSLIB from "roslib"
 
@@ -12,6 +12,8 @@ export default function RobotFeed() {
   const [cameraSrc, setCameraSrc] = useState("")
   const [connectionStatus, setConnectionStatus] = useState("No conectado")
   const [ros, setRos] = useState<ROSLIB.Ros | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const videoContainerRef = useRef<HTMLDivElement>(null)
   const rosbridgeAddress = "ws://127.0.0.1:9090/" // Dirección del servidor ROS
 
   // Conexión automática a ROS y actualización del feed de la cámara
@@ -48,14 +50,42 @@ export default function RobotFeed() {
     updateCameraFeed() // Llamada inicial
     const interval = setInterval(updateCameraFeed, 1000) // Actualiza cada segundo
 
+    // Escuchar cambios en el estado de pantalla completa
+    const handleFullscreenChange = () => {
+      setIsFullscreen(
+        document.fullscreenElement === videoContainerRef.current
+      )
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+
     // Limpiar al desmontar
     return () => {
       rosInstance.close()
       clearInterval(interval)
       setRos(null)
       setConnectionStatus("No conectado")
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
     }
   }, [])
+
+  // Función para entrar en modo pantalla completa
+  const enterFullscreen = () => {
+    if (videoContainerRef.current) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen()
+      }
+    }
+  }
+
+  // Función para salir del modo pantalla completa
+  const exitFullscreen = () => {
+    if (document.fullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen()
+      }
+    }
+  }
 
   const categories = [
     { id: "live", name: "En vivo", icon: Video },
@@ -109,7 +139,10 @@ export default function RobotFeed() {
           {selectedCategory === "live" ? (
             <div>
               <h2 className="text-2xl font-bold text-button mb-6">Vista en tiempo real</h2>
-              <div className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden">
+              <div 
+                ref={videoContainerRef}
+                className="relative aspect-video bg-gray-900 rounded-lg overflow-hidden"
+              >
                 {cameraSrc ? (
                   <div className="relative h-full">
                     <img
@@ -119,6 +152,27 @@ export default function RobotFeed() {
                     />
                     <div className="absolute bottom-3 right-3 bg-black/60 text-white px-3 py-1 rounded-full text-xs">
                       Estado: {connectionStatus}
+                    </div>
+                    
+                    {/* Botón de pantalla completa */}
+                    <div className="absolute top-3 right-3 flex gap-2">
+                      {!isFullscreen ? (
+                        <button
+                          onClick={enterFullscreen}
+                          className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                          title="Pantalla completa"
+                        >
+                          <Maximize2 size={18} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={exitFullscreen}
+                          className="bg-black/60 text-white p-2 rounded-full hover:bg-black/80 transition-colors"
+                          title="Salir de pantalla completa"
+                        >
+                          <Minimize2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ) : (
