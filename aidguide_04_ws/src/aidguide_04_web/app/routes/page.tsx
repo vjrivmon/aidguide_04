@@ -1,7 +1,18 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { MapPin, Navigation, Clock, RotateCw } from "lucide-react"
+import dynamic from "next/dynamic"
+
+// Importamos el componente de mapa de forma dinámica para evitar problemas de SSR
+const RouteMap = dynamic(() => import("@/app/components/RouteMap"), { 
+  ssr: false,
+  loading: () => (
+    <div className="bg-gray-200 rounded-lg h-64 md:h-80 flex items-center justify-center">
+      <p className="text-gray-500">Cargando mapa...</p>
+    </div>
+  )
+})
 
 export default function Routes() {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null)
@@ -126,8 +137,13 @@ export default function Routes() {
 
               {selectedRoute ? (
                 <>
-                  <div className="bg-gray-200 rounded-lg h-64 md:h-80 flex items-center justify-center mb-6">
-                    <p className="text-gray-500">[Aquí se mostraría el mapa de la ruta seleccionada]</p>
+                  <div className="bg-gray-200 rounded-lg h-64 md:h-80 mb-6 overflow-hidden">
+                    {selectedRoute && (
+                      <RouteMap 
+                        waypoints={savedRoutes.find((r) => r.id === selectedRoute)?.waypoints || []}
+                        routeName={savedRoutes.find((r) => r.id === selectedRoute)?.name || ""}
+                      />
+                    )}
                   </div>
 
                   <div>
