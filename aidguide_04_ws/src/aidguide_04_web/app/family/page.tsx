@@ -281,7 +281,6 @@ export default function FamilyPage() {
           </div>
         </div>
       </div>
-
       {/* Mapa y Vídeo en tiempo real */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Mapa en tiempo real */}
@@ -289,7 +288,9 @@ export default function FamilyPage() {
           <h2 className="text-2xl font-bold text-button mb-6">Ubicación de María en tiempo real</h2>
           <div className="relative h-[600px] bg-gray-100 rounded-lg">
             <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-gray-500">Mapa en tiempo real</p>
+              <div className="text-center">
+                <canvas id="mapCanvas"></canvas>
+              </div>
             </div>
           </div>
         </div>
