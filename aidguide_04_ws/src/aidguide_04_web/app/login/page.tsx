@@ -50,7 +50,14 @@ export default function Login() {
         } else if (user.role === "family") {
           router.push("/family")
         } else {
-          router.push("/welcome")
+          // Si el usuario es normal, comprobar si ya tiene un robot vinculado
+          // Esta sería la lógica real, aquí solo lo simulamos
+          const hasLinkedRobot = localStorage.getItem("has-linked-robot") === "true"
+          if (hasLinkedRobot) {
+            router.push("/welcome")
+          } else {
+            router.push("/link-robot")
+          }
         }
       } else {
         setError("Credenciales incorrectas. Por favor, inténtalo de nuevo.")
