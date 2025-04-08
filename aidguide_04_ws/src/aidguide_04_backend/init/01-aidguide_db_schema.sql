@@ -27,6 +27,23 @@ CREATE TABLE IF NOT EXISTS RolPermiso (
   FOREIGN KEY (id_permiso) REFERENCES Permisos(id_permiso)
 );
 
+-- Tabla de Autenticación
+CREATE TABLE IF NOT EXISTS Autenticacion (
+  id_autenticacion INT PRIMARY KEY AUTO_INCREMENT,
+  email VARCHAR(100) UNIQUE NOT NULL,
+  password_hash VARCHAR(255) NOT NULL,
+  token_acceso VARCHAR(255),
+  token_refresco VARCHAR(255),
+  fecha_expiracion DATETIME,
+  ultimo_login DATETIME,
+  fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+  fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  activo BOOLEAN DEFAULT TRUE,
+  intentos_fallidos INT DEFAULT 0,
+  codigo_verificacion VARCHAR(10),
+  verificado BOOLEAN DEFAULT FALSE
+);
+
 -- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS Usuarios (
   id_usuario INT PRIMARY KEY AUTO_INCREMENT,
@@ -42,7 +59,10 @@ CREATE TABLE IF NOT EXISTS Usuarios (
   activo BOOLEAN,
   foto_perfil VARCHAR(200),
   id_rol INT,
-  FOREIGN KEY (id_rol) REFERENCES Roles(id_rol)
+  id_autenticacion INT UNIQUE,
+  codigo_vinculacion VARCHAR(10) UNIQUE,
+  FOREIGN KEY (id_rol) REFERENCES Roles(id_rol),
+  FOREIGN KEY (id_autenticacion) REFERENCES Autenticacion(id_autenticacion)
 );
 
 -- Tabla de Lugares
@@ -93,6 +113,11 @@ CREATE TABLE IF NOT EXISTS Robots (
   ubicacion VARCHAR(100),
   velocidad_navegacion VARCHAR(25),
   id_usuario INT,
+  codigo_vinculacion VARCHAR(10),
+  token_acceso VARCHAR(255),
+  activo BOOLEAN DEFAULT TRUE,
+  ultima_conexion DATETIME,
+  serie VARCHAR(50) UNIQUE,
   FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
 );
 
@@ -178,4 +203,18 @@ CREATE TABLE IF NOT EXISTS RecompensasObtenidas (
   PRIMARY KEY (id_usuario, id_recompensa),
   FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
   FOREIGN KEY (id_recompensa) REFERENCES Recompensas(id_recompensa)
+);
+
+-- Tabla para el registro de vinculaciones de robots a usuarios
+CREATE TABLE IF NOT EXISTS VinculacionRobots (
+  id_vinculacion INT PRIMARY KEY AUTO_INCREMENT,
+  codigo_vinculacion VARCHAR(10) NOT NULL,
+  id_robot INT,
+  id_usuario INT,
+  fecha_vinculacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+  estado ENUM('pendiente', 'activa', 'rechazada', 'expirada') DEFAULT 'pendiente',
+  fecha_expiracion DATETIME,
+  FOREIGN KEY (id_robot) REFERENCES Robots(id_robot),
+  FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
+  UNIQUE KEY (codigo_vinculacion)
 );

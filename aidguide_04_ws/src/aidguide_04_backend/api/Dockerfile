@@ -7,7 +7,7 @@ COPY package*.json ./
 
 # Instala las dependencias
 RUN npm install
-RUN npm install dotenv --save
+RUN npm install dotenv bcrypt jsonwebtoken uuid --save
 
 # Copia el resto de los archivos
 COPY . .
