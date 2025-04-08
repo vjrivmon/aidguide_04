@@ -14,7 +14,10 @@ aidguide_04_backend/
 │   │   ├── roles.js         # Endpoints para gestión de roles
 │   │   ├── lugares.js       # Endpoints para gestión de lugares
 │   │   ├── robots.js        # Endpoints para gestión de robots
-│   │   └── rutas.js         # Endpoints para gestión de rutas
+│   │   ├── rutas.js         # Endpoints para gestión de rutas
+│   │   ├── ruta_lugares.js  # Endpoints para gestión de lugares en rutas
+│   │   ├── recompensas.js   # Endpoints para gestión de recompensas
+│   │   └── progreso_usuario.js # Endpoints para gestión del progreso de usuarios
 │   ├── swagger.json         # Documentación de la API con Swagger
 │   ├── db.js                # Configuración de conexión a la base de datos
 │   ├── app.js               # Configuración principal de Express
@@ -37,6 +40,9 @@ El backend proporciona una API RESTful completa con los siguientes endpoints:
 - **/api/lugares**: Gestión de lugares y ubicaciones (CRUD)
 - **/api/robots**: Gestión de robots y su estado (CRUD)
 - **/api/rutas**: Gestión de rutas de navegación (CRUD)
+- **/api/ruta-lugares**: Gestión de la secuencia de lugares en una ruta (CRUD)
+- **/api/recompensas**: Gestión de recompensas y retos (CRUD)
+- **/api/progreso-usuario**: Gestión del progreso y nivel de los usuarios (CRUD)
 - **/api/status**: Estado del servicio
 
 ### 2. Modelo de Datos Completo
@@ -48,12 +54,33 @@ Se ha implementado un esquema de base de datos MySQL completo con las siguientes
 - **Lugares**: Ubicaciones y puntos de interés
 - **Robots**: Información y estado de robots disponibles
 - **Rutas**: Trayectos entre ubicaciones
+- **RutaLugares**: Asociación de lugares a rutas en un orden específico
 - **Categorías**: Tipos de objetos detectables
-- **Detecciones**: Registro de objetos detectados
+- **Detecciones**: Registro de objetos detectados asociados a lugares
 - **Historial de Ubicaciones**: Seguimiento de la posición del robot
 - **Alertas**: Sistema de notificaciones y alertas
+- **Recompensas**: Sistema de recompensas y retos para los usuarios
+- **ProgresoUsuario**: Progreso, niveles y puntos de los usuarios
+- **RecompensasObtenidas**: Registro de recompensas obtenidas por cada usuario
 
-### 3. Documentación con Swagger
+### 3. Sistema de Gamificación
+
+Se ha implementado un sistema completo de gamificación que incluye:
+
+- **Niveles de usuario**: Los usuarios pueden subir de nivel a medida que acumulan puntos
+- **Puntos**: Se otorgan por realizar diferentes acciones en la aplicación
+- **Recompensas**: Diferentes tipos de recompensas (diarias, semanales, mensuales, logros)
+- **Retos**: Actividades que el usuario puede completar para recibir puntos
+- **Rankings**: Clasificaciones de usuarios por puntos, nivel y retos completados
+
+### 4. Rutas como Secuencia de Lugares
+
+- Las rutas ahora se modelan como una secuencia ordenada de lugares
+- Cada ruta puede tener múltiples lugares intermedios, no solo origen y destino
+- Se pueden reordenar los lugares dentro de una ruta
+- Las detecciones ahora se asocian directamente a lugares específicos
+
+### 5. Documentación con Swagger
 
 Toda la API está documentada utilizando Swagger, accesible en **/api-docs**, lo que permite:
 
@@ -62,7 +89,7 @@ Toda la API está documentada utilizando Swagger, accesible en **/api-docs**, lo
 - Obtener información detallada sobre parámetros y respuestas
 - Generar clientes automáticamente para diferentes lenguajes
 
-### 4. Contenerización Completa del Sistema
+### 6. Contenerización Completa del Sistema
 
 El sistema completo está contenerizado utilizando Docker y Docker Compose:
 
@@ -189,6 +216,8 @@ Es importante mantener este documento actualizado cuando se implementen cambios 
 - [x] Contenerización completa con Docker
 - [x] Integración con frontend mediante docker-compose
 - [x] Configuración de redes Docker para comunicación entre servicios
+- [x] Implementación del sistema de rutas como secuencia de lugares
+- [x] Implementación del sistema de gamificación con recompensas y progreso
 - [ ] Implementación de autenticación JWT
 - [ ] Integración directa con nodos ROS2
 - [ ] Implementación de WebSockets para comunicación en tiempo real
@@ -202,4 +231,4 @@ Para más información o consultas, contactar con el equipo de desarrollo de Aid
 
 ---
 
-*Este documento fue generado para el proyecto AidGuide 04, parte del proyecto de robótica de GTI de la Universidad Politécnica de Valencia.* 
+*Este documento fue generado para el proyecto AidGuide 04, parte del proyecto de robótica de GTI de la Universidad Politécnica de Valencia.*

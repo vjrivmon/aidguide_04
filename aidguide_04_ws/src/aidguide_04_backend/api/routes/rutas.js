@@ -35,44 +35,120 @@ router.get('/completadas/:id', (req, res) => {
   });
 });
 
+// GET /api/rutas/detalle/:id - Obtener una ruta con todos sus lugares
+router.get('/detalle/:id', (req, res) => {
+  // Obtener primero la ruta
+  db.query('SELECT * FROM Rutas WHERE id_ruta = ?', [req.params.id], (err, rutaResults) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (rutaResults.length === 0) return res.status(404).json({ error: 'Ruta no encontrada' });
+    
+    const ruta = rutaResults[0];
+    
+    // Obtener los lugares de la ruta ordenados
+    db.query(
+      `SELECT l.*, rl.orden 
+       FROM Lugares l
+       JOIN RutaLugares rl ON l.id_lugar = rl.id_lugar
+       WHERE rl.id_ruta = ?
+       ORDER BY rl.orden ASC`,
+      [req.params.id],
+      (err, lugaresResults) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        res.json({
+          ...ruta,
+          lugares: lugaresResults
+        });
+      }
+    );
+  });
+});
+
 // POST /api/rutas - Crear una nueva ruta
 router.post('/', (req, res) => {
   const { 
-    fecha, id_origen, id_destino, duracion, mapa, 
-    ultimo_uso, descripcion, completada, id_usuario 
+    fecha, duracion, mapa, ultimo_uso, descripcion,
+    completada, id_usuario, lugares
   } = req.body;
   
-  if (!id_origen || !id_destino || !id_usuario) {
-    return res.status(400).json({ error: 'Origen, destino y usuario son obligatorios' });
+  if (!id_usuario) {
+    return res.status(400).json({ error: 'El usuario es obligatorio' });
   }
   
-  const query = `
-    INSERT INTO Rutas 
-    (fecha, id_origen, id_destino, duracion, mapa, ultimo_uso, descripcion, completada, id_usuario) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  if (!lugares || !Array.isArray(lugares) || lugares.length < 2) {
+    return res.status(400).json({ error: 'Una ruta debe tener al menos dos lugares (origen y destino)' });
+  }
   
   const now = new Date();
   
-  const values = [
-    fecha || now, id_origen, id_destino, duracion || 0, 
-    mapa || null, ultimo_uso || now, descripcion || null, 
-    completada !== undefined ? completada : false, id_usuario
-  ];
-  
-  db.query(query, values, (err, result) => {
+  // Iniciamos una transacción para asegurar la integridad de los datos
+  db.beginTransaction(err => {
     if (err) return res.status(500).json({ error: err.message });
     
-    res.status(201).json({
-      id_ruta: result.insertId,
-      fecha: fecha || now,
-      id_origen,
-      id_destino,
-      duracion: duracion || 0,
-      mapa,
-      ultimo_uso: ultimo_uso || now,
-      descripcion,
-      completada: completada !== undefined ? completada : false,
-      id_usuario
+    // Insertar primero la ruta
+    const rutaQuery = `
+      INSERT INTO Rutas 
+      (fecha, duracion, mapa, ultimo_uso, descripcion, completada, id_usuario) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    
+    const rutaValues = [
+      fecha || now, duracion || 0, mapa || null, 
+      ultimo_uso || now, descripcion || null,
+      completada !== undefined ? completada : false, id_usuario
+    ];
+    
+    db.query(rutaQuery, rutaValues, (err, rutaResult) => {
+      if (err) {
+        return db.rollback(() => {
+          res.status(500).json({ error: err.message });
+        });
+      }
+      
+      const id_ruta = rutaResult.insertId;
+      
+      // Insertar los lugares de la ruta
+      const rutaLugaresQuery = `
+        INSERT INTO RutaLugares (id_ruta, id_lugar, orden)
+        VALUES (?, ?, ?)`;
+      
+      const insertPromises = lugares.map((lugar, index) => {
+        return new Promise((resolve, reject) => {
+          db.query(rutaLugaresQuery, [id_ruta, lugar, index], (err, result) => {
+            if (err) return reject(err);
+            resolve(result);
+          });
+        });
+      });
+      
+      Promise.all(insertPromises)
+        .then(() => {
+          // Confirmar la transacción
+          db.commit(err => {
+            if (err) {
+              return db.rollback(() => {
+                res.status(500).json({ error: err.message });
+              });
+            }
+            
+            // Devolver la ruta creada con sus lugares
+            res.status(201).json({
+              id_ruta,
+              fecha: fecha || now,
+              duracion: duracion || 0,
+              mapa,
+              ultimo_uso: ultimo_uso || now,
+              descripcion,
+              completada: completada !== undefined ? completada : false,
+              id_usuario,
+              lugares: lugares.map((lugar, index) => ({ id_lugar: lugar, orden: index }))
+            });
+          });
+        })
+        .catch(err => {
+          db.rollback(() => {
+            res.status(500).json({ error: err.message });
+          });
+        });
     });
   });
 });
@@ -80,8 +156,8 @@ router.post('/', (req, res) => {
 // PUT /api/rutas/:id - Actualizar una ruta
 router.put('/:id', (req, res) => {
   const { 
-    fecha, id_origen, id_destino, duracion, mapa, 
-    ultimo_uso, descripcion, completada, id_usuario 
+    fecha, duracion, mapa, ultimo_uso, descripcion, 
+    completada, id_usuario, lugares
   } = req.body;
   
   // Primero verificamos si la ruta existe
@@ -90,39 +166,104 @@ router.put('/:id', (req, res) => {
     if (results.length === 0) return res.status(404).json({ error: 'Ruta no encontrada' });
     
     const ruta = results[0];
+    const id_ruta = parseInt(req.params.id);
     
     // Preparamos los valores actualizados
     const updatedRoute = {
       fecha: fecha || ruta.fecha,
-      id_origen: id_origen || ruta.id_origen,
-      id_destino: id_destino || ruta.id_destino,
       duracion: duracion !== undefined ? duracion : ruta.duracion,
       mapa: mapa || ruta.mapa,
-      ultimo_uso: ultimo_uso || new Date(),  // Actualizamos el último uso por defecto
+      ultimo_uso: ultimo_uso || new Date(),
       descripcion: descripcion || ruta.descripcion,
       completada: completada !== undefined ? completada : ruta.completada,
       id_usuario: id_usuario || ruta.id_usuario
     };
     
-    const query = `
-      UPDATE Rutas 
-      SET fecha = ?, id_origen = ?, id_destino = ?, duracion = ?, 
-          mapa = ?, ultimo_uso = ?, descripcion = ?, completada = ?, id_usuario = ?
-      WHERE id_ruta = ?`;
-    
-    const values = [
-      updatedRoute.fecha, updatedRoute.id_origen, updatedRoute.id_destino,
-      updatedRoute.duracion, updatedRoute.mapa, updatedRoute.ultimo_uso,
-      updatedRoute.descripcion, updatedRoute.completada, updatedRoute.id_usuario,
-      req.params.id
-    ];
-    
-    db.query(query, values, (err, result) => {
+    // Iniciamos una transacción
+    db.beginTransaction(err => {
       if (err) return res.status(500).json({ error: err.message });
       
-      res.json({
-        id_ruta: parseInt(req.params.id),
-        ...updatedRoute
+      // Actualizar la ruta
+      const query = `
+        UPDATE Rutas 
+        SET fecha = ?, duracion = ?, mapa = ?, ultimo_uso = ?, 
+            descripcion = ?, completada = ?, id_usuario = ?
+        WHERE id_ruta = ?`;
+      
+      const values = [
+        updatedRoute.fecha, updatedRoute.duracion, updatedRoute.mapa, 
+        updatedRoute.ultimo_uso, updatedRoute.descripcion, 
+        updatedRoute.completada, updatedRoute.id_usuario, id_ruta
+      ];
+      
+      db.query(query, values, (err, result) => {
+        if (err) {
+          return db.rollback(() => {
+            res.status(500).json({ error: err.message });
+          });
+        }
+        
+        // Si no se proporcionan lugares, finalizamos
+        if (!lugares || !Array.isArray(lugares)) {
+          return db.commit(err => {
+            if (err) {
+              return db.rollback(() => {
+                res.status(500).json({ error: err.message });
+              });
+            }
+            res.json({
+              id_ruta,
+              ...updatedRoute
+            });
+          });
+        }
+        
+        // Si hay lugares, primero eliminamos los existentes
+        db.query('DELETE FROM RutaLugares WHERE id_ruta = ?', [id_ruta], (err, result) => {
+          if (err) {
+            return db.rollback(() => {
+              res.status(500).json({ error: err.message });
+            });
+          }
+          
+          // Luego insertamos los nuevos lugares
+          const rutaLugaresQuery = `
+            INSERT INTO RutaLugares (id_ruta, id_lugar, orden)
+            VALUES (?, ?, ?)`;
+          
+          const insertPromises = lugares.map((lugar, index) => {
+            return new Promise((resolve, reject) => {
+              db.query(rutaLugaresQuery, [id_ruta, lugar, index], (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+              });
+            });
+          });
+          
+          Promise.all(insertPromises)
+            .then(() => {
+              // Confirmar la transacción
+              db.commit(err => {
+                if (err) {
+                  return db.rollback(() => {
+                    res.status(500).json({ error: err.message });
+                  });
+                }
+                
+                // Devolver la ruta actualizada con sus lugares
+                res.json({
+                  id_ruta,
+                  ...updatedRoute,
+                  lugares: lugares.map((lugar, index) => ({ id_lugar: lugar, orden: index }))
+                });
+              });
+            })
+            .catch(err => {
+              db.rollback(() => {
+                res.status(500).json({ error: err.message });
+              });
+            });
+        });
       });
     });
   });
@@ -130,10 +271,46 @@ router.put('/:id', (req, res) => {
 
 // DELETE /api/rutas/:id - Eliminar una ruta
 router.delete('/:id', (req, res) => {
-  db.query('DELETE FROM Rutas WHERE id_ruta = ?', [req.params.id], (err, result) => {
+  const id_ruta = req.params.id;
+  
+  // Iniciamos una transacción
+  db.beginTransaction(err => {
     if (err) return res.status(500).json({ error: err.message });
-    if (result.affectedRows === 0) return res.status(404).json({ error: 'Ruta no encontrada' });
-    res.json({ message: 'Ruta eliminada con éxito' });
+    
+    // Primero eliminamos los lugares asociados a la ruta
+    db.query('DELETE FROM RutaLugares WHERE id_ruta = ?', [id_ruta], (err, result) => {
+      if (err) {
+        return db.rollback(() => {
+          res.status(500).json({ error: err.message });
+        });
+      }
+      
+      // Después eliminamos la ruta
+      db.query('DELETE FROM Rutas WHERE id_ruta = ?', [id_ruta], (err, result) => {
+        if (err) {
+          return db.rollback(() => {
+            res.status(500).json({ error: err.message });
+          });
+        }
+        
+        if (result.affectedRows === 0) {
+          return db.rollback(() => {
+            res.status(404).json({ error: 'Ruta no encontrada' });
+          });
+        }
+        
+        // Confirmamos la transacción
+        db.commit(err => {
+          if (err) {
+            return db.rollback(() => {
+              res.status(500).json({ error: err.message });
+            });
+          }
+          
+          res.json({ message: 'Ruta eliminada con éxito' });
+        });
+      });
+    });
   });
 });
 

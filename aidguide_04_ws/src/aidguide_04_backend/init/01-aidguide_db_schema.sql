@@ -57,21 +57,27 @@ CREATE TABLE IF NOT EXISTS Lugares (
   FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
 );
 
--- Tabla de Rutas
+-- Tabla de Rutas (modificada: eliminados id_origen e id_destino)
 CREATE TABLE IF NOT EXISTS Rutas (
   id_ruta INT PRIMARY KEY AUTO_INCREMENT,
   fecha DATETIME,
-  id_origen INT,
-  id_destino INT,
   duracion INT,
   mapa VARCHAR(100),
   ultimo_uso DATETIME,
   descripcion VARCHAR(255),
   completada BOOLEAN,
   id_usuario INT,
-  FOREIGN KEY (id_origen) REFERENCES Lugares(id_lugar),
-  FOREIGN KEY (id_destino) REFERENCES Lugares(id_lugar),
   FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
+);
+
+-- Tabla intermedia RutaLugares (nueva)
+CREATE TABLE IF NOT EXISTS RutaLugares (
+  id_ruta INT,
+  id_lugar INT,
+  orden INT,
+  PRIMARY KEY (id_ruta, id_lugar, orden),
+  FOREIGN KEY (id_ruta) REFERENCES Rutas(id_ruta),
+  FOREIGN KEY (id_lugar) REFERENCES Lugares(id_lugar)
 );
 
 -- Tabla de Robots
@@ -99,15 +105,15 @@ CREATE TABLE IF NOT EXISTS Categorias (
   imagen VARCHAR(200)
 );
 
--- Tabla de Detecciones
+-- Tabla de Detecciones (modificada: sustituye id_ruta por id_lugar)
 CREATE TABLE IF NOT EXISTS Detecciones (
   id_deteccion INT PRIMARY KEY AUTO_INCREMENT,
   id_robot INT,
-  id_ruta INT,
+  id_lugar INT,
   id_categoria INT,
   fecha_hora DATETIME,
   FOREIGN KEY (id_robot) REFERENCES Robots(id_robot),
-  FOREIGN KEY (id_ruta) REFERENCES Rutas(id_ruta),
+  FOREIGN KEY (id_lugar) REFERENCES Lugares(id_lugar),
   FOREIGN KEY (id_categoria) REFERENCES Categorias(id_categoria)
 );
 
@@ -137,4 +143,39 @@ CREATE TABLE IF NOT EXISTS Alertas (
   FOREIGN KEY (id_robot) REFERENCES Robots(id_robot),
   FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
   FOREIGN KEY (id_deteccion) REFERENCES Detecciones(id_deteccion)
+);
+
+-- Tabla de Recompensas (nueva)
+CREATE TABLE IF NOT EXISTS Recompensas (
+  id_recompensa INT PRIMARY KEY AUTO_INCREMENT,
+  nombre VARCHAR(100),
+  descripcion TEXT,
+  puntos_requeridos INT,
+  nivel_requerido INT,
+  tipo ENUM('diario', 'semanal', 'mensual', 'logro') DEFAULT 'logro',
+  icono VARCHAR(100)
+);
+
+-- Tabla de Progreso de Usuario (nueva)
+CREATE TABLE IF NOT EXISTS ProgresoUsuario (
+  id_usuario INT,
+  puntos INT DEFAULT 0,
+  nivel INT DEFAULT 1,
+  puntos_siguiente_nivel INT DEFAULT 350,
+  retos_completados INT DEFAULT 0,
+  PRIMARY KEY (id_usuario),
+  FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario)
+);
+
+-- Tabla de Recompensas Obtenidas (nueva)
+CREATE TABLE IF NOT EXISTS RecompensasObtenidas (
+  id_usuario INT,
+  id_recompensa INT,
+  fecha_obtencion DATETIME DEFAULT CURRENT_TIMESTAMP,
+  puntos_obtenidos INT DEFAULT 0,
+  progreso INT DEFAULT 0,
+  completada BOOLEAN DEFAULT FALSE,
+  PRIMARY KEY (id_usuario, id_recompensa),
+  FOREIGN KEY (id_usuario) REFERENCES Usuarios(id_usuario),
+  FOREIGN KEY (id_recompensa) REFERENCES Recompensas(id_recompensa)
 );
