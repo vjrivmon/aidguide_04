@@ -1,97 +1,213 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Signal, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import { MapPin, Navigation, Battery, Activity, Clock, AlertCircle, Wifi, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import ROSLIB from "roslib";
-import { useRobot } from "@/context/robot-context"
+import { useRobot } from "@/context/robot-context";
+import yaml from "js-yaml";
+
+interface MapData {
+  resolution: number;
+  origin: [number, number, number];
+}
+
+interface Position {
+  x: number;
+  y: number;
+}
 
 export default function FamilyPage() {
   const { user } = useAuth();
-  const [fromLocation, setFromLocation] = useState("");
-  const [toLocation, setToLocation] = useState("");
-  const [stopLocation, setStopLocation] = useState("");
-  const [connectionStatus, setConnectionStatus] = useState("Not connected");
-  const [ros, setRos] = useState<ROSLIB.Ros | null>(null);
-  const [cameraSrc, setCameraSrc] = useState("");
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected, robotPose } = useRobot();
+  const [fromLocation, setFromLocation] = useState<string>("");
+  const [toLocation, setToLocation] = useState<string>("");
+  const [stopLocation, setStopLocation] = useState<string>("");
+  const [cameraSrc, setCameraSrc] = useState<string>("");
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [mapData, setMapData] = useState<MapData | null>(null);
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
-  const rosbridgeAddress = "ws://127.0.0.1:9090/"; // Dirección del servidor ROS
-  const { batteryPercentage, batteryStatus, estimatedTimeRemaining, isConnected } = useRobot()
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mapImageDataRef = useRef<ImageData | null>(null); // Para almacenar los datos del mapa
 
-  // Actualizar connectionStatus basado en isConnected
+  // Cargar metadatos del mapa YAML
   useEffect(() => {
-    setConnectionStatus(isConnected ? "Conectado" : "Desconectado")
-  }, [isConnected]);
-
-  // Conexión automática a ROS y actualización del feed de la cámara
-  useEffect(() => {
-    console.log("Page loaded");
-
-    // Conectar a ROS
-    const rosInstance = new ROSLIB.Ros({
-      url: rosbridgeAddress,
-    });
-
-    rosInstance.on("connection", () => {
-      setRos(rosInstance);
-      setConnectionStatus("Connected");
-      console.log("Connection to ROSBridge successful");
-    });
-
-    rosInstance.on("error", (error) => {
-      setConnectionStatus("Connection error");
-      console.log("Connection error:", error);
-    });
-
-    rosInstance.on("close", () => {
-      setRos(null);
-      setConnectionStatus("Not connected");
-      console.log("Connection to ROSBridge closed");
-    });
-
-    // Actualizar el feed de la cámara cada segundo
-    const updateCameraFeed = () => {
-      const timestamp = new Date().getTime();
-      setCameraSrc(`http://0.0.0.0:8080/stream?topic=/camera/image_raw&t=${timestamp}`);
-    };
-    updateCameraFeed(); // Llamada inicial
-    const interval = setInterval(updateCameraFeed, 1000); // Actualiza cada segundo
-
-    // Escuchar cambios en el estado de pantalla completa
-    const handleFullscreenChange = () => {
-      setIsFullscreen(
-        document.fullscreenElement === videoContainerRef.current
-      );
-    };
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-
-    // Limpiar al desmontar
-    return () => {
-      rosInstance.close();
-      clearInterval(interval);
-      setRos(null);
-      setConnectionStatus("Not connected");
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
+    fetch("/aidguide_04_map.yaml") // Ajusta la ruta según tu proyecto
+      .then((response) => {
+        if (!response.ok) throw new Error("YAML no encontrado");
+        return response.text();
+      })
+      .then((yamlText) => {
+        const parsedData = yaml.load(yamlText) as MapData;
+        setMapData(parsedData);
+        console.log("YAML cargado:", parsedData);
+      })
+      .catch((error) => console.error("Error loading YAML:", error));
   }, []);
 
-  // Función para entrar en modo pantalla completa
-  const enterFullscreen = () => {
-    if (videoContainerRef.current) {
-      if (videoContainerRef.current.requestFullscreen) {
-        videoContainerRef.current.requestFullscreen();
+  const resolution = mapData?.resolution || 0.05;
+  const origin = mapData?.origin || [0, 0, 0];
+
+  // Transformar coordenadas ROS a píxeles del mapa
+  const rosToMap = (x: number, y: number): Position => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
+    const pixelX = (x - origin[0]) / resolution;
+    const pixelY = canvasRef.current.height - (y - origin[1]) / resolution;
+    console.log("Coordenadas ROS:", x, y, "-> Píxeles:", pixelX, pixelY);
+    return { x: pixelX, y: pixelY };
+  };
+
+  // Cargar y dibujar el mapa PGM una vez al montar el componente
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+
+    const loadMap = async () => {
+      try {
+        const response = await fetch("/aidguide_04_map.pgm"); // Ajusta la ruta según tu proyecto
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const buffer = await response.arrayBuffer();
+        const data = new Uint8Array(buffer);
+        let offset = 0;
+
+        const textDecoder = new TextDecoder();
+        let header = "";
+        while (offset < data.length && data[offset] !== 10) {
+          header += String.fromCharCode(data[offset]);
+          offset++;
+        }
+        offset++;
+
+        if (header !== "P5") throw new Error("Unsupported PGM format. Expected P5.");
+
+        let width = "",
+          height = "",
+          maxVal = "";
+        while (offset < data.length && data[offset] !== 32) {
+          width += String.fromCharCode(data[offset]);
+          offset++;
+        }
+        offset++;
+        while (offset < data.length && data[offset] !== 10) {
+          height += String.fromCharCode(data[offset]);
+          offset++;
+        }
+        offset++;
+        while (offset < data.length && data[offset] !== 10) {
+          maxVal += String.fromCharCode(data[offset]);
+          offset++;
+        }
+        offset++;
+
+        const imgWidth = parseInt(width);
+        const imgHeight = parseInt(height);
+        const maxValue = parseInt(maxVal);
+
+        canvas.width = imgWidth;
+        canvas.height = imgHeight;
+
+        const pixelData = data.slice(offset);
+        const imageData = ctx.createImageData(imgWidth, imgHeight);
+        for (let i = 0; i < pixelData.length; i++) {
+          const gray = (pixelData[i] / maxValue) * 255;
+          imageData.data[i * 4] = gray;
+          imageData.data[i * 4 + 1] = gray;
+          imageData.data[i * 4 + 2] = gray;
+          imageData.data[i * 4 + 3] = 255;
+        }
+        ctx.putImageData(imageData, 0, 0);
+        mapImageDataRef.current = imageData; // Guardamos los datos del mapa
+        console.log("Mapa PGM cargado con dimensiones:", imgWidth, imgHeight);
+      } catch (error) {
+        console.error("Error loading PGM:", error);
+        setMapLoadError("No se pudo cargar el mapa PGM.");
       }
+    };
+
+    loadMap();
+  }, []);
+
+  // Actualizar la posición del robot en el mapa
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx || !mapImageDataRef.current) {
+      console.log("No se puede dibujar: canvas, ctx o mapImageData no están listos");
+      return;
+    }
+    const redrawMap = () => {
+      const canvas = canvasRef.current;
+      const ctx = canvas?.getContext("2d");
+      if (!canvas || !ctx || !mapImageDataRef.current) {
+        console.log("No se puede dibujar: canvas, ctx o mapImageData no están listos");
+        return;
+      }
+    
+      // Redibujar el mapa primero
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+      // Guardar el contexto antes de la rotación
+      ctx.save();
+    
+      // Cambiar las dimensiones del canvas para adaptarse a la rotación (ancho y alto invertidos)
+      canvas.width = canvas.height; // Cambiar el ancho al alto
+      canvas.height = canvas.width; // Cambiar el alto al ancho
+    
+      // Mover el contexto al centro para rotar alrededor del centro de la imagen
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+    
+      // Rotar 90 grados a la izquierda
+      ctx.rotate(-Math.PI / 2); // Rotación en sentido antihorario
+    
+      // Mover el contexto de nuevo al origen para dibujar la imagen correctamente
+      ctx.translate(-canvas.height / 2, -canvas.width / 2); // Ajustar el centro
+    
+      // Dibujar el mapa
+      ctx.putImageData(mapImageDataRef.current, 0, 0);
+    
+      // Restaurar el contexto a su estado original después de la rotación
+      ctx.restore();
+    
+      // Dibujar el robot si la información de la posición está disponible
+      if (robotPose) {
+        const { x, y } = rosToMap(robotPose.x, robotPose.y);
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, 2 * Math.PI);
+        ctx.fillStyle = "green";
+        ctx.fill();
+        console.log("Robot dibujado en:", x, y);
+      } else {
+        console.log("robotPose no está disponible aún");
+      }
+    };
+    
+
+    redrawMap();
+  }, [robotPose, mapData]); // Dependencias: robotPose y mapData
+
+  // Configuración de la cámara
+  useEffect(() => {
+    const updateCameraFeed = () => {
+      const timestamp = new Date().getTime();
+      setCameraSrc(`http://localhost:8080/stream?topic=/camera/image_raw&t=${timestamp}`);
+    };
+    updateCameraFeed();
+    const interval = setInterval(updateCameraFeed, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const enterFullscreen = () => {
+    if (videoContainerRef.current?.requestFullscreen) {
+      videoContainerRef.current.requestFullscreen();
+      setIsFullscreen(true);
     }
   };
 
-  // Función para salir del modo pantalla completa
   const exitFullscreen = () => {
-    if (document.fullscreenElement) {
-      if (document.exitFullscreen) {
-        document.exitFullscreen();
-      }
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen();
+      setIsFullscreen(false);
     }
   };
 
@@ -101,23 +217,15 @@ export default function FamilyPage() {
 
   return (
     <div className="container-custom py-14">
-      {/* Título y subtítulo */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-4xl font-bold mb-4">
-          Bienvenido, {user?.name}
-        </h1>
-        <h2 className="text-2xl text-text">
-          Seguimiento y control del robot de su hija María
-        </h2>
+        <h1 className="text-4xl md:text-4xl font-bold mb-4">Bienvenido, {user?.name}</h1>
+        <h2 className="text-2xl text-text">Seguimiento y control del robot de su hija María</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {/* Panel izquierdo - Estado del robot */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-button mb-6">Estado del robot de María</h2>
-          
           <div className="space-y-6">
-            {/* Estado de batería */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
@@ -127,38 +235,30 @@ export default function FamilyPage() {
                 <span className="text-text font-medium">{batteryPercentage}%</span>
               </div>
               <div className="w-full h-2 bg-gray-200 rounded-full">
-                <div 
+                <div
                   className={`h-full rounded-full ${
-                    batteryPercentage > 60 
-                      ? 'bg-green-500' 
-                      : batteryPercentage > 20 
-                        ? 'bg-yellow-500' 
-                        : 'bg-red-500'
-                  }`} 
+                    batteryPercentage > 60 ? "bg-green-500" : batteryPercentage > 20 ? "bg-yellow-500" : "bg-red-500"
+                  }`}
                   style={{ width: `${batteryPercentage}%` }}
-                ></div>
+                />
               </div>
               <p className="text-sm text-gray-500 mt-2">
-                {batteryStatus === 'charging' 
-                  ? `Cargando - ${estimatedTimeRemaining}` 
+                {batteryStatus === "charging"
+                  ? `Cargando - ${estimatedTimeRemaining}`
                   : `Tiempo estimado restante: ${estimatedTimeRemaining}`}
               </p>
             </div>
-
-            {/* Estado de conexión */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
                   <Wifi className="text-button mr-2" size={20} />
                   <span className="text-text font-medium">Conexión</span>
                 </div>
-                <span className={`font-medium ${connectionStatus === "Connected" ? "text-green-500" : "text-red-500"}`}>
-                  {connectionStatus}
+                <span className={`font-medium ${isConnected ? "text-green-500" : "text-red-500"}`}>
+                  {isConnected ? "Connected" : "Not connected"}
                 </span>
               </div>
             </div>
-
-            {/* Estado operativo */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
@@ -172,8 +272,6 @@ export default function FamilyPage() {
                 <span>Última revisión: Hace 2 días</span>
               </div>
             </div>
-
-            {/* Estado de averías */}
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center">
@@ -187,7 +285,6 @@ export default function FamilyPage() {
           </div>
         </div>
 
-        {/* Panel central - Navegación */}
         <div className="md:col-span-2 bg-white rounded-lg shadow-md p-6">
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -197,9 +294,7 @@ export default function FamilyPage() {
               </p>
             </div>
           </div>
-
           <div className="space-y-6">
-            {/* Origen */}
             <div>
               <label className="block text-text mb-2">Desde:</label>
               <div className="relative">
@@ -218,18 +313,9 @@ export default function FamilyPage() {
                 </button>
               </div>
             </div>
-
-            {/* Parada intermedia */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-text">Añadir parada (opcional):</label>
-                <button
-                  onClick={() => setStopLocation("")}
-                  className="text-red-500 hover:text-red-600 transition-colors"
-                  title="Eliminar parada"
-                >
-                  <Trash2 size={16} />
-                </button>
               </div>
               <div className="relative">
                 <input
@@ -247,8 +333,6 @@ export default function FamilyPage() {
                 </button>
               </div>
             </div>
-
-            {/* Destino */}
             <div>
               <label className="block text-text mb-2">Hasta:</label>
               <div className="relative">
@@ -267,8 +351,6 @@ export default function FamilyPage() {
                 </button>
               </div>
             </div>
-
-            {/* Botón de inicio de ruta */}
             <div className="flex justify-center pt-4">
               <button
                 onClick={handleStartRoute}
@@ -282,37 +364,30 @@ export default function FamilyPage() {
         </div>
       </div>
 
-      {/* Mapa y Vídeo en tiempo real */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Mapa en tiempo real */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-button mb-6">Ubicación de María en tiempo real</h2>
           <div className="relative h-[600px] bg-gray-100 rounded-lg">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <p className="text-gray-500">Mapa en tiempo real</p>
-            </div>
+            {mapLoadError ? (
+              <div className="absolute inset-0 flex items-center justify-center text-red-500">
+                {mapLoadError}
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <canvas ref={canvasRef} className="max-w-full max-h-full" />
+              </div>
+            )}
           </div>
         </div>
-
-        {/* Vídeo en tiempo real */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-2xl font-bold text-button mb-6">Cámara del robot en tiempo real</h2>
-          <div 
-            ref={videoContainerRef}
-            className="relative h-[600px] bg-gray-100 rounded-lg overflow-hidden"
-          >
+          <div ref={videoContainerRef} className="relative h-[600px] bg-gray-100 rounded-lg overflow-hidden">
             {cameraSrc ? (
               <div className="relative h-full">
-                <img
-                  src={cameraSrc}
-                  alt="Camera Feed"
-                  className="w-full h-full object-cover rounded-lg"
-                />
+                <img src={cameraSrc} alt="Camera Feed" className="w-full h-full object-cover rounded-lg" />
                 <div className="absolute bottom-3 right-3 bg-black/60 text-white px-3 py-1 rounded-full text-xs">
-                  Estado: {connectionStatus}
+                  Estado: {isConnected ? "Connected" : "Not connected"}
                 </div>
-                
-                {/* Botón de pantalla completa */}
                 <div className="absolute top-3 right-3 flex gap-2">
                   {!isFullscreen ? (
                     <button
