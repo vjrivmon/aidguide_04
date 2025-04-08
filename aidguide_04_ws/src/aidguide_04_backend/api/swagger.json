@@ -34,6 +34,18 @@
         "description": "Operaciones relacionadas con rutas"
       },
       {
+        "name": "ruta-lugares",
+        "description": "Operaciones relacionadas con lugares de una ruta"
+      },
+      {
+        "name": "recompensas",
+        "description": "Operaciones relacionadas con recompensas y logros"
+      },
+      {
+        "name": "progreso-usuario",
+        "description": "Operaciones relacionadas con el progreso y nivel de usuarios"
+      },
+      {
         "name": "estado",
         "description": "Operaciones relacionadas con el estado del servidor"
       }
@@ -1016,18 +1028,74 @@
       },
       "Ruta": {
         "type": "object",
-        "required": ["id_origen", "id_destino", "id_usuario"],
+        "required": ["id_usuario"],
         "properties": {
           "id_ruta": { "type": "integer", "format": "int64", "description": "Identificador único de la ruta" },
           "fecha": { "type": "string", "format": "date-time", "description": "Fecha de creación de la ruta" },
-          "id_origen": { "type": "integer", "format": "int64", "description": "ID del lugar de origen" },
-          "id_destino": { "type": "integer", "format": "int64", "description": "ID del lugar de destino" },
           "duracion": { "type": "integer", "format": "int32", "description": "Duración estimada de la ruta en segundos" },
           "mapa": { "type": "string", "description": "URL o referencia al mapa de la ruta" },
           "ultimo_uso": { "type": "string", "format": "date-time", "description": "Fecha del último uso de la ruta" },
           "descripcion": { "type": "string", "description": "Descripción de la ruta" },
           "completada": { "type": "boolean", "description": "Indica si la ruta ha sido completada" },
-          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario propietario de la ruta" }
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario propietario de la ruta" },
+          "lugares": { 
+            "type": "array", 
+            "description": "Lista de lugares que componen la ruta",
+            "items": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        }
+      },
+      "RutaLugar": {
+        "type": "object",
+        "required": ["id_ruta", "id_lugar", "orden"],
+        "properties": {
+          "id_ruta": { "type": "integer", "format": "int64", "description": "ID de la ruta" },
+          "id_lugar": { "type": "integer", "format": "int64", "description": "ID del lugar" },
+          "orden": { "type": "integer", "format": "int32", "description": "Orden del lugar en la ruta" }
+        }
+      },
+      "Recompensa": {
+        "type": "object",
+        "required": ["nombre", "descripcion", "puntos_requeridos", "nivel_requerido"],
+        "properties": {
+          "id_recompensa": { "type": "integer", "format": "int64", "description": "Identificador único de la recompensa" },
+          "nombre": { "type": "string", "description": "Nombre de la recompensa" },
+          "descripcion": { "type": "string", "description": "Descripción de la recompensa o reto" },
+          "puntos_requeridos": { "type": "integer", "format": "int32", "description": "Puntos necesarios para obtener la recompensa" },
+          "nivel_requerido": { "type": "integer", "format": "int32", "description": "Nivel mínimo requerido para acceder a la recompensa" },
+          "tipo": { 
+            "type": "string", 
+            "enum": ["diario", "semanal", "mensual", "logro"], 
+            "description": "Tipo de recompensa" 
+          },
+          "icono": { "type": "string", "description": "URL o referencia al icono de la recompensa" }
+        }
+      },
+      "RecompensaObtenida": {
+        "type": "object",
+        "required": ["id_usuario", "id_recompensa"],
+        "properties": {
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario que obtuvo la recompensa" },
+          "id_recompensa": { "type": "integer", "format": "int64", "description": "ID de la recompensa obtenida" },
+          "fecha_obtencion": { "type": "string", "format": "date-time", "description": "Fecha en que se obtuvo la recompensa" },
+          "puntos_obtenidos": { "type": "integer", "format": "int32", "description": "Puntos obtenidos al completar el reto" },
+          "progreso": { "type": "integer", "format": "int32", "description": "Progreso actual del reto (0-100)" },
+          "completada": { "type": "boolean", "description": "Indica si la recompensa está completada" }
+        }
+      },
+      "ProgresoUsuario": {
+        "type": "object",
+        "required": ["id_usuario"],
+        "properties": {
+          "id_usuario": { "type": "integer", "format": "int64", "description": "ID del usuario" },
+          "puntos": { "type": "integer", "format": "int32", "description": "Puntos acumulados" },
+          "nivel": { "type": "integer", "format": "int32", "description": "Nivel actual" },
+          "puntos_siguiente_nivel": { "type": "integer", "format": "int32", "description": "Puntos necesarios para subir al siguiente nivel" },
+          "retos_completados": { "type": "integer", "format": "int32", "description": "Número de retos completados" },
+          "nivel_subido": { "type": "boolean", "description": "Indica si el usuario ha subido de nivel en la última actualización" }
         }
       },
       "Error": {

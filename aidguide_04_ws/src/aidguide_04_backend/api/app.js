@@ -6,6 +6,9 @@ const rolesRoutes = require('./routes/roles');
 const lugaresRoutes = require('./routes/lugares');
 const robotsRoutes = require('./routes/robots');
 const rutasRoutes = require('./routes/rutas');
+const rutaLugaresRoutes = require('./routes/ruta_lugares');
+const recompensasRoutes = require('./routes/recompensas');
+const progresoUsuarioRoutes = require('./routes/progreso_usuario');
 
 const app = express();
 app.use(express.json());
@@ -27,6 +30,9 @@ app.use('/api/roles', rolesRoutes);
 app.use('/api/lugares', lugaresRoutes);
 app.use('/api/robots', robotsRoutes);
 app.use('/api/rutas', rutasRoutes);
+app.use('/api/ruta-lugares', rutaLugaresRoutes);
+app.use('/api/recompensas', recompensasRoutes);
+app.use('/api/progreso-usuario', progresoUsuarioRoutes);
 
 // Documentación Swagger
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
