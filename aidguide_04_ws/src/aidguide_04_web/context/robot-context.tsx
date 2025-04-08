@@ -1,174 +1,190 @@
-"use client"
+"use client";
 
-import { ReactNode, createContext, useContext, useEffect, useState } from "react"
-import ROSLIB from 'roslib'
+import { ReactNode, createContext, useContext, useEffect, useState } from "react";
+import ROSLIB from "roslib";
 
 // Interfaz para las notificaciones
 interface Notification {
   id: string;
   message: string;
-  type: 'weather' | 'battery' | 'system' | 'maintenance';
+  type: "weather" | "battery" | "system" | "maintenance";
   timestamp: Date;
   read: boolean;
 }
 
+// Interfaz para la posición del robot
+interface RobotPose {
+  x: number;
+  y: number;
+}
+
+// Interfaz actualizada del contexto
 interface RobotContextType {
-  batteryPercentage: number
-  batteryStatus: string // 'charging' | 'discharging'
-  estimatedTimeRemaining: string
-  isConnected: boolean
-  notifications: Notification[]
-  markNotificationAsRead: (id: string) => void
-  reconnect: () => void
+  batteryPercentage: number;
+  batteryStatus: string; // 'charging' | 'discharging'
+  estimatedTimeRemaining: string;
+  isConnected: boolean;
+  notifications: Notification[];
+  robotPose: RobotPose; // Añadimos la posición del robot
+  markNotificationAsRead: (id: string) => void;
+  reconnect: () => void;
 }
 
 const defaultContext: RobotContextType = {
   batteryPercentage: 75,
-  batteryStatus: 'discharging',
-  estimatedTimeRemaining: '4 horas',
+  batteryStatus: "discharging",
+  estimatedTimeRemaining: "4 horas",
   isConnected: false,
   notifications: [],
+  robotPose: { x: 0, y: 0 }, // Valor inicial para robotPose
   markNotificationAsRead: () => {},
-  reconnect: () => {}
-}
+  reconnect: () => {},
+};
 
-const RobotContext = createContext<RobotContextType>(defaultContext)
+const RobotContext = createContext<RobotContextType>(defaultContext);
 
 export function RobotProvider({ children }: { children: ReactNode }) {
-  const [ros, setRos] = useState<ROSLIB.Ros | null>(null)
-  const [isConnected, setIsConnected] = useState(false)
-  const [batteryPercentage, setBatteryPercentage] = useState(75)
-  const [batteryStatus, setBatteryStatus] = useState('discharging')
-  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState('4 horas')
-  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [ros, setRos] = useState<ROSLIB.Ros | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [batteryPercentage, setBatteryPercentage] = useState(75);
+  const [batteryStatus, setBatteryStatus] = useState("discharging");
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState("4 horas");
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [robotPose, setRobotPose] = useState<RobotPose>({ x: 0, y: 0 }); // Estado para la posición del robot
 
   // Marcar una notificación como leída
   const markNotificationAsRead = (id: string) => {
-    setNotifications(prevNotifications => 
-      prevNotifications.map(notification => 
+    setNotifications((prevNotifications) =>
+      prevNotifications.map((notification) =>
         notification.id === id ? { ...notification, read: true } : notification
       )
-    )
-  }
+    );
+  };
 
   // Calcular el tiempo estimado basado en el porcentaje de batería y estado
   const calculateEstimatedTime = (percentage: number, status: string): string => {
-    if (status === 'charging') {
-      // Tiempo estimado para carga completa
-      const minutesToFull = Math.round((100 - percentage) * 5) // Estimación simple: 5 minutos por cada 1%
+    if (status === "charging") {
+      const minutesToFull = Math.round((100 - percentage) * 5); // 5 min por 1%
       if (minutesToFull < 60) {
-        return `${minutesToFull} minutos para carga completa`
+        return `${minutesToFull} minutos para carga completa`;
       } else {
-        const hours = Math.floor(minutesToFull / 60)
-        const minutes = minutesToFull % 60
-        return `${hours} hora${hours !== 1 ? 's' : ''} ${minutes > 0 ? `${minutes} min` : ''} para carga completa`
+        const hours = Math.floor(minutesToFull / 60);
+        const minutes = minutesToFull % 60;
+        return `${hours} hora${hours !== 1 ? "s" : ""} ${minutes > 0 ? `${minutes} min` : ""} para carga completa`;
       }
     } else {
-      // Tiempo estimado restante de batería
-      const minutesRemaining = Math.round(percentage * 5) // Estimación simple: 5 minutos por cada 1%
+      const minutesRemaining = Math.round(percentage * 5); // 5 min por 1%
       if (minutesRemaining < 60) {
-        return `${minutesRemaining} minutos`
+        return `${minutesRemaining} minutos`;
       } else {
-        const hours = Math.floor(minutesRemaining / 60)
-        return `${hours} hora${hours !== 1 ? 's' : ''}`
+        const hours = Math.floor(minutesRemaining / 60);
+        return `${hours} hora${hours !== 1 ? "s" : ""}`;
       }
     }
-  }
+  };
 
   const connectToROS = () => {
     try {
       const rosInstance = new ROSLIB.Ros({
-        url: 'ws://localhost:9090' // Asume que el puente websocket está en localhost:9090
-      })
+        url: "ws://localhost:9090", // Asegúrate de que esta URL sea correcta
+      });
 
-      rosInstance.on('connection', () => {
-        console.log('Conectado al servidor de ROS')
-        setIsConnected(true)
-      })
+      rosInstance.on("connection", () => {
+        console.log("Conectado al servidor de ROS");
+        setIsConnected(true);
+      });
 
-      rosInstance.on('error', (error) => {
-        console.error('Error conectando a ROS:', error)
-        setIsConnected(false)
-      })
+      rosInstance.on("error", (error) => {
+        console.error("Error conectando a ROS:", error);
+        setIsConnected(false);
+      });
 
-      rosInstance.on('close', () => {
-        console.log('Conexión a ROS cerrada')
-        setIsConnected(false)
-      })
+      rosInstance.on("close", () => {
+        console.log("Conexión a ROS cerrada");
+        setIsConnected(false);
+      });
 
-      setRos(rosInstance)
+      setRos(rosInstance);
     } catch (error) {
-      console.error('Error iniciando conexión ROS:', error)
-      setIsConnected(false)
+      console.error("Error iniciando conexión ROS:", error);
+      setIsConnected(false);
     }
-  }
+  };
 
   const reconnect = () => {
     if (ros) {
-      ros.close()
+      ros.close();
     }
-    connectToROS()
-  }
+    connectToROS();
+  };
 
   useEffect(() => {
-    connectToROS()
+    connectToROS();
 
     return () => {
       if (ros) {
-        ros.close()
+        ros.close();
       }
-    }
-  }, [])
+    };
+  }, []);
 
   useEffect(() => {
-    if (!ros || !isConnected) return
+    if (!ros || !isConnected) return;
 
-    // Suscribirse al tema de batería
+    // Suscripción al tópico de batería
     const batteryTopic = new ROSLIB.Topic({
       ros: ros,
-      name: '/battery_status',
-      messageType: 'sensor_msgs/BatteryState'
-    })
+      name: "/battery_status",
+      messageType: "sensor_msgs/BatteryState",
+    });
 
     batteryTopic.subscribe((message: any) => {
-      // Actualizar estado de la batería
-      const percentage = Math.round(message.percentage)
-      setBatteryPercentage(percentage)
-      
-      // Determinar si está cargando o descargando
-      const status = message.power_supply_status === 1 ? 'charging' : 'discharging'
-      setBatteryStatus(status)
-      
-      // Actualizar tiempo estimado
-      setEstimatedTimeRemaining(calculateEstimatedTime(percentage, status))
-    })
+      const percentage = Math.round(message.percentage);
+      setBatteryPercentage(percentage);
+      const status = message.power_supply_status === 1 ? "charging" : "discharging";
+      setBatteryStatus(status);
+      setEstimatedTimeRemaining(calculateEstimatedTime(percentage, status));
+    });
 
-    // Suscribirse al tema de alertas del clima
+    // Suscripción al tópico de alertas del clima
     const weatherTopic = new ROSLIB.Topic({
       ros: ros,
-      name: '/weather_alert',
-      messageType: 'std_msgs/String'
-    })
+      name: "/weather_alert",
+      messageType: "std_msgs/String",
+    });
 
     weatherTopic.subscribe((message: any) => {
-      // Crear una nueva notificación de clima
       const weatherNotification: Notification = {
         id: Date.now().toString(),
         message: message.data,
-        type: 'weather',
+        type: "weather",
         timestamp: new Date(),
-        read: false
-      }
-      
-      // Añadir la notificación al principio de la lista (más reciente primero)
-      setNotifications(prev => [weatherNotification, ...prev])
-    })
+        read: false,
+      };
+      setNotifications((prev) => [weatherNotification, ...prev]);
+    });
 
+    // Suscripción al tópico de odometría para la posición del robot
+    const odomTopic = new ROSLIB.Topic({
+      ros: ros,
+      name: "/odom", // Asegúrate de que este sea el tópico correcto en tu sistema ROS
+      messageType: "nav_msgs/Odometry",
+    });
+
+    odomTopic.subscribe((message: any) => {
+      setRobotPose({
+        x: message.pose.pose.position.x,
+        y: message.pose.pose.position.y,
+      });
+    });
+
+    // Limpieza de las suscripciones al desmontar
     return () => {
-      batteryTopic.unsubscribe()
-      weatherTopic.unsubscribe()
-    }
-  }, [ros, isConnected])
+      batteryTopic.unsubscribe();
+      weatherTopic.unsubscribe();
+      odomTopic.unsubscribe();
+    };
+  }, [ros, isConnected]);
 
   return (
     <RobotContext.Provider
@@ -178,13 +194,14 @@ export function RobotProvider({ children }: { children: ReactNode }) {
         estimatedTimeRemaining,
         isConnected,
         notifications,
+        robotPose, // Añadimos robotPose al valor del contexto
         markNotificationAsRead,
-        reconnect
+        reconnect,
       }}
     >
       {children}
     </RobotContext.Provider>
-  )
+  );
 }
 
-export const useRobot = () => useContext(RobotContext) 
+export const useRobot = () => useContext(RobotContext);
