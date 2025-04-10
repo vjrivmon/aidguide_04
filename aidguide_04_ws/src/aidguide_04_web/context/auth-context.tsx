@@ -11,6 +11,9 @@ type AuthContextType = {
   register: (data: RegisterData) => Promise<boolean>
   logout: () => void
   isLoading: boolean
+  verifyCode: (code: string) => Promise<boolean>
+  resendVerificationCode: () => Promise<boolean>
+  checkVerification: () => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -35,6 +38,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authService.login(credentials)
       setUser(response.usuario)
       setIsLoading(false)
+      
+      // Si el usuario no está verificado, redirigir a la página de verificación
+      if (response.usuario && !response.usuario.verified) {
+        router.push('/verify-email')
+      }
+      
       return true
     } catch (error) {
       console.error("Error de inicio de sesión:", error)
@@ -50,6 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authService.register(data)
       setUser(response.usuario)
       setIsLoading(false)
+      
+      // Después del registro, redirigir a la verificación de correo
+      toast.success("Cuenta creada correctamente. Por favor verifica tu correo electrónico.")
+      router.push('/verify-email')
+      
       return true
     } catch (error) {
       console.error("Error de registro:", error)
@@ -59,6 +73,54 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const verifyCode = async (code: string): Promise<boolean> => {
+    if (!user) return false
+    
+    setIsLoading(true)
+    try {
+      const success = await authService.verifyEmailCode(user.id, code)
+      
+      if (success) {
+        // Actualizar el estado del usuario localmente
+        setUser(prev => prev ? { ...prev, verified: true } : null)
+        toast.success("Correo electrónico verificado correctamente")
+      }
+      
+      setIsLoading(false)
+      return success
+    } catch (error) {
+      console.error("Error al verificar código:", error)
+      toast.error("Error al verificar el código")
+      setIsLoading(false)
+      return false
+    }
+  }
+
+  const resendVerificationCode = async (): Promise<boolean> => {
+    if (!user) return false
+    
+    setIsLoading(true)
+    try {
+      const success = await authService.resendVerificationCode(user.id)
+      
+      if (success) {
+        toast.success("Código reenviado correctamente")
+      }
+      
+      setIsLoading(false)
+      return success
+    } catch (error) {
+      console.error("Error al reenviar código:", error)
+      toast.error("Error al reenviar el código")
+      setIsLoading(false)
+      return false
+    }
+  }
+
+  const checkVerification = (): boolean => {
+    return authService.isUserVerified()
+  }
+
   const logout = () => {
     authService.logout()
     setUser(null)
@@ -66,7 +128,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        login, 
+        register, 
+        logout, 
+        isLoading, 
+        verifyCode, 
+        resendVerificationCode, 
+        checkVerification 
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

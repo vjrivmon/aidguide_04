@@ -410,13 +410,13 @@ TERMINAL7_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 # Terminal 8: Install ROS Libraries for Web
 TERMINAL8_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${YELLOW}╔════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${YELLOW}║  TERMINAL 8: INSTALAR ROSLIB           ║${NC}\" && \
+    echo -e \"${YELLOW}║  TERMINAL 8: FRONTEND WEB              ║${NC}\" && \
     echo -e \"${YELLOW}╚════════════════════════════════════════╝${NC}\" && \
     if [ -d \"$WORKSPACE_PATH/src/aidguide_04_web\" ]; then \
         echo -e \"${CYAN}📦 Navegando al directorio del frontend...${NC}\" && \
         cd \"$WORKSPACE_PATH/src/aidguide_04_web\" && \
-        echo -e \"${CYAN}📦 Instalando roslib...${NC}\" && \
-        npm install roslib --save; \
+        echo -e \"${CYAN}🚀 Iniciando servidor de desarrollo...${NC}\" && \
+        npm run dev; \
     else \
         echo -e \"${YELLOW}⚠️ Directorio del frontend no encontrado en $WORKSPACE_PATH/src/aidguide_04_web${NC}\" && \
         echo -e \"${CYAN}📦 Instalando roslib globalmente...${NC}\" && \
@@ -424,12 +424,91 @@ TERMINAL8_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     fi && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
+# Terminal 9: Monitor de Batería y Sensores
+TERMINAL9_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${GREEN}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${GREEN}║  TERMINAL 9: MONITOR DE SENSORES       ║${NC}\" && \
+    echo -e \"${GREEN}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🕒 Esperando 15 segundos para que todos los servicios estén activos...${NC}\" && \
+    sleep 15 && \
+    echo -e \"${YELLOW}🔍 Verificando tópicos del sistema...${NC}\" && \
+    TOPICS_TO_CHECK=(\"/battery_status\" \"/hardware_health\" \"/temperature_sensor\" \"/log_messages\") && \
+    AVAILABLE_TOPICS=() && \
+    
+    # Función para verificar y mostrar información de un tópico
+    check_topic() {
+        local topic=\$1
+        if ros2 topic list 2>/dev/null | grep -q \"\$topic\"; then
+            echo -e \"${GREEN}✅ Tópico encontrado: \$topic${NC}\"
+            echo -e \"${CYAN}ℹ️ Información del tópico:${NC}\"
+            ros2 topic info \$topic
+            AVAILABLE_TOPICS+=(\"\$topic\")
+            return 0
+        else
+            echo -e \"${YELLOW}⚠️ Tópico no encontrado: \$topic${NC}\"
+            return 1
+        fi
+    } && \
+    
+    # Verificar cada tópico
+    for topic in \"\${TOPICS_TO_CHECK[@]}\"; do
+        check_topic \$topic
+    done && \
+    
+    if [ \${#AVAILABLE_TOPICS[@]} -eq 0 ]; then
+        echo -e \"${YELLOW}⚠️ No se encontraron los tópicos específicos. Esperando 10 segundos más...${NC}\" && \
+        sleep 10 && \
+        for topic in \"\${TOPICS_TO_CHECK[@]}\"; do
+            check_topic \$topic
+        done
+    fi && \
+    
+    if [ \${#AVAILABLE_TOPICS[@]} -eq 0 ]; then
+        echo -e \"${RED}❌ No se encontraron los tópicos específicos después de esperar${NC}\" && \
+        echo -e \"${YELLOW}📝 Mostrando todos los tópicos disponibles:${NC}\" && \
+        ros2 topic list
+    else
+        echo -e \"${GREEN}✅ Tópicos disponibles: \${AVAILABLE_TOPICS[@]}${NC}\" && \
+        
+        # Monitorizar cada tópico encontrado brevemente
+        for topic in \"\${AVAILABLE_TOPICS[@]}\"; do
+            echo -e \"${CYAN}🔄 Monitorizando \$topic (5 segundos o 1 mensaje)...${NC}\"
+            timeout 5s ros2 topic echo \$topic --once 2>/dev/null || echo -e \"${YELLOW}⚠️ Sin mensajes en \$topic durante el tiempo de espera${NC}\"
+            echo
+        done && \
+        
+        # Menú interactivo para monitoreo continuo
+        echo -e \"${CYAN}╔════════════════════════════════════════╗${NC}\" && \
+        echo -e \"${CYAN}║  MONITOR CONTINUO DE TÓPICOS           ║${NC}\" && \
+        echo -e \"${CYAN}╚════════════════════════════════════════╝${NC}\" && \
+        echo -e \"${YELLOW}Selecciona un tópico para monitorizar continuamente:${NC}\" && \
+        
+        # Mostrar opciones de tópicos disponibles
+        for i in \"\${!AVAILABLE_TOPICS[@]}\"; do
+            echo -e \"${GREEN}   \$((i+1))) \${AVAILABLE_TOPICS[i]}${NC}\"
+        done && \
+        echo -e \"${GREEN}   q) Salir${NC}\" && \
+        
+        read -p \"> \" selection && \
+        
+        if [[ \$selection =~ ^[0-9]+\$ ]] && [ \$selection -ge 1 ] && [ \$selection -le \${#AVAILABLE_TOPICS[@]} ]; then
+            selected_topic=\"\${AVAILABLE_TOPICS[\$((selection-1))]}\"
+            echo -e \"${CYAN}🔄 Monitorizando \$selected_topic continuamente. Presiona Ctrl+C para detener.${NC}\"
+            ros2 topic echo \$selected_topic
+        else
+            echo -e \"${YELLOW}📝 Saliendo del monitor de tópicos${NC}\"
+        fi
+    fi && \
+    echo -e \"${CYAN}🔄 Monitoreo de sensores finalizado${NC}\" && \
+    echo -e \"${CYAN}📝 Presiona Enter para cerrar esta terminal${NC}\" && \
+    read -p \"> \" dummy"
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 8 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 9 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -459,11 +538,16 @@ sleep 3
 start_terminal "Terminal 6: Web Video Server" "$TERMINAL7_COMMANDS" "${BLUE}"
 sleep 3
 
-start_terminal "Terminal 7: Instalar ROSLIB" "$TERMINAL8_COMMANDS" "${YELLOW}"
+start_terminal "Terminal 7: Frontend Web" "$TERMINAL8_COMMANDS" "${YELLOW}"
 sleep 3
 
-# Gazebo es el último en iniciarse
+# Gazebo es el penúltimo en iniciarse
 start_terminal "Terminal 8: Gazebo" "$TERMINAL1_COMMANDS" "${BLUE}"
+echo -e "${YELLOW}🕒 Esperando 10 segundos para que Gazebo se inicialice completamente...${NC}"
+sleep 10
+
+# Monitor de batería es el último en iniciarse
+start_terminal "Terminal 9: Monitor de Sensores" "$TERMINAL9_COMMANDS" "${GREEN}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"

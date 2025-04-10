@@ -320,6 +320,17 @@ main() {
     fi
     echo
     
+    # Verificar paquete de monitorización del robot
+    echo -e "${CYAN}${BOLD}▶ VERIFICANDO MONITORIZACIÓN DEL ROBOT${NC}"
+    ROS_MONITORING_OK=false
+    if [ -d "$WORKSPACE_PATH/src/aidguide_04_robot_monitoring" ]; then
+        echo -e "${GREEN}${ICON_CHECK} Paquete de monitorización de robot encontrado${NC}"
+        ROS_MONITORING_OK=true
+    else
+        echo -e "${YELLOW}${ICON_WARNING} Paquete de monitorización de robot no encontrado${NC}"
+    fi
+    echo
+    
     # Iniciar componentes
     echo -e "${CYAN}${BOLD}▶ INICIANDO COMPONENTES${NC}"
     
@@ -339,8 +350,72 @@ main() {
     run_if_exists "$SCRIPT_DIR/start-ros2-gazebo.sh" "ROS2 & Gazebo" "${ICON_ROS}" "${MAGENTA}"
     show_progress 2 "${ICON_LOADING} Esperando que ROS2 se inicialice..."
     
-    # 3. Iniciar Frontend
-    echo -e "${GREEN}${BOLD}3. Iniciando Frontend...${NC}"
+    # 3. Iniciar sistema de monitorización del robot
+    if [ "$ROS_MONITORING_OK" = true ]; then
+        echo -e "${YELLOW}${BOLD}3. Iniciando Sistema de Monitorización del Robot...${NC}"
+        
+        # Crear un script temporal para iniciar los monitores
+        MONITOR_SCRIPT="/tmp/start_robot_monitoring.sh"
+        cat > "$MONITOR_SCRIPT" << EOL
+#!/bin/bash
+cd "$WORKSPACE_PATH"
+source /opt/ros/galactic/setup.bash
+
+# Compilar el paquete de monitorización si es necesario
+echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}║  ${YELLOW}🤖 MONITORIZACIÓN DEL ROBOT                             ${CYAN}  ║${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+
+echo -e "${YELLOW}🔧 Compilando el paquete de monitorización...${NC}"
+colcon build --packages-select aidguide_04_robot_monitoring
+
+# Cargar el entorno de trabajo
+source install/setup.bash
+
+# Comprobar si existe el archivo de lanzamiento de monitorización
+if [ -f "$WORKSPACE_PATH/src/aidguide_04_robot_monitoring/launch/monitoring.launch.py" ]; then
+    echo -e "${YELLOW}🔍 Iniciando monitores con el archivo de lanzamiento...${NC}"
+    ros2 launch aidguide_04_robot_monitoring monitoring.launch.py
+else
+    echo -e "${YELLOW}🔍 Iniciando monitores individualmente...${NC}"
+    
+    # Iniciamos cada nodo de monitorización
+    echo -e "${GREEN}✅ Iniciando monitor de batería${NC}"
+    ros2 run aidguide_04_robot_monitoring battery_monitor &
+    BATTERY_PID=\$!
+    
+    echo -e "${GREEN}✅ Iniciando monitor de hardware${NC}"
+    ros2 run aidguide_04_robot_monitoring hardware_monitor &
+    HARDWARE_PID=\$!
+    
+    echo -e "${GREEN}✅ Iniciando monitor de temperatura${NC}"
+    ros2 run aidguide_04_robot_monitoring temperature_monitor &
+    TEMP_PID=\$!
+    
+    echo -e "${GREEN}✅ Iniciando monitor de logs${NC}"
+    ros2 run aidguide_04_robot_monitoring log_monitor &
+    LOG_PID=\$!
+    
+    echo -e "${GREEN}✅ Iniciando panel de monitorización${NC}"
+    ros2 run aidguide_04_robot_monitoring monitoring_dashboard
+    
+    # Detener todos los procesos al salir
+    kill \$BATTERY_PID \$HARDWARE_PID \$TEMP_PID \$LOG_PID
+fi
+
+echo -e "${YELLOW}Monitorización finalizada${NC}"
+read -p "Presiona Enter para cerrar esta terminal..."
+EOL
+        
+        chmod +x "$MONITOR_SCRIPT"
+        start_app_terminal "Monitorización del Robot" "$MONITOR_SCRIPT" "${ICON_ROS}" "${YELLOW}"
+        show_progress 2 "${ICON_LOADING} Esperando que los monitores se inicialicen..."
+    fi
+    
+    # 4. Iniciar Frontend
+    echo -e "${GREEN}${BOLD}4. Iniciando Frontend...${NC}"
     run_if_exists "$SCRIPT_DIR/start-frontend.sh" "AidGuide Frontend" "${ICON_WEB}" "${GREEN}"
     
     # Resumen final
@@ -355,6 +430,10 @@ main() {
         if [ "$DOCKER_OK" = false ] && [ -f "$SCRIPT_DIR/aidguide_04_ws/start-services.sh" ]; then
             echo -e "${CYAN}${BOLD}║${NC} ${YELLOW}${BOLD}${ICON_WARNING} Backend no disponible - Docker no en ejecución${NC}  ${CYAN}${BOLD}║${NC}"
         fi
+    fi
+    
+    if [ "$ROS_MONITORING_OK" = true ]; then
+        echo -e "${CYAN}${BOLD}║${NC} ${GREEN}${BOLD}${ICON_CHECK} Sistema de monitorización del robot activo${NC}      ${CYAN}${BOLD}║${NC}"
     fi
     
     echo -e "${CYAN}${BOLD}╠════════════════════════════════════════════════════════════╣${NC}"
