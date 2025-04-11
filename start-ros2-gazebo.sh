@@ -426,9 +426,9 @@ TERMINAL8_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 
 # Terminal 9: Monitor de Batería y Sensores
 TERMINAL9_COMMANDS="cd \"$WORKSPACE_PATH\" && \
-    echo -e \"${GREEN}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${GREEN}╔════════════════════════════════════════════╗${NC}\" && \
     echo -e \"${GREEN}║  TERMINAL 9: MONITOR DE SENSORES       ║${NC}\" && \
-    echo -e \"${GREEN}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${GREEN}╚════════════════════════════════════════════╝${NC}\" && \
     echo -e \"${YELLOW}🕒 Esperando 15 segundos para que todos los servicios estén activos...${NC}\" && \
     sleep 15 && \
     echo -e \"${YELLOW}🔍 Verificando tópicos del sistema...${NC}\" && \
@@ -505,9 +505,9 @@ TERMINAL9_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 
 # Terminal 10: Puente Web-Waypoint
 TERMINAL10_COMMANDS="cd \"$WORKSPACE_PATH\" && \
-    echo -e \"${RED}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${RED}╔════════════════════════════════════════════╗${NC}\" && \
     echo -e \"${RED}║  TERMINAL 10: PUENTE WEB-WAYPOINT      ║${NC}\" && \
-    echo -e \"${RED}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${RED}╚════════════════════════════════════════════╝${NC}\" && \
     echo -e \"${YELLOW}🔨 Compilando nodo puente...${NC}\" && \
     colcon build --packages-select aidguide_04_my_nav2_system && \
     echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
@@ -516,12 +516,25 @@ TERMINAL10_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     ros2 run aidguide_04_my_nav2_system web_waypoint_bridge && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
+# Terminal 11: Robot Monitoring
+TERMINAL11_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${MAGENTA}╔════════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${MAGENTA}║  TERMINAL 11: ROBOT MONITORING         ║${NC}\" && \
+    echo -e \"${MAGENTA}╚════════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando sistema de monitoreo...${NC}\" && \
+    colcon build --packages-select aidguide_04_robot_monitoring && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash && \
+    echo -e \"${CYAN}🔋 Iniciando monitoreo de batería y sensores...${NC}\" && \
+    ros2 run aidguide_04_robot_monitoring battery_monitor && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 10 terminales con los diferentes componentes ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 11 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -564,6 +577,9 @@ start_terminal "Terminal 9: Monitor de Sensores" "$TERMINAL9_COMMANDS" "${GREEN}
 
 # Terminal 10: Puente Web-Waypoint
 start_terminal "Terminal 10: Puente Web-Waypoint" "$TERMINAL10_COMMANDS" "${RED}"
+
+# Terminal 11: Robot Monitoring
+start_terminal "Terminal 11: Robot Monitoring" "$TERMINAL11_COMMANDS" "${MAGENTA}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"

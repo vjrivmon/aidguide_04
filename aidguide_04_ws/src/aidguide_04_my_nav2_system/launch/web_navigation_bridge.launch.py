@@ -17,7 +17,7 @@ from launch.actions import (
     LogInfo
 )
 from launch.substitutions import LaunchConfiguration, TextSubstitution
-from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.launch_description_sources import PythonLaunchDescriptionSource, FrontendLaunchDescriptionSource
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -37,7 +37,7 @@ def generate_launch_description():
 
     # Asegurarnos de que rosbridge server esté en ejecución
     rosbridge_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource([os.path.join(
+        FrontendLaunchDescriptionSource([os.path.join(
             get_package_share_directory('rosbridge_server'), 'launch', 'rosbridge_websocket_launch.xml'
         )])
     )
