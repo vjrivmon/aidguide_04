@@ -14,6 +14,8 @@ class WaypointFollowerClient(Node):
         """Lista de puntos que ha de recorrer el robot."""
         waypoints = []
 
+
+
         # Waypoint 1
         pose1 = PoseStamped()
         pose1.header.frame_id = 'map'
@@ -23,6 +25,9 @@ class WaypointFollowerClient(Node):
         pose1.pose.position.z = 0.0
         pose1.pose.orientation.w = 1.0
         waypoints.append(pose1)
+        
+        
+            
 
         # Waypoint 2
         pose2 = PoseStamped()
@@ -42,6 +47,16 @@ class WaypointFollowerClient(Node):
         pose3.pose.position.y = -1.390872
         pose3.pose.orientation.w = 1.0
         waypoints.append(pose3)
+
+
+        # Waypoint 3-4 intermedio 
+        pose4 = PoseStamped()
+        pose4.header.frame_id = 'map'
+        pose4.header.stamp = self.get_clock().now().to_msg()
+        pose4.pose.position.x = 1.508040
+        pose4.pose.position.y = -1.390872
+        pose4.pose.orientation.w = 1.0
+        waypoints.append(pose4)
 
         # Waypoint 4
         pose4 = PoseStamped()

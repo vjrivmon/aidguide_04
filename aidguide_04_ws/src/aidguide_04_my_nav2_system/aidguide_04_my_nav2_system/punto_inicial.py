@@ -15,10 +15,10 @@ class Publisher(Node):
         msg = PoseWithCovarianceStamped()
         msg.header.stamp = self.get_clock().now().to_msg()  # ✅ Muy importante
         msg.header.frame_id = 'map'
-        msg.pose.pose.position.x = 0.2
-        msg.pose.pose.position.y = 0.0
+        msg.pose.pose.position.x =  -3.414589 
+        msg.pose.pose.position.y = -1.716389
         msg.pose.pose.orientation.w = 1.0
-        self.get_logger().info('📍 Publicando posición inicial: X=0.2, Y=0.0, W=1.0')
+        self.get_logger().info('📍 Publicando posición inicial: X=-2.284589, Y=-3.375697, W=1.0')
         self.publisher_.publish(msg)
 
 def main(args=None):
