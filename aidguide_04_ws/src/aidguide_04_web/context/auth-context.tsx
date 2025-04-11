@@ -52,9 +52,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.usuario.role === "admin") {
         router.push('/admin/dashboard')
       } else if (response.usuario.role === "family") {
-        router.push('/family/dashboard')
+        router.push('/family')
       } else {
-        router.push('/dashboard')
+        router.push('/welcome')
       }
       
       return true

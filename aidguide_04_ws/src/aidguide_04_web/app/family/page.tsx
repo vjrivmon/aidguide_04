@@ -218,7 +218,7 @@ export default function FamilyPage() {
   return (
     <div className="container-custom py-14">
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-4xl font-bold mb-4">Bienvenido, {user?.name}</h1>
+        <h1 className="text-4xl md:text-4xl font-bold mb-4">Bienvenido, {user?.nombre}</h1>
         <h2 className="text-2xl text-text">Seguimiento y control del robot de su hija María</h2>
       </div>
 
