@@ -49,6 +49,7 @@ class WebWaypointBridge(Node):
         self.is_running = False
         self.status_thread = None
         self.stop_thread_flag = False
+        self.manually_stopped = False  # Nueva bandera para indicar si fue detenido manualmente
         
         self.get_logger().info('Nodo puente de waypoints inicializado')
         self.publish_status("Listo para navegar")
@@ -78,6 +79,9 @@ class WebWaypointBridge(Node):
         
         self.get_logger().info('Deteniendo seguimiento de waypoints por solicitud web')
         
+        # Establecer la bandera de detención manual
+        self.manually_stopped = True
+        
         # Detener navegación
         self.stop_navigation()
         
@@ -85,6 +89,9 @@ class WebWaypointBridge(Node):
         """Iniciar el nodo seguidor de waypoints"""
         if self.is_running:
             return
+        
+        # Restablecer la bandera de detención manual cuando iniciamos manualmente
+        self.manually_stopped = False
         
         self.get_logger().info('Lanzando proceso de navegación')
         
@@ -132,7 +139,12 @@ class WebWaypointBridge(Node):
                 self.navigation_process = None
                 
             self.is_running = False
-            self.publish_status("Navegación detenida")
+            
+            # Mensaje diferente según si fue detenido manualmente o no
+            if self.manually_stopped:
+                self.publish_status("Navegación detenida por el usuario")
+            else:
+                self.publish_status("Navegación detenida")
             
         except Exception as e:
             self.get_logger().error(f'Error al detener navegación: {str(e)}')
@@ -167,10 +179,13 @@ class WebWaypointBridge(Node):
                 
                 # Actualizar estado
                 self.is_running = False
-                if exitcode == 0:
-                    self.publish_status("Navegación completada con éxito")
-                else:
-                    self.publish_status(f"Error en navegación (código {exitcode})")
+                
+                # Sólo actualizamos el estado si no fue detenido manualmente
+                if not self.manually_stopped:
+                    if exitcode == 0:
+                        self.publish_status("Navegación completada con éxito")
+                    else:
+                        self.publish_status(f"Error en navegación (código {exitcode})")
                 
                 # Limpiar
                 self.navigation_process = None
