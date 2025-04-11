@@ -36,12 +36,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const response = await authService.login(credentials)
+      
+      if (!response.usuario || !response.token) {
+        toast.error("Credenciales incorrectas")
+        setIsLoading(false)
+        return false
+      }
+      
       setUser(response.usuario)
       setIsLoading(false)
       
-      // Si el usuario no está verificado, redirigir a la página de verificación
-      if (response.usuario && !response.usuario.verified) {
-        router.push('/verify-email')
+      toast.success(`Bienvenido/a ${response.usuario.nombre}`)
+      
+      // Si el usuario es administrador, redirigir al panel de administración
+      if (response.usuario.role === "admin") {
+        router.push('/admin/dashboard')
+      } else if (response.usuario.role === "family") {
+        router.push('/family/dashboard')
+      } else {
+        router.push('/dashboard')
       }
       
       return true
@@ -78,7 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true)
     try {
-      const success = await authService.verifyEmailCode(user.id, code)
+      // Para la simulación, asumimos que el id de usuario es un número 
+      // aunque en el tipo sea string
+      const userId = parseInt(user.id, 10) || 1
+      const success = await authService.verifyEmailCode(userId, code)
       
       if (success) {
         // Actualizar el estado del usuario localmente
@@ -101,7 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setIsLoading(true)
     try {
-      const success = await authService.resendVerificationCode(user.id)
+      // Para la simulación, asumimos que el id de usuario es un número
+      // aunque en el tipo sea string
+      const userId = parseInt(user.id, 10) || 1
+      const success = await authService.resendVerificationCode(userId)
       
       if (success) {
         toast.success("Código reenviado correctamente")
@@ -124,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     authService.logout()
     setUser(null)
+    toast.success("Has cerrado sesión correctamente")
     router.push("/")
   }
 

@@ -11,11 +11,12 @@ export interface RegisterData {
 }
 
 export interface UserResponse {
-  id: number
+  id: string
   nombre: string
   email: string
   token?: string
   verified?: boolean
+  role?: string
 }
 
 export interface AuthResponse {
@@ -26,33 +27,90 @@ export interface AuthResponse {
 // URL base de la API
 const API_URL = 'http://localhost:3000/api';
 
+// Tipos de usuario según la base de datos
+interface DBUser {
+  id_usuario: number
+  nombre: string
+  apellidos: string
+  correo: string
+  id_rol: number
+}
+
+interface DBAuthData {
+  id_autenticacion: number
+  email: string
+  password_hash: string
+  token_acceso: string
+  verificado: boolean
+}
+
 // Servicio de autenticación
 const authService = {
-  // Iniciar sesión
+  // Iniciar sesión con simulación
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(credentials),
-      });
+    // Simulación de autenticación
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (credentials.email === "admin@aidguide.com" && credentials.password === "admin123") {
+          const adminUser = {
+            id: "admin-1",
+            nombre: "Administrador",
+            email: "admin@aidguide.com",
+            role: "admin" as const,
+          }
+          this.setUser(adminUser)
+          localStorage.setItem("aidguide-user", JSON.stringify(adminUser))
+          resolve({
+            usuario: adminUser,
+            token: "admin-token-123"
+          })
+        } else if (credentials.email === "user@aidguide.com" && credentials.password === "user123") {
+          const regularUser = {
+            id: "user-1",
+            nombre: "María García",
+            email: "user@aidguide.com",
+            role: "user" as const,
+          }
+          this.setUser(regularUser)
+          localStorage.setItem("aidguide-user", JSON.stringify(regularUser))
+          resolve({
+            usuario: regularUser,
+            token: "user-token-123"
+          })
+        } else if (credentials.email === "family@aidguide.com" && credentials.password === "family123") {
+          const regularUser = {
+            id: "user-2",
+            nombre: "Juana García",
+            email: "family@aidguide.com",
+            role: "family" as const,
+          }
+          this.setUser(regularUser)
+          localStorage.setItem("aidguide-user", JSON.stringify(regularUser))
+          resolve({
+            usuario: regularUser,
+            token: "family-token-123"
+          })
+        } else {
+          resolve({
+            usuario: null,
+            token: null
+          } as any)
+        }
+        this.setIsLoading(false)
+      }, 1000)
+    });
+  },
 
-      if (!response.ok) {
-        throw new Error('Error de inicio de sesión');
-      }
+  // Mock función para simular el estado de carga
+  setIsLoading(value: boolean) {
+    // Esta función sería implementada en un contexto real
+    console.log(`Loading state: ${value}`);
+  },
 
-      const data = await response.json();
-      // Guardar el token en localStorage
-      localStorage.setItem('authToken', data.token);
-      localStorage.setItem('user', JSON.stringify(data.usuario));
-      
-      return data;
-    } catch (error) {
-      console.error('Error en login:', error);
-      throw error;
-    }
+  // Mock función para establecer el usuario actual
+  setUser(user: UserResponse) {
+    // Esta función sería implementada en un contexto real
+    console.log(`Setting user: ${JSON.stringify(user)}`);
   },
 
   // Registrar un nuevo usuario
@@ -156,9 +214,14 @@ const authService = {
       return null; // Estamos en el servidor
     }
     
-    const userStr = localStorage.getItem('user');
+    // Primero intentar con la clave 'aidguide-user' (para el código viejo)
+    let userStr = localStorage.getItem('aidguide-user');
     if (!userStr) {
-      return null;
+      // Si no existe, intentar con la clave 'user' (para el código nuevo)
+      userStr = localStorage.getItem('user');
+      if (!userStr) {
+        return null;
+      }
     }
     
     try {
@@ -179,6 +242,7 @@ const authService = {
   logout(): void {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('aidguide-user');
   },
 
   // Obtener el token de autenticación
