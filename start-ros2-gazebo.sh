@@ -503,12 +503,25 @@ TERMINAL9_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${CYAN}📝 Presiona Enter para cerrar esta terminal${NC}\" && \
     read -p \"> \" dummy"
 
+# Terminal 10: Puente Web-Waypoint
+TERMINAL10_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${RED}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${RED}║  TERMINAL 10: PUENTE WEB-WAYPOINT      ║${NC}\" && \
+    echo -e \"${RED}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando nodo puente...${NC}\" && \
+    colcon build --packages-select aidguide_04_my_nav2_system && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash && \
+    echo -e \"${CYAN}🌉 Iniciando nodo puente web-waypoint...${NC}\" && \
+    ros2 run aidguide_04_my_nav2_system web_waypoint_bridge && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 9 terminales con los diferentes componentes  ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 10 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -548,6 +561,9 @@ sleep 10
 
 # Monitor de batería es el último en iniciarse
 start_terminal "Terminal 9: Monitor de Sensores" "$TERMINAL9_COMMANDS" "${GREEN}"
+
+# Terminal 10: Puente Web-Waypoint
+start_terminal "Terminal 10: Puente Web-Waypoint" "$TERMINAL10_COMMANDS" "${RED}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
