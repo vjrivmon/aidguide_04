@@ -529,12 +529,107 @@ TERMINAL11_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     ros2 run aidguide_04_robot_monitoring battery_monitor && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
+# Terminal 12: Monitor datos del robot
+TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${BLUE}╔════════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${BLUE}║  TERMINAL 12: MONITOR DATOS ROBOT       ║${NC}\" && \
+    echo -e \"${BLUE}╚════════════════════════════════════════════╝${NC}\" && \
+    source install/setup.bash && \
+    echo -e \"${YELLOW}🕒 Esperando 20 segundos para que todos los servicios estén activos...${NC}\" && \
+    sleep 20 && \
+    
+    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${CYAN}║  MONITOR DE DATOS DEL ROBOT              ║${NC}\" && \
+    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
+
+    # Batería
+    echo -e \"${GREEN}🔋 BATERÍA DEL ROBOT:${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    ros2 topic echo /battery_status --once 2>/dev/null || echo -e \"${RED}❌ Datos de batería no disponibles${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    echo && \
+    
+    # Estado del hardware
+    echo -e \"${GREEN}🔧 ESTADO DEL HARDWARE:${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    ros2 topic echo /hardware_health --once 2>/dev/null || echo -e \"${RED}❌ Datos de hardware no disponibles${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    echo && \
+    
+    # Temperatura
+    echo -e \"${GREEN}🌡️ TEMPERATURA:${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    ros2 topic echo /temperature_sensor --once 2>/dev/null || echo -e \"${RED}❌ Datos de temperatura no disponibles${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    echo && \
+    
+    # Logs
+    echo -e \"${GREEN}📋 MENSAJES DE LOG:${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    ros2 topic echo /log_messages --once 2>/dev/null || echo -e \"${RED}❌ Mensajes de log no disponibles${NC}\" && \
+    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
+    echo && \
+    
+    # Menú interactivo para monitoreo continuo
+    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${CYAN}║  MONITOREO CONTINUO DE DATOS            ║${NC}\" && \
+    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}Selecciona un tópico para monitorizar continuamente:${NC}\" && \
+    echo -e \"${GREEN}   1) /battery_status - Nivel de batería${NC}\" && \
+    echo -e \"${GREEN}   2) /hardware_health - Estado del hardware${NC}\" && \
+    echo -e \"${GREEN}   3) /temperature_sensor - Temperatura${NC}\" && \
+    echo -e \"${GREEN}   4) /log_messages - Mensajes de log${NC}\" && \
+    echo -e \"${GREEN}   5) Monitorear todos simultáneamente (refresco cada 5s)${NC}\" && \
+    echo -e \"${GREEN}   q) Salir${NC}\" && \
+    
+    read -p \"> \" selection && \
+    
+    case \$selection in
+        1)
+            echo -e \"${CYAN}🔄 Monitorizando nivel de batería continuamente. Presiona Ctrl+C para detener.${NC}\"
+            ros2 topic echo /battery_status
+            ;;
+        2)
+            echo -e \"${CYAN}🔄 Monitorizando estado del hardware continuamente. Presiona Ctrl+C para detener.${NC}\"
+            ros2 topic echo /hardware_health
+            ;;
+        3)
+            echo -e \"${CYAN}🔄 Monitorizando temperatura continuamente. Presiona Ctrl+C para detener.${NC}\"
+            ros2 topic echo /temperature_sensor
+            ;;
+        4)
+            echo -e \"${CYAN}🔄 Monitorizando mensajes de log continuamente. Presiona Ctrl+C para detener.${NC}\"
+            ros2 topic echo /log_messages
+            ;;
+        5)
+            echo -e \"${CYAN}🔄 Monitorizando todos los datos (refresco cada 5s). Presiona Ctrl+C para detener.${NC}\"
+            while true; do
+                clear
+                echo -e \"${GREEN}🔋 BATERÍA:${NC}\"
+                ros2 topic echo /battery_status --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
+                echo -e \"\\n${GREEN}🔧 HARDWARE:${NC}\"
+                ros2 topic echo /hardware_health --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
+                echo -e \"\\n${GREEN}🌡️ TEMPERATURA:${NC}\"
+                ros2 topic echo /temperature_sensor --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
+                echo -e \"\\n${GREEN}📋 LOGS:${NC}\"
+                ros2 topic echo /log_messages --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
+                echo -e \"\\n${YELLOW}Actualizando en 5 segundos... Presiona Ctrl+C para detener.${NC}\"
+                sleep 5
+            done
+            ;;
+        *)
+            echo -e \"${YELLOW}📝 Saliendo del monitor de datos${NC}\"
+            ;;
+    esac && \
+    echo -e \"${CYAN}🔄 Monitoreo de datos finalizado${NC}\" && \
+    read -p \"Presiona Enter para cerrar esta terminal...\" dummy"
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 11 terminales con los diferentes componentes ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 12 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -580,6 +675,9 @@ start_terminal "Terminal 10: Puente Web-Waypoint" "$TERMINAL10_COMMANDS" "${RED}
 
 # Terminal 11: Robot Monitoring
 start_terminal "Terminal 11: Robot Monitoring" "$TERMINAL11_COMMANDS" "${MAGENTA}"
+
+# Terminal 12: Monitor datos del robot
+start_terminal "Terminal 12: Monitor datos del robot" "$TERMINAL12_COMMANDS" "${BLUE}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
