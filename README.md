@@ -324,3 +324,36 @@ chmod +x prueba-simple.sh
    killall -9 gzserver gzclient
    ./start-ros2-gazebo.sh
    ```
+
+## Navegación Web-Waypoint
+
+Para iniciar la integración entre la interfaz web y el sistema de navegación por waypoints, sigue estos pasos:
+
+1. Inicia el sistema ROS y Gazebo:
+```bash
+./start-ros-gazebo.sh
+```
+
+2. En una nueva terminal, inicia el puente entre la web y el seguidor de waypoints:
+```bash
+cd aidguide_04_ws
+source install/setup.bash
+ros2 launch aidguide_04_my_nav2_system web_navigation_bridge.launch.py
+```
+
+3. En una nueva terminal, inicia el frontend web:
+```bash
+./start-frontend.sh
+```
+
+4. Abre tu navegador y visita la página de rutas en: [http://localhost:3000/routes](http://localhost:3000/routes)
+
+5. Selecciona una ruta y haz clic en el botón "Iniciar Navegación" para que el robot comience a recorrer los waypoints en Gazebo.
+
+### Solución de problemas
+
+Si encuentras algún problema, verifica lo siguiente:
+
+- Asegúrate de que ROS Bridge está funcionando correctamente (debería iniciarse automáticamente con el archivo de lanzamiento)
+- Verifica que el robot esté correctamente localizado en el mapa de Gazebo
+- Comprueba que la conexión entre el frontend y ROS Bridge sea correcta (deberías ver un indicador verde en la interfaz web)

@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { MapPin, Navigation, Clock, RotateCw } from "lucide-react"
+import { MapPin, Navigation, Clock, RotateCw, Wifi, WifiOff, AlertTriangle } from "lucide-react"
 import dynamic from "next/dynamic"
+import ROSService from "@/services/ros-service"
 
 // Importamos el componente de mapa de forma dinámica para evitar problemas de SSR
 const RouteMap = dynamic(() => import("@/app/components/RouteMap"), { 
@@ -16,6 +17,74 @@ const RouteMap = dynamic(() => import("@/app/components/RouteMap"), {
 
 export default function Routes() {
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+  const [navigationStatus, setNavigationStatus] = useState<string | null>(null)
+  const [currentWaypoint, setCurrentWaypoint] = useState<number | null>(null)
+  const rosService = useRef<ROSService | null>(null)
+  const statusListener = useRef<any>(null)
+
+  // Inicializar el servicio ROS
+  useEffect(() => {
+    rosService.current = ROSService.getInstance()
+    
+    // Manejar estado de conexión
+    const handleConnectionStatus = (connected: boolean) => {
+      setIsConnected(connected)
+      
+      // Si nos desconectamos durante la navegación, actualizar el estado
+      if (!connected && isNavigating) {
+        setIsNavigating(false)
+        setNavigationStatus("Desconectado");
+      }
+    }
+    
+    rosService.current.addConnectionListener(handleConnectionStatus)
+    
+    // Limpiar al desmontar
+    return () => {
+      if (rosService.current) {
+        rosService.current.removeConnectionListener(handleConnectionStatus)
+      }
+      if (statusListener.current) {
+        statusListener.current.unsubscribe()
+      }
+    }
+  }, [isNavigating])
+  
+  // Función para iniciar la navegación
+  const startNavigation = () => {
+    if (!rosService.current || !isConnected) return
+    
+    const success = rosService.current.startWaypointFollowing()
+    if (success) {
+      setIsNavigating(true)
+      setNavigationStatus("Iniciando navegación...")
+      
+      // Suscribirse al estado de la navegación
+      statusListener.current = rosService.current.getNavigationStatus((status, waypoint) => {
+        setNavigationStatus(status)
+        setCurrentWaypoint(waypoint)
+      })
+    }
+  }
+  
+  // Función para detener la navegación
+  const stopNavigation = () => {
+    if (!rosService.current || !isConnected) return
+    
+    const success = rosService.current.stopWaypointFollowing()
+    if (success) {
+      setIsNavigating(false)
+      setNavigationStatus("Navegación detenida")
+      
+      // Cancelar suscripción
+      if (statusListener.current) {
+        statusListener.current.unsubscribe()
+        statusListener.current = null
+      }
+    }
+  }
 
   const savedRoutes = [
     {
@@ -91,6 +160,30 @@ export default function Routes() {
           <p className="max-w-3xl mx-auto text-lg">
             Gestiona y visualiza las rutas guardadas y recientes de tu AidGuide.
           </p>
+          
+          {/* Estado de conexión */}
+          <div className={`inline-flex items-center mt-4 px-4 py-2 rounded-full ${isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {isConnected ? (
+              <>
+                <Wifi className="mr-2" size={16} />
+                Conectado a ROS
+              </>
+            ) : (
+              <>
+                <WifiOff className="mr-2" size={16} />
+                Desconectado de ROS
+              </>
+            )}
+          </div>
+          
+          {/* Estado de navegación */}
+          {isNavigating && (
+            <div className="inline-flex items-center ml-4 mt-4 px-4 py-2 rounded-full bg-yellow-100 text-yellow-700">
+              <Navigation className="mr-2 animate-pulse" size={16} />
+              {navigationStatus || "Navegando..."}
+              {currentWaypoint !== null && ` (Waypoint ${currentWaypoint})`}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -176,15 +269,38 @@ export default function Routes() {
                     </ul>
 
                     <div className="flex gap-4">
-                      <button className="btn-primary flex-1 flex items-center justify-center">
-                        <Navigation className="mr-2" size={18} />
-                        Iniciar Navegación
-                      </button>
+                      {isNavigating ? (
+                        <button 
+                          onClick={stopNavigation}
+                          className="btn-secondary flex-1 flex items-center justify-center"
+                          disabled={!isConnected}
+                        >
+                          <AlertTriangle className="mr-2" size={18} />
+                          Detener Navegación
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={startNavigation}
+                          className="btn-primary flex-1 flex items-center justify-center"
+                          disabled={!isConnected}
+                        >
+                          <Navigation className="mr-2" size={18} />
+                          Iniciar Navegación
+                        </button>
+                      )}
                       <button className="btn-secondary flex-1 flex items-center justify-center">
                         <RotateCw className="mr-2" size={18} />
                         Editar Ruta
                       </button>
                     </div>
+                    
+                    {/* Mensaje de conexión */}
+                    {!isConnected && (
+                      <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg flex items-center">
+                        <WifiOff className="mr-2" size={18} />
+                        <span>No se puede iniciar la navegación. Verifica la conexión con ROS.</span>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
