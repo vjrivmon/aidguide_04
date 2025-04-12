@@ -627,12 +627,25 @@ TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${CYAN}🔄 Monitoreo de datos finalizado${NC}\" && \
     read -p \"Presiona Enter para cerrar esta terminal...\" dummy"
 
+# Terminal 13: Monitor de Clima
+TERMINAL13_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${CYAN}║  TERMINAL 13: MONITOR DE CLIMA           ║${NC}\" && \
+    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando aidguide_04_weather...${NC}\" && \
+    colcon build --packages-select aidguide_04_weather && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash && \
+    echo -e \"${CYAN}🌦️ Iniciando monitor del clima...${NC}\" && \
+    ros2 run aidguide_04_weather weather_monitor && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 12 terminales con los diferentes componentes ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 13 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -681,6 +694,9 @@ start_terminal "Terminal 11: Robot Monitoring" "$TERMINAL11_COMMANDS" "${MAGENTA
 
 # Terminal 12: Monitor datos del robot
 start_terminal "Terminal 12: Monitor datos del robot" "$TERMINAL12_COMMANDS" "${BLUE}"
+
+# Terminal 13: Monitor de Clima
+start_terminal "Terminal 13: Monitor de Clima" "$TERMINAL13_COMMANDS" "${CYAN}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
