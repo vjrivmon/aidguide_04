@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>aidguide_04_web_video_server</name>
+  <name>web_video_server</name>
   <version>2.0.1</version>
   <description>HTTP Streaming of ROS Image Topics in Multiple Formats</description>
 
