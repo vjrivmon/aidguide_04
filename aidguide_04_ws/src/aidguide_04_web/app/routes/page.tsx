@@ -5,6 +5,188 @@ import { MapPin, Navigation, Clock, RotateCw, Wifi, WifiOff, AlertTriangle } fro
 import dynamic from "next/dynamic"
 import ROSService from "@/services/ros-service"
 
+// IMPORTES NECESARIOS PARA EL MAPA (se agregó para la funcionalidad del mapa)
+import yaml from "js-yaml"
+import { useRobot } from "@/context/robot-context"
+
+// Declaración de la interfaz MapData (puedes moverla a otro archivo e importarla si lo prefieres)
+interface MapData {
+  resolution: number
+  origin: [number, number, number]
+}
+
+// ===================== INICIO DEL MAPA - Componente RobotMap =====================
+function RobotMap() {
+  const { robotPose } = useRobot() // Se asume que robotPose viene del contexto useRobot
+
+  // Se tipan los estados para evitar errores en la asignación
+  const [mapData, setMapData] = useState<MapData | null>(null)
+  const [mapLoadError, setMapLoadError] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const mapImageDataRef = useRef<ImageData | null>(null) // Para almacenar los datos del mapa
+
+  // Cargar metadatos del mapa YAML
+  useEffect(() => {
+    fetch("/aidguide_04_map.yaml") // Ajusta la ruta según tu proyecto
+      .then((response) => {
+        if (!response.ok) throw new Error("YAML no encontrado")
+        return response.text()
+      })
+      .then((yamlText) => {
+        const parsedData = yaml.load(yamlText) as MapData
+        setMapData(parsedData)
+        console.log("YAML cargado:", parsedData)
+      })
+      .catch((error) => {
+        console.error("Error loading YAML:", error)
+        setMapLoadError("Error cargando el YAML del mapa.")
+      })
+  }, [])
+
+  // Se utilizan valores por defecto en caso de que mapData sea null
+  const resolution = mapData?.resolution || 0.05
+  const origin = mapData?.origin || [0, 0, 0]
+
+  // Convertir coordenadas ROS a píxeles del mapa
+  const rosToMap = (x: number, y: number) => {
+    const canvas = canvasRef.current
+    if (!canvas) return { x: 0, y: 0 }
+    const pixelX = (x - origin[0]) / resolution
+    const pixelY = canvas.height - (y - origin[1]) / resolution
+    console.log("Coordenadas ROS:", x, y, "-> Píxeles:", pixelX, pixelY)
+    return { x: pixelX, y: pixelY }
+  }
+
+  // Cargar y dibujar el mapa PGM una sola vez al montar el componente
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return
+
+    const loadMap = async () => {
+      try {
+        const response = await fetch("/aidguide_04_map.pgm") // Ajusta la ruta según tu proyecto
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`)
+        const buffer = await response.arrayBuffer()
+        const data = new Uint8Array(buffer)
+        let offset = 0
+
+        // Leer el header
+        const textDecoder = new TextDecoder()
+        let header = ""
+        while (offset < data.length && data[offset] !== 10) { // 10 es '\n'
+          header += String.fromCharCode(data[offset])
+          offset++
+        }
+        offset++ // Saltar el salto de línea
+
+        if (header !== "P5")
+          throw new Error("Unsupported PGM format. Expected P5.")
+
+        let width = "", height = "", maxVal = ""
+        while (offset < data.length && data[offset] !== 32) { // 32 es ' '
+          width += String.fromCharCode(data[offset])
+          offset++
+        }
+        offset++ // Saltar el espacio
+        while (offset < data.length && data[offset] !== 10) {
+          height += String.fromCharCode(data[offset])
+          offset++
+        }
+        offset++ // Saltar el salto de línea
+        while (offset < data.length && data[offset] !== 10) {
+          maxVal += String.fromCharCode(data[offset])
+          offset++
+        }
+        offset++ // Saltar el salto de línea
+
+        const imgWidth = parseInt(width)
+        const imgHeight = parseInt(height)
+        const maxValue = parseInt(maxVal)
+
+        // Asignar dimensiones al canvas (se hace una sola vez)
+        canvas.width = imgWidth
+        canvas.height = imgHeight
+
+        const pixelData = data.slice(offset)
+        const imageData = ctx.createImageData(imgWidth, imgHeight)
+        for (let i = 0; i < pixelData.length; i++) {
+          const gray = (pixelData[i] / maxValue) * 255
+          imageData.data[i * 4] = gray
+          imageData.data[i * 4 + 1] = gray
+          imageData.data[i * 4 + 2] = gray
+          imageData.data[i * 4 + 3] = 255
+        }
+        ctx.putImageData(imageData, 0, 0)
+        mapImageDataRef.current = imageData // Guardamos los datos del mapa
+        console.log("Mapa PGM cargado con dimensiones:", imgWidth, imgHeight)
+      } catch (error) {
+        console.error("Error loading PGM:", error)
+        setMapLoadError("No se pudo cargar el mapa PGM.")
+      }
+    }
+
+    loadMap()
+  }, [mapData])
+
+  // Actualizar la posición del robot en el mapa sin modificar las dimensiones del canvas
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext("2d")
+    if (!ctx || !mapImageDataRef.current) {
+      console.log("No se puede dibujar: canvas, ctx o mapImageData no están listos")
+      return
+    }
+    // Usamos las dimensiones actuales del canvas (ya definidas en loadMap)
+    const stableWidth = canvas.width
+    const stableHeight = canvas.height
+
+    const redrawMap = () => {
+      // Limpiar el canvas usando dimensiones estables
+      ctx.clearRect(0, 0, stableWidth, stableHeight)
+
+      // Guardar el contexto y aplicar la transformación para rotar la imagen
+      ctx.save()
+      ctx.translate(stableWidth / 2, stableHeight / 2)
+      ctx.rotate(-Math.PI / 2)
+      ctx.translate(-stableWidth / 2, -stableHeight / 2)
+      ctx.putImageData(mapImageDataRef.current!, 0, 0)
+      ctx.restore()
+
+      // Dibujar el robot si la información está disponible
+      if (robotPose) {
+        const { x, y } = rosToMap(robotPose.x, robotPose.y)
+        ctx.beginPath()
+        ctx.arc(x, y, 5, 0, 2 * Math.PI)
+        ctx.fillStyle = "green"
+        ctx.fill()
+        console.log("Robot dibujado en:", x, y)
+      } else {
+        console.log("robotPose no está disponible")
+      }
+    }
+
+    redrawMap()
+  }, [robotPose, mapData])
+
+  return (
+    // Se centra el canvas con flexbox
+    <div className="h-full w-full relative flex items-center justify-center">
+      {mapLoadError ? (
+        <div className="absolute inset-0 flex items-center justify-center text-red-500">
+          {mapLoadError}
+        </div>
+      ) : (
+        <canvas ref={canvasRef} className="max-w-full max-h-full" />
+      )}
+    </div>
+  )
+}
+// ===================== FIN DEL MAPA - Componente RobotMap =====================
+
 // Importamos el componente de mapa de forma dinámica para evitar problemas de SSR
 const RouteMap = dynamic(() => import("@/app/components/RouteMap"), { 
   ssr: false,
@@ -35,7 +217,7 @@ export default function Routes() {
       // Si nos desconectamos durante la navegación, actualizar el estado
       if (!connected && isNavigating) {
         setIsNavigating(false)
-        setNavigationStatus("Desconectado");
+        setNavigationStatus("Desconectado")
       }
     }
     
@@ -230,27 +412,38 @@ export default function Routes() {
 
               {selectedRoute ? (
                 <>
+                  {/* ===================== INICIO DEL MAPA INTEGRADO ===================== */}
                   <div className="bg-gray-200 rounded-lg h-64 md:h-80 mb-6 overflow-hidden">
-                    {selectedRoute && (
-                      <RouteMap 
-                        waypoints={savedRoutes.find((r) => r.id === selectedRoute)?.waypoints || []}
-                        routeName={savedRoutes.find((r) => r.id === selectedRoute)?.name || ""}
-                      />
-                    )}
+                    <RobotMap />
                   </div>
+                  {/* ===================== FIN DEL MAPA INTEGRADO ===================== */}
+                  {selectedRoute && (
+                    <RouteMap
+                      waypoints={savedRoutes.find((r) => r.id === selectedRoute)?.waypoints || []}
+                      routeName={savedRoutes.find((r) => r.id === selectedRoute)?.name || ""}
+                    />
+                  )}
 
                   <div>
-                    <h3 className="font-bold text-lg mb-2">{savedRoutes.find((r) => r.id === selectedRoute)?.name}</h3>
-                    <p className="text-gray-600 mb-4">{savedRoutes.find((r) => r.id === selectedRoute)?.description}</p>
+                    <h3 className="font-bold text-lg mb-2">
+                      {savedRoutes.find((r) => r.id === selectedRoute)?.name}
+                    </h3>
+                    <p className="text-gray-600 mb-4">
+                      {savedRoutes.find((r) => r.id === selectedRoute)?.description}
+                    </p>
 
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-gray-100 p-3 rounded-lg">
                         <div className="text-sm text-gray-500">Distancia</div>
-                        <div className="font-bold">{savedRoutes.find((r) => r.id === selectedRoute)?.distance}</div>
+                        <div className="font-bold">
+                          {savedRoutes.find((r) => r.id === selectedRoute)?.distance}
+                        </div>
                       </div>
                       <div className="bg-gray-100 p-3 rounded-lg">
                         <div className="text-sm text-gray-500">Duración estimada</div>
-                        <div className="font-bold">{savedRoutes.find((r) => r.id === selectedRoute)?.duration}</div>
+                        <div className="font-bold">
+                          {savedRoutes.find((r) => r.id === selectedRoute)?.duration}
+                        </div>
                       </div>
                     </div>
 
@@ -307,7 +500,9 @@ export default function Routes() {
                 <div className="bg-gray-100 rounded-lg h-64 md:h-96 flex items-center justify-center">
                   <div className="text-center p-6">
                     <MapPin className="mx-auto mb-4 text-gray-400" size={48} />
-                    <p className="text-gray-500 mb-4">Selecciona una ruta para ver los detalles y el mapa</p>
+                    <p className="text-gray-500 mb-4">
+                      Selecciona una ruta para ver los detalles y el mapa
+                    </p>
                     <button className="btn-primary">Crear Nueva Ruta</button>
                   </div>
                 </div>
@@ -361,4 +556,3 @@ export default function Routes() {
     </div>
   )
 }
-
