@@ -519,22 +519,25 @@ TERMINAL10_COMMANDS="cd \"$WORKSPACE_PATH\" && \
 # Terminal 11: Robot Monitoring
 TERMINAL11_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${MAGENTA}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${MAGENTA}║  TERMINAL 11: ROBOT MONITORING         ║${NC}\" && \
+    echo -e \"${MAGENTA}║  TERMINAL 11: MONITOR DE ROBOT CON PANTALLAS SEPARADAS  ║${NC}\" && \
     echo -e \"${MAGENTA}╚════════════════════════════════════════════╝${NC}\" && \
-    echo -e \"${YELLOW}🔨 Compilando sistema de monitoreo...${NC}\" && \
-    colcon build --packages-select aidguide_04_robot_monitoring && \
+    echo -e \"${YELLOW}🔨 Compilando sistema de monitoreo personalizado...${NC}\" && \
+    cd ~/turtlebot3_ws && colcon build --packages-select show_msg && \
     echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
-    source install/setup.bash && \
-    echo -e \"${CYAN}🔋 Iniciando monitoreo de batería y sensores...${NC}\" && \
-    ros2 run aidguide_04_robot_monitoring battery_monitor && \
+    source ~/turtlebot3_ws/install/setup.bash && \
+    echo -e \"${CYAN}🔌 Iniciando simulador de datos del robot...${NC}\" && \
+    ros2 launch show_msg robot_simulator.launch.py & \
+    sleep 3 && \
+    echo -e \"${CYAN}🔋 Iniciando monitor de robot con pantallas separadas...${NC}\" && \
+    ros2 launch show_msg robot_monitor.launch.py && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
 # Terminal 12: Monitor datos del robot
 TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${BLUE}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${BLUE}║  TERMINAL 12: MONITOR DATOS ROBOT       ║${NC}\" && \
+    echo -e \"${BLUE}║  TERMINAL 12: MONITOR EN CONSOLA ÚNICA   ║${NC}\" && \
     echo -e \"${BLUE}╚════════════════════════════════════════════╝${NC}\" && \
-    source install/setup.bash && \
+    source ~/turtlebot3_ws/install/setup.bash && \
     echo -e \"${YELLOW}🕒 Esperando 20 segundos para que todos los servicios estén activos...${NC}\" && \
     sleep 20 && \
     
@@ -566,7 +569,7 @@ TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     # Logs
     echo -e \"${GREEN}📋 MENSAJES DE LOG:${NC}\" && \
     echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    ros2 topic echo /log_messages --once 2>/dev/null || echo -e \"${RED}❌ Mensajes de log no disponibles${NC}\" && \
+    ros2 topic echo /rosout --once 2>/dev/null || echo -e \"${RED}❌ Mensajes de log no disponibles${NC}\" && \
     echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
     echo && \
     
@@ -578,7 +581,7 @@ TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     echo -e \"${GREEN}   1) /battery_status - Nivel de batería${NC}\" && \
     echo -e \"${GREEN}   2) /hardware_health - Estado del hardware${NC}\" && \
     echo -e \"${GREEN}   3) /temperature_sensor - Temperatura${NC}\" && \
-    echo -e \"${GREEN}   4) /log_messages - Mensajes de log${NC}\" && \
+    echo -e \"${GREEN}   4) /rosout - Mensajes de log${NC}\" && \
     echo -e \"${GREEN}   5) Monitorear todos simultáneamente (refresco cada 5s)${NC}\" && \
     echo -e \"${GREEN}   q) Salir${NC}\" && \
     
@@ -599,7 +602,7 @@ TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
             ;;
         4)
             echo -e \"${CYAN}🔄 Monitorizando mensajes de log continuamente. Presiona Ctrl+C para detener.${NC}\"
-            ros2 topic echo /log_messages
+            ros2 topic echo /rosout
             ;;
         5)
             echo -e \"${CYAN}🔄 Monitorizando todos los datos (refresco cada 5s). Presiona Ctrl+C para detener.${NC}\"
@@ -612,7 +615,7 @@ TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
                 echo -e \"\\n${GREEN}🌡️ TEMPERATURA:${NC}\"
                 ros2 topic echo /temperature_sensor --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
                 echo -e \"\\n${GREEN}📋 LOGS:${NC}\"
-                ros2 topic echo /log_messages --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
+                ros2 topic echo /rosout --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
                 echo -e \"\\n${YELLOW}Actualizando en 5 segundos... Presiona Ctrl+C para detener.${NC}\"
                 sleep 5
             done
