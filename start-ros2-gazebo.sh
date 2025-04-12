@@ -13,6 +13,32 @@ BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 NC='\033[0m' # No Color
 
+# Función para verificar e instalar js-yaml para manipular archivos YAML
+check_and_install_jsyaml() {
+    echo -e "${YELLOW}🔍 Verificando dependencia: js-yaml${NC}"
+    
+    # Verificar si js-yaml está instalado
+    if ! npm list --global js-yaml >/dev/null 2>&1 && ! npm list --depth=0 js-yaml >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️ La dependencia 'js-yaml' no está instalada${NC}"
+        echo -e "${CYAN}❓ ¿Deseas instalar js-yaml? (s/n)${NC}"
+        read -p "> " install_jsyaml
+        
+        if [ "$install_jsyaml" = "s" ] || [ "$install_jsyaml" = "S" ]; then
+            echo -e "${YELLOW}📦 Instalando js-yaml...${NC}"
+            if npm install --save js-yaml --legacy-peer-deps; then
+                echo -e "${GREEN}✅ js-yaml instalado correctamente${NC}"
+            else
+                echo -e "${RED}❌ Error al instalar js-yaml${NC}"
+                echo -e "${YELLOW}📝 Intenta instalarlo manualmente con: npm install --save js-yaml --legacy-peer-deps${NC}"
+            fi
+        else
+            echo -e "${YELLOW}⚠️ Continuando sin instalar js-yaml. Algunas funciones pueden no estar disponibles.${NC}"
+        fi
+    else
+        echo -e "${GREEN}✅ js-yaml ya está instalado${NC}"
+    fi
+}
+
 # Función para verificar si ROS2 está instalado y configurado
 check_ros() {
     if ! command -v ros2 &> /dev/null; then
@@ -193,6 +219,9 @@ echo ""
 echo -e "${YELLOW}🔍 Verificando instalación de ROS2...${NC}"
 check_ros
 echo -e "${GREEN}✅ ROS2 está correctamente instalado${NC}"
+
+# Verificar dependencia js-yaml
+check_and_install_jsyaml
 
 # Verificar paquetes ROS2 necesarios
 echo -e "${YELLOW}🔍 Verificando paquetes ROS2 necesarios...${NC}"
@@ -415,12 +444,15 @@ TERMINAL8_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     if [ -d \"$WORKSPACE_PATH/src/aidguide_04_web\" ]; then \
         echo -e \"${CYAN}📦 Navegando al directorio del frontend...${NC}\" && \
         cd \"$WORKSPACE_PATH/src/aidguide_04_web\" && \
+        echo -e \"${CYAN}📦 Instalando dependencias necesarias...${NC}\" && \
+        npm install --save js-yaml --legacy-peer-deps && \
+        echo -e \"${GREEN}✅ js-yaml instalado correctamente en el frontend${NC}\" && \
         echo -e \"${CYAN}🚀 Iniciando servidor de desarrollo...${NC}\" && \
         npm run dev; \
     else \
         echo -e \"${YELLOW}⚠️ Directorio del frontend no encontrado en $WORKSPACE_PATH/src/aidguide_04_web${NC}\" && \
-        echo -e \"${CYAN}📦 Instalando roslib globalmente...${NC}\" && \
-        npm install -g roslib; \
+        echo -e \"${CYAN}📦 Instalando dependencias globalmente...${NC}\" && \
+        npm install -g roslib js-yaml; \
     fi && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
