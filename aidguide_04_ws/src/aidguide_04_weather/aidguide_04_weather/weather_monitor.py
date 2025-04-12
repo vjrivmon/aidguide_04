@@ -1,6 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
+import random
+import time
 
 class WeatherMonitor(Node):
 
@@ -14,13 +16,27 @@ class WeatherMonitor(Node):
             self.weather_callback,
             10)
         
-        # Publisher para notificaciones
+        # Publisher para notificaciones de alertas meteorológicas
         self.publisher = self.create_publisher(
             String,
             'weather_alert',
             10)
         
-        self.get_logger().info('WeatherMonitor node inicializado. Escuchando en /weather_info')
+        # Lista de posibles fenómenos atmosféricos con sus colores
+        self.weather_phenomena = [
+            {"type": "lluvia", "message": "ALERTA: Lluvia intensa prevista", "color": "blue"},
+            {"type": "calor", "message": "ALERTA: Ola de calor (38°C)", "color": "red"},
+            {"type": "nieve", "message": "ALERTA: Posible nevada ligera", "color": "white"},
+            {"type": "niebla", "message": "ALERTA: Niebla densa, precaución", "color": "gray"},
+            {"type": "viento", "message": "ALERTA: Vientos fuertes (80 km/h)", "color": "orange"},
+            {"type": "tormenta", "message": "ALERTA: Tormenta eléctrica", "color": "purple"},
+            {"type": "granizo", "message": "ALERTA: Posibilidad de granizo", "color": "cyan"}
+        ]
+        
+        # Crear un timer que genere alertas cada 3 segundos
+        self.timer = self.create_timer(3.0, self.generate_weather_alert)
+        
+        self.get_logger().info('WeatherMonitor node inicializado. Publicando alertas cada 3 segundos')
 
     def weather_callback(self, msg):
         # Procesar mensaje del clima
@@ -42,6 +58,21 @@ class WeatherMonitor(Node):
             alert.data = alert_message
             self.publisher.publish(alert)
             self.get_logger().warning(alert_message)
+
+    def generate_weather_alert(self):
+        # Seleccionar un fenómeno aleatorio
+        phenomenon = random.choice(self.weather_phenomena)
+        
+        # Construir mensaje con información del fenómeno y color
+        message = f"{phenomenon['message']}|{phenomenon['type']}|{phenomenon['color']}"
+        
+        # Crear y publicar el mensaje
+        alert = String()
+        alert.data = message
+        self.publisher.publish(alert)
+        
+        # Registrar en el log
+        self.get_logger().info(f'Alerta meteorológica publicada: {phenomenon["type"]} (color: {phenomenon["color"]})')
 
 
 def main(args=None):

@@ -8,6 +8,8 @@ interface Notification {
   id: string;
   message: string;
   type: "weather" | "battery" | "system" | "maintenance";
+  subtype?: string; // Para el tipo específico de alerta meteorológica
+  color?: string; // Para el color asociado
   timestamp: Date;
   read: boolean;
 }
@@ -149,10 +151,38 @@ export function RobotProvider({ children }: { children: ReactNode }) {
       }));
     }, 5000); // Actualizar cada 5 segundos
 
+    // Simular alertas meteorológicas
+    const weatherInterval = setInterval(() => {
+      const weatherTypes = [
+        { type: "lluvia", message: "ALERTA: Lluvia intensa prevista", color: "blue" },
+        { type: "calor", message: "ALERTA: Ola de calor (38°C)", color: "red" },
+        { type: "nieve", message: "ALERTA: Posible nevada ligera", color: "white" },
+        { type: "niebla", message: "ALERTA: Niebla densa, precaución", color: "gray" },
+        { type: "viento", message: "ALERTA: Vientos fuertes (80 km/h)", color: "orange" },
+        { type: "tormenta", message: "ALERTA: Tormenta eléctrica", color: "purple" },
+        { type: "granizo", message: "ALERTA: Posibilidad de granizo", color: "cyan" }
+      ];
+      
+      const selectedWeather = weatherTypes[Math.floor(Math.random() * weatherTypes.length)];
+      
+      const weatherNotification: Notification = {
+        id: Date.now().toString(),
+        message: selectedWeather.message,
+        type: "weather",
+        subtype: selectedWeather.type,
+        color: selectedWeather.color,
+        timestamp: new Date(),
+        read: false,
+      };
+      
+      setNotifications((prev) => [weatherNotification, ...prev]);
+    }, 3000); // Actualizar cada 3 segundos
+    
     // Limpiar intervalos cuando el componente se desmonte
     return () => {
       clearInterval(batteryInterval);
       clearInterval(positionInterval);
+      clearInterval(weatherInterval);
     };
   };
 
@@ -199,10 +229,18 @@ export function RobotProvider({ children }: { children: ReactNode }) {
     }) as ROSLIBTopic;
 
     weatherTopic.subscribe((message: any) => {
+      // Procesar el mensaje que viene en formato "mensaje|tipo|color"
+      const parts = message.data.split('|');
+      const weatherMessage = parts[0];
+      const weatherType = parts.length > 1 ? parts[1] : "general";
+      const weatherColor = parts.length > 2 ? parts[2] : "blue";
+      
       const weatherNotification: Notification = {
         id: Date.now().toString(),
-        message: message.data,
+        message: weatherMessage,
         type: "weather",
+        subtype: weatherType,
+        color: weatherColor,
         timestamp: new Date(),
         read: false,
       };
@@ -239,7 +277,7 @@ export function RobotProvider({ children }: { children: ReactNode }) {
         estimatedTimeRemaining,
         isConnected,
         notifications,
-        robotPose, // Añadimos robotPose al valor del contexto
+        robotPose,
         markNotificationAsRead,
         reconnect,
       }}

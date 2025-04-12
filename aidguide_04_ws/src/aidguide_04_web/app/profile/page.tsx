@@ -9,6 +9,7 @@ import { useAuth } from "@/context/auth-context"
 import { useRobot } from "@/context/robot-context"
 import { format, formatDistance } from 'date-fns'
 import { es } from 'date-fns/locale'
+import Link from "next/link"
 
 export default function Profile() {
   const { user } = useAuth()
@@ -198,58 +199,76 @@ export default function Profile() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Panel izquierdo - Navegación */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-button mb-6">Menú</h2>
-          <nav className="space-y-2">
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold text-center">Mi Perfil</h3>
+          </div>
+          
+          <div className="space-y-1">
             <button
               onClick={() => setActiveTab("activity")}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "activity"
-                  ? "bg-button text-white"
-                  : "text-text hover:bg-gray-50"
+              className={`px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 ${
+                activeTab === "activity" ? "bg-button text-white" : "hover:bg-gray-100"
               }`}
             >
-              <History size={20} className="mr-3" />
-              Actividad
+              <History size={18} />
+              <span>Actividad Reciente</span>
             </button>
+            
+            {/* <Link
+              href="/profile/notificaciones"
+              className="px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 hover:bg-gray-100"
+            >
+              <CloudRain size={18} />
+              <span>Clima y Alertas</span>
+              {notifications.filter(n => !n.read && n.type === 'weather').length > 0 && (
+                <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs ml-auto">
+                  {notifications.filter(n => !n.read && n.type === 'weather').length}
+                </span>
+              )}
+            </Link> */}
+            
             <button
               onClick={() => setActiveTab("notifications")}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "notifications"
-                  ? "bg-button text-white"
-                  : "text-text hover:bg-gray-50"
+              className={`px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 ${
+                activeTab === "notifications" ? "bg-button text-white" : "hover:bg-gray-100"
               }`}
             >
-              <Bell size={20} className="mr-3" />
-              Notificaciones
+              <Bell size={18} />
+              <span>Notificaciones</span>
               {notifications.filter(n => !n.read).length > 0 && (
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                <span className="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs ml-auto">
                   {notifications.filter(n => !n.read).length}
                 </span>
               )}
             </button>
+            
+            <button
+              onClick={() => setActiveTab("settings")}
+              className={`px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 ${
+                activeTab === "settings" ? "bg-button text-white" : "hover:bg-gray-100"
+              }`}
+            >
+              <Settings size={18} />
+              <span>Configuración</span>
+            </button>
+            
             <button
               onClick={() => setActiveTab("gamification")}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "gamification"
-                  ? "bg-button text-white"
-                  : "text-text hover:bg-gray-50"
+              className={`px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 ${
+                activeTab === "gamification" ? "bg-button text-white" : "hover:bg-gray-100"
               }`}
             >
-              <Trophy size={20} className="mr-3" />
-              Recompensas
+              <Trophy size={18} />
+              <span>Gamificación</span>
             </button>
-            <button
-              onClick={() => setActiveTab("preferences")}
-              className={`w-full flex items-center px-4 py-3 rounded-lg transition-colors ${
-                activeTab === "preferences"
-                  ? "bg-button text-white"
-                  : "text-text hover:bg-gray-50"
-              }`}
-            >
-              <Settings size={20} className="mr-3" />
-              Preferencias
+          </div>
+          
+          {/* <div className="mt-6 pt-6 border-t">
+            <button className="px-4 py-2 w-full rounded-md text-left flex items-center space-x-2 text-red-500 hover:bg-red-50">
+              <LogOut size={18} />
+              <span>Cerrar sesión</span>
             </button>
-          </nav>
+          </div> */}
         </div>
 
         {/* Panel central - Contenido */}
