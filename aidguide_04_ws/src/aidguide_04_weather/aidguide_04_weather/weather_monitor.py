@@ -2,11 +2,21 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 import random
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class WeatherMonitor(Node):
 
+    """Clase WeatherMonitor.
+    
+    Implementa funcionalidad para WeatherMonitor.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('weather_monitor')
         
         # Suscriptor para el topic /weather_info
@@ -40,6 +50,11 @@ class WeatherMonitor(Node):
 
     def weather_callback(self, msg):
         # Procesar mensaje del clima
+        """Función Weather callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         weather_info = msg.data
         self.get_logger().info(f'Información del clima recibida: {weather_info}')
         
@@ -61,6 +76,8 @@ class WeatherMonitor(Node):
 
     def generate_weather_alert(self):
         # Seleccionar un fenómeno aleatorio
+        """Función Generate weather alert.
+        """
         phenomenon = random.choice(self.weather_phenomena)
         
         # Construir mensaje con información del fenómeno y color
@@ -76,6 +93,11 @@ class WeatherMonitor(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     weather_monitor = WeatherMonitor()
     

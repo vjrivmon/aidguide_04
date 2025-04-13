@@ -1,5 +1,9 @@
 from setuptools import setup
 import os #incluir
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from glob import glob #incluir
 
 package_name = 'aidguide_04_provide_map'
@@ -29,7 +33,6 @@ setup(
         ],
     },
 )
-
 
 
 

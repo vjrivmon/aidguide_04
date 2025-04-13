@@ -4,10 +4,19 @@ import launch.actions
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch_ros.actions import Node
 
 def generate_launch_description():
 
+    """Función Generate launch description.
+    
+    Returns:
+        Descripción del valor de retorno.
+    """
     nav2_yaml = os.path.join(get_package_share_directory('aidguide_04_my_nav2_system'), 'config', 'my_nav2_params.yaml')
     map_file = os.path.join(get_package_share_directory('aidguide_04_my_nav2_system'), 'config', 'aidguide_04_map.yaml')
     rviz_config_dir = os.path.join(get_package_share_directory('aidguide_04_my_nav2_system'), 'config', 'aidguide_config_robot.rviz')

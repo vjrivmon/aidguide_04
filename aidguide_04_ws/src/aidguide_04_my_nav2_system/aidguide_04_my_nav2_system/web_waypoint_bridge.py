@@ -20,6 +20,8 @@ class WebWaypointBridge(Node):
     Nodo que actúa como puente entre mensajes web y el seguidor de waypoints
     """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('web_waypoint_bridge')
         
         # Suscriptores para mensajes desde la web
@@ -224,6 +226,11 @@ class WebWaypointBridge(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     
     bridge_node = WebWaypointBridge()
