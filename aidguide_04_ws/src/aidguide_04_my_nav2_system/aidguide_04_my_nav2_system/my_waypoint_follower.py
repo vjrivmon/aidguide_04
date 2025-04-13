@@ -5,16 +5,27 @@ from nav2_msgs.action import FollowWaypoints
 from geometry_msgs.msg import PoseStamped
 
 class WaypointFollowerClient(Node):
+    """
+    Nodo cliente que se conecta a un action server para enviar una lista de waypoints
+    que el robot debe seguir utilizando la acción FollowWaypoints.
+    """
+
     def __init__(self):
+        """
+        Inicializa el nodo y el cliente de acción para enviar waypoints.
+        """
         super().__init__('waypoint_follower_client')
         self._action_client = ActionClient(self, FollowWaypoints, 'follow_waypoints')
         self.get_logger().info('Waypoint Follower Client initialized')
 
     def define_waypoints(self):
-        """Lista de puntos que ha de recorrer el robot."""
+        """
+        Define y devuelve una lista de waypoints (poses) que el robot debe seguir.
+
+        Returns:
+            list: Lista de objetos PoseStamped representando los waypoints.
+        """
         waypoints = []
-
-
 
         # Waypoint 1
         pose1 = PoseStamped()
@@ -25,9 +36,6 @@ class WaypointFollowerClient(Node):
         pose1.pose.position.z = 0.0
         pose1.pose.orientation.w = 1.0
         waypoints.append(pose1)
-        
-        
-            
 
         # Waypoint 2
         pose2 = PoseStamped()
@@ -80,7 +88,12 @@ class WaypointFollowerClient(Node):
         return waypoints
 
     def send_waypoints(self, waypoints):
-        """Enviar la lista de puntos al action server."""
+        """
+        Envía la lista de waypoints al action server.
+
+        Args:
+            waypoints (list): Lista de objetos PoseStamped a enviar como meta.
+        """
         if not self._action_client.wait_for_server(timeout_sec=10.0):
             self.get_logger().error('Action server no disponible')
             return
@@ -94,7 +107,12 @@ class WaypointFollowerClient(Node):
         self._send_goal_future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
-        """Manejar la respuesta del servidor."""
+        """
+        Maneja la respuesta inicial del action server sobre si se aceptó o rechazó la meta.
+
+        Args:
+            future: Objeto Future con la respuesta del servidor.
+        """
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().info('Goal rejected by server')
@@ -105,12 +123,22 @@ class WaypointFollowerClient(Node):
         self._get_result_future.add_done_callback(self.get_result_callback)
 
     def feedback_callback(self, feedback_msg):
-        """Handle feedback from the action server."""
+        """
+        Maneja el feedback enviado por el servidor durante la ejecución.
+
+        Args:
+            feedback_msg: Mensaje de feedback recibido del servidor.
+        """
         current_waypoint = feedback_msg.feedback.current_waypoint
         self.get_logger().info(f'Currently at waypoint: {current_waypoint}')
 
     def get_result_callback(self, future):
-        """Handle the result from the action server."""
+        """
+        Procesa el resultado final de la acción una vez completada.
+
+        Args:
+            future: Objeto Future con el resultado del action server.
+        """
         result = future.result().result
         self.get_logger().info('Result received:')
         self.get_logger().info(f'Missed waypoints: {len(result.missed_waypoints)}')

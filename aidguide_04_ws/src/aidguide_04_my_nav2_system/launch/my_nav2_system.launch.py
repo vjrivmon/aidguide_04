@@ -7,6 +7,14 @@ from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
+    """
+    Genera una descripción de lanzamiento (LaunchDescription) para iniciar los nodos
+    necesarios del sistema de navegación Nav2, incluyendo el mapa, AMCL, RViz, y otros
+    componentes personalizados como el nodo de punto inicial y el seguidor de waypoints.
+
+    Returns:
+        LaunchDescription: Objeto que contiene la configuración del lanzamiento.
+    """
 
     nav2_yaml = os.path.join(get_package_share_directory('aidguide_04_my_nav2_system'), 'config', 'my_nav2_params.yaml')
     map_file = os.path.join(get_package_share_directory('aidguide_04_my_nav2_system'), 'config', 'aidguide_04_map.yaml')
