@@ -1,6 +1,10 @@
 import sys
 import rclpy
 from rclpy.node import Node
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
 class Publisher(Node):

@@ -2,6 +2,10 @@ import rclpy
 from rclpy.action import ActionClient
 from rclpy.node import Node
 from nav2_msgs.action import FollowWaypoints
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from geometry_msgs.msg import PoseStamped
 
 class WaypointFollowerClient(Node):
@@ -146,6 +150,11 @@ class WaypointFollowerClient(Node):
         rclpy.shutdown()
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     waypoint_client = WaypointFollowerClient()
     waypoints = waypoint_client.define_waypoints()
