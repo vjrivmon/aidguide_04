@@ -41,7 +41,8 @@ jobs:
       - name: Instalar dependencias básicas
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
-          npm install --no-save mysql2
+          npm install
+          npm install mysql2
 
       - name: Crear package-lock.json si no existe
         run: |
