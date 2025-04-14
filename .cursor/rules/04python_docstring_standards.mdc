@@ -1,0 +1,277 @@
+---
+description: Estándares de documentación Python (docstrings)
+globs: "**/*.py"
+alwaysApply: false
+---
+# Regla: Estándares de Documentación Python (Docstrings)
+
+Esta regla establece los estándares y mejores prácticas para la documentación mediante docstrings en archivos Python del proyecto AidGuide 04.
+
+## Descripción
+Define la estructura, formato y contenido esperado de los docstrings en archivos Python para mantener una documentación coherente y completa en todo el código.
+
+## Estándares de Docstrings
+
+### 1. Formato de Docstrings
+Se utilizará el formato de docstrings de Google, caracterizado por:
+- Descripción concisa en la primera línea
+- Línea en blanco
+- Secciones con etiquetas (Args, Returns, Raises, etc.)
+
+```python
+"""Descripción concisa de una sola línea.
+
+Descripción más detallada que puede ocupar
+múltiples líneas y proporcionar más contexto.
+
+Args:
+    param1 (tipo): Descripción del primer parámetro.
+    param2 (tipo): Descripción del segundo parámetro.
+
+Returns:
+    tipo: Descripción del valor de retorno.
+
+Raises:
+    ExceptionType: Descripción de cuándo se lanza esta excepción.
+
+Examples:
+    >>> función(param1=1, param2='test')
+    'resultado esperado'
+"""
+```
+
+### 2. Docstrings Obligatorios
+Los siguientes elementos deben tener docstrings:
+- Módulos (archivos .py)
+- Clases
+- Métodos públicos
+- Funciones públicas
+- Paquetes (__init__.py)
+
+### 3. Contenido de Docstrings
+
+#### Para Módulos
+```python
+"""Nombre del módulo.
+
+Descripción detallada del propósito y funcionalidad del módulo.
+
+Este módulo proporciona:
+    * Clase1: para hacer X
+    * Función1: para hacer Y
+    * Constante1: define Z
+"""
+```
+
+#### Para Clases
+```python
+class MiClase:
+    """Descripción concisa de la clase.
+    
+    Descripción detallada que explique el propósito, comportamiento
+    y contexto de uso de la clase.
+    
+    Attributes:
+        attr1 (tipo): Descripción del atributo 1.
+        attr2 (tipo): Descripción del atributo 2.
+    """
+```
+
+#### Para Métodos y Funciones
+```python
+def mi_funcion(param1, param2):
+    """Descripción concisa de la función.
+    
+    Descripción más detallada que explique qué hace
+    la función y cómo se debe usar.
+    
+    Args:
+        param1 (tipo): Descripción del parámetro.
+        param2 (tipo): Descripción del parámetro.
+    
+    Returns:
+        tipo: Descripción del valor devuelto.
+    
+    Raises:
+        ExceptionType: Descripción de cuándo ocurre.
+    """
+```
+
+### 4. Secciones Comunes en Docstrings
+
+#### Args
+Documenta los parámetros de entrada:
+```python
+"""
+Args:
+    param1 (int): El primer parámetro.
+    param2 (str): El segundo parámetro.
+    *args: Argumentos variables.
+    **kwargs: Argumentos de palabra clave variables.
+"""
+```
+
+#### Returns
+Documenta los valores de retorno:
+```python
+"""
+Returns:
+    bool: True si la operación tuvo éxito, False en caso contrario.
+"""
+```
+
+#### Raises
+Documenta las excepciones que puede lanzar:
+```python
+"""
+Raises:
+    ValueError: Si el parámetro no está en el rango esperado.
+    TypeError: Si el parámetro no es del tipo esperado.
+"""
+```
+
+#### Examples
+Proporciona ejemplos de uso:
+```python
+"""
+Examples:
+    >>> suma(1, 2)
+    3
+    >>> suma('a', 'b')
+    'ab'
+"""
+```
+
+## Mejores Prácticas
+
+### 1. Claridad y Concisión
+- La primera línea debe ser clara, concisa y descriptiva
+- Usar voz activa y tiempo presente
+- Evitar redundancias como "Esta función hace..."
+
+### 2. Completitud
+- Documentar todos los parámetros
+- Describir todos los posibles valores de retorno
+- Listar todas las excepciones que podrían lanzarse
+
+### 3. Tipado
+- Especificar los tipos de los parámetros y valores de retorno
+- Usar anotaciones de tipo de Python 3 cuando sea posible
+- Preferir tipos específicos sobre generales (List[int] vs list)
+
+### 4. Código en Docstrings
+- Usar backticks (\`) para nombres de variables y código inline
+- Usar bloques de código para ejemplos más extensos
+- Formatear correctamente los bloques de código
+
+### 5. Mantenimiento
+- Actualizar los docstrings cuando cambie la funcionalidad
+- Mantener la coherencia entre el código y su documentación
+- Revisar regularmente la calidad de los docstrings
+
+## Herramientas de Validación
+
+### 1. pydocstyle
+Configuración recomendada:
+```ini
+[pydocstyle]
+convention = google
+add-ignore = D107,D202,D203
+```
+
+### 2. Sphinx
+Para generar documentación automática:
+```bash
+# Instalar Sphinx con extensión para docstrings de Google
+pip install sphinx sphinxcontrib-napoleon
+
+# Generar documentación
+sphinx-build -b html docs/source/ docs/build/html
+```
+
+### 3. Visual Studio Code
+Configuración recomendada para validación de docstrings:
+```json
+{
+    "python.linting.pydocstyleEnabled": true,
+    "python.linting.pydocstyleArgs": [
+        "--convention=google"
+    ]
+}
+```
+
+## Lista de Verificación
+
+Para cada archivo Python, verificar:
+- [ ] Tiene docstring a nivel de módulo
+- [ ] Todas las clases tienen docstrings
+- [ ] Todos los métodos/funciones públicos tienen docstrings
+- [ ] Se documentan todos los parámetros
+- [ ] Se documentan todos los valores de retorno
+- [ ] Se documentan las excepciones relevantes
+- [ ] Se incluyen ejemplos para funcionalidades complejas
+- [ ] El formato sigue el estilo de Google
+
+## Script de Verificación
+
+```python
+#!/usr/bin/env python3
+"""Script para verificar docstrings en archivos Python.
+
+Este script analiza los archivos Python en un directorio
+y verifica que cumplan con los estándares de docstring.
+
+Usage:
+    python check_docstrings.py [directorio]
+"""
+
+import os
+import sys
+import pydocstyle
+from pydocstyle import checker
+
+def check_directory(directory):
+    """Verifica los docstrings en todos los archivos Python de un directorio.
+    
+    Args:
+        directory (str): Ruta al directorio a verificar.
+    
+    Returns:
+        int: Número de errores encontrados.
+    """
+    errors = 0
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith('.py'):
+                file_path = os.path.join(root, file)
+                errors += check_file(file_path)
+    return errors
+
+def check_file(file_path):
+    """Verifica los docstrings en un archivo Python.
+    
+    Args:
+        file_path (str): Ruta al archivo a verificar.
+    
+    Returns:
+        int: Número de errores encontrados.
+    """
+    print(f"Verificando: {file_path}")
+    file_errors = 0
+    for error in checker.check([file_path], select=['D1', 'D2', 'D3', 'D4']):
+        file_errors += 1
+        print(f"  {error}")
+    return file_errors
+
+if __name__ == "__main__":
+    directory = sys.argv[1] if len(sys.argv) > 1 else '.'
+    errors = check_directory(directory)
+    print(f"Total de errores: {errors}")
+    sys.exit(1 if errors > 0 else 0)
+```
+
+## Referencias
+- [Google Python Style Guide - Docstrings](mdc:https:/google.github.io/styleguide/pyguide.html#38-comments-and-docstrings)
+- [PEP 257 - Docstring Conventions](mdc:https:/www.python.org/dev/peps/pep-0257)
+- [Sphinx Documentation](mdc:https:/www.sphinx-doc.org/en/master)
+- [pydocstyle](mdc:http:/www.pydocstyle.org/en/stable) 

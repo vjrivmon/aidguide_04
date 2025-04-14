@@ -1,0 +1,212 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Regla: Estándares para Scripts de Automatización
+
+Esta regla establece los estándares y mejores prácticas para la creación y mantenimiento de scripts de automatización en el proyecto AidGuide 04.
+
+## Descripción
+Define la estructura, convenciones y mejores prácticas para crear scripts de automatización que faciliten el desarrollo y despliegue del proyecto.
+
+## Estructura Base de Scripts
+
+### 1. Encabezado Estándar
+```powershell
+# Script de automatización para [propósito]
+# Autor: [nombre del autor/equipo]
+# Fecha: [fecha de creación/última modificación]
+# Descripción: [descripción detallada del propósito del script]
+```
+
+### 2. Variables de Configuración
+```powershell
+# PowerShell
+# Configuración de colores y estilos
+$Colors = @{
+    Success = 'Green'
+    Warning = 'Yellow'
+    Error = 'Red'
+    Info = 'Cyan'
+}
+
+# Bash
+# Configuración de colores y estilos
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+```
+
+## Convenciones de Nombrado
+
+### 1. Nombres de Archivos
+- Scripts PowerShell: `start-[componente].ps1`
+- Scripts Bash: `start-[componente].sh`
+- Scripts de configuración: `setup-[componente].[ps1/sh]`
+- Scripts de utilidades: `utils-[propósito].[ps1/sh]`
+
+### 2. Variables y Funciones
+- Variables: PascalCase para PowerShell, UPPER_CASE para variables de entorno
+- Funciones: Verb-Noun para PowerShell, snake_case para Bash
+- Paths: usar variables para rutas comunes
+
+## Estructura de Directorios
+```
+scripts/
+├── windows/              # Scripts específicos para Windows
+│   ├── setup/           # Scripts de configuración
+│   ├── start/           # Scripts de inicio
+│   └── utils/           # Utilidades
+├── linux/               # Scripts específicos para Linux
+│   ├── setup/
+│   ├── start/
+│   └── utils/
+└── common/              # Scripts multiplataforma
+    └── config/          # Configuraciones compartidas
+```
+
+## Plantillas de Scripts
+
+### 1. Script de Inicio (PowerShell)
+```powershell
+#!/usr/bin/env pwsh
+
+# Script de automatización para [propósito]
+# Autor: DevOps Team
+# Fecha: [fecha]
+# Descripción: [descripción]
+
+# Configuración de colores
+$Colors = @{
+    Success = 'Green'
+    Warning = 'Yellow'
+    Error = 'Red'
+    Info = 'Cyan'
+}
+
+# Función para mostrar mensajes
+function Write-StatusMessage {
+    param(
+        [string]$Message,
+        [string]$Type = 'Info'
+    )
+    Write-Host "[$Type] $Message" -ForegroundColor $Colors[$Type]
+}
+
+# Manejo de errores
+$ErrorActionPreference = 'Stop'
+try {
+    Write-StatusMessage "🚀 Iniciando proceso..." -Type 'Info'
+    
+    # Lógica principal aquí
+    
+    Write-StatusMessage "✅ Proceso completado" -Type 'Success'
+} catch {
+    Write-StatusMessage "❌ Error: $_" -Type 'Error'
+    exit 1
+}
+```
+
+### 2. Script de Inicio (Bash)
+```bash
+#!/bin/bash
+
+# Script de automatización para [propósito]
+# Autor: DevOps Team
+# Fecha: [fecha]
+# Descripción: [descripción]
+
+# Configuración
+set -e  # Salir en caso de error
+
+# Colores
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Función para mostrar mensajes
+log_message() {
+    local type=$1
+    local message=$2
+    case $type in
+        "info")    echo -e "${CYAN}[INFO] $message${NC}" ;;
+        "success") echo -e "${GREEN}[SUCCESS] $message${NC}" ;;
+        "warning") echo -e "${YELLOW}[WARNING] $message${NC}" ;;
+        "error")   echo -e "${RED}[ERROR] $message${NC}" ;;
+    esac
+}
+
+# Manejo de errores
+trap 'log_message error "Error en línea $LINENO"' ERR
+
+# Función principal
+main() {
+    log_message info "🚀 Iniciando proceso..."
+    
+    # Lógica principal aquí
+    
+    log_message success "✅ Proceso completado"
+}
+
+main "$@"
+```
+
+## Mejores Prácticas
+
+### 1. Manejo de Errores
+- Implementar try-catch en PowerShell
+- Usar set -e en Bash
+- Proporcionar mensajes de error descriptivos
+- Implementar limpieza en caso de error
+
+### 2. Logging
+- Usar funciones de logging consistentes
+- Incluir timestamps en logs
+- Diferenciar tipos de mensajes (info, warning, error)
+- Mantener logs legibles
+
+### 3. Parametrización
+- Usar argumentos de línea de comandos para configuración
+- Implementar valores por defecto
+- Validar parámetros de entrada
+- Documentar todos los parámetros
+
+### 4. Verificaciones
+- Comprobar requisitos previos
+- Verificar permisos necesarios
+- Validar existencia de archivos/directorios
+- Comprobar conectividad si es necesario
+
+### 5. Documentación
+- Incluir descripción del propósito
+- Documentar parámetros y valores de retorno
+- Proporcionar ejemplos de uso
+- Mantener un registro de cambios
+
+## Validación
+
+### 1. Checklist de Calidad
+- [ ] El script tiene encabezado completo
+- [ ] Implementa manejo de errores
+- [ ] Incluye logging apropiado
+- [ ] Valida entradas y prerrequisitos
+- [ ] Tiene documentación completa
+- [ ] Sigue las convenciones de nombrado
+- [ ] Incluye mensajes de usuario claros
+- [ ] Maneja la limpieza de recursos
+
+### 2. Testing
+- Probar en entorno limpio
+- Verificar manejo de errores
+- Comprobar casos límite
+- Validar en diferentes sistemas operativos
+
+## Referencias
+- [PowerShell Style Guide](mdc:https:/poshcode.gitbook.io/powershell-practice-and-style)
+- [Bash Scripting Guide](mdc:https:/google.github.io/styleguide/shellguide.html)
+- [ROS2 Launch File Guide](mdc:https:/docs.ros.org/en/humble/Tutorials/Launch/Launch-Main.html) 

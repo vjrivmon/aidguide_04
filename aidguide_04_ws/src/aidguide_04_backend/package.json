@@ -1,0 +1,21 @@
+{
+  "name": "aidguide_04_backend",
+  "version": "1.0.0",
+  "description": "Backend API para el proyecto AidGuide 04",
+  "main": "api/app.js",
+  "scripts": {
+    "start": "node api/app.js",
+    "dev": "nodemon api/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "verify-db": "node scripts/verify-db-connection.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

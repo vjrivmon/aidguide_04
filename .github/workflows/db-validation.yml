@@ -1,0 +1,181 @@
+name: Validación de Conexión a Base de Datos
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  test-db-connection:
+    runs-on: ubuntu-latest
+
+    # Configuración de servicios para CI/CD
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ${{ secrets.DB_NAME }}
+          MYSQL_USER: ${{ secrets.DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: aidguide_04_ws/src/aidguide_04_backend/package-lock.json
+
+      - name: Instalar dependencias básicas
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          npm install
+          npm install mysql2
+
+      - name: Crear package-lock.json si no existe
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          if [ ! -f "package-lock.json" ]; then
+            echo "Creando package-lock.json"
+            npm install --package-lock-only
+          fi
+      
+      - name: Limpiar e instalar dependencias
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          rm -rf node_modules
+          npm cache clean --force
+          npm install --legacy-peer-deps
+
+      - name: Verificar instalación de mysql2
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          if [ ! -d "node_modules/mysql2" ]; then
+            echo "La carpeta node_modules/mysql2 no existe!"
+            npm install --no-save mysql2
+          else
+            echo "Dependencia mysql2 instalada correctamente"
+          fi
+
+      - name: Configurar variables de entorno
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          cat > .env << EOF
+          DB_HOST=localhost
+          DB_USER=${{ secrets.DB_USER }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          EOF
+          
+          # Mostrar contenido del archivo .env (sin mostrar valores)
+          echo "Archivo .env creado con las siguientes variables:"
+          grep -v "PASSWORD" .env | cat -n
+
+      - name: Esperar que MySQL esté listo
+        run: |
+          echo "Esperando que MySQL esté disponible..."
+          for i in {1..30}; do
+            if mysqladmin ping -h"127.0.0.1" -P"3306" --silent; then
+              echo "MySQL está disponible"
+              break
+            fi
+            echo "Intento $i: MySQL aún no está disponible, esperando..."
+            sleep 2
+          done
+
+      - name: Verificar script antes de ejecución
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          echo "Contenido del script verify-db-connection.js:"
+          cat scripts/verify-db-connection.js | head -n 20
+          echo "..."
+          echo "Archivos en carpeta scripts:"
+          ls -la scripts/
+
+      - name: Ejecutar verificación completa de DB
+        run: |
+          cd aidguide_04_ws/src/aidguide_04_backend
+          # Verificar que el mapper de variables de entorno exista
+          if [ ! -f "scripts/db-env-mapper.js" ]; then
+            echo "⚠️ El archivo db-env-mapper.js no existe, creando..."
+            # Crear estructura mínima del mapper si no existe
+            cat > scripts/db-env-mapper.js << 'EOF'
+            module.exports = function() {
+              // Mapeo básico de DATABASE_* a DB_*
+              if (process.env.DATABASE_HOST && !process.env.DB_HOST) process.env.DB_HOST = process.env.DATABASE_HOST;
+              if (process.env.DATABASE_USER && !process.env.DB_USER) process.env.DB_USER = process.env.DATABASE_USER;
+              if (process.env.DATABASE_PASSWORD && !process.env.DB_PASSWORD) process.env.DB_PASSWORD = process.env.DATABASE_PASSWORD;
+              if (process.env.DATABASE_NAME && !process.env.DB_NAME) process.env.DB_NAME = process.env.DATABASE_NAME;
+              // Y viceversa
+              if (process.env.DB_HOST && !process.env.DATABASE_HOST) process.env.DATABASE_HOST = process.env.DB_HOST;
+              if (process.env.DB_USER && !process.env.DATABASE_USER) process.env.DATABASE_USER = process.env.DB_USER;
+              if (process.env.DB_PASSWORD && !process.env.DATABASE_PASSWORD) process.env.DATABASE_PASSWORD = process.env.DB_PASSWORD;
+              if (process.env.DB_NAME && !process.env.DATABASE_NAME) process.env.DATABASE_NAME = process.env.DB_NAME;
+            };
+            EOF
+          fi
+          
+          # Primero verificar conexión
+          node scripts/verify-db-connection.js
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Conexión a base de datos verificada, comprobando estructura..."
+            
+            # Crear script de verificación de estructura si no existe
+            if [ ! -f "scripts/verify-db-structure.js" ]; then
+              echo "⚠️ El archivo verify-db-structure.js no existe, creando..."
+              cat > scripts/verify-db-structure.js << 'EOF'
+              const mysql = require('mysql2/promise');
+              
+              async function verifyDatabaseStructure() {
+                console.log('🔍 Verificando estructura de la base de datos...');
+                
+                const connection = await mysql.createConnection({
+                  host: process.env.DB_HOST || 'localhost',
+                  user: process.env.DB_USER || 'root',
+                  password: process.env.DB_PASSWORD || '',
+                  database: process.env.DB_NAME || 'test'
+                });
+                
+                try {
+                  // Verificar tablas principales
+                  console.log('📋 Verificando tablas...');
+                  const [tables] = await connection.execute(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ?",
+                    [process.env.DB_NAME || 'test']
+                  );
+                  
+                  const tableNames = tables.map(t => t.table_name || t.TABLE_NAME);
+                  console.log(`📊 Tablas encontradas: ${tableNames.join(', ')}`);
+                  
+                  await connection.end();
+                  console.log('✅ Verificación básica completada');
+                } catch (error) {
+                  console.error('❌ Error:', error.message);
+                  await connection.end();
+                  process.exit(1);
+                }
+              }
+              
+              verifyDatabaseStructure();
+              EOF
+            fi
+            
+            # Ejecutar verificación de estructura
+            node scripts/verify-db-structure.js
+          else
+            echo "❌ La verificación de conexión falló, no se procederá con la verificación de estructura"
+            exit 1
+          fi
