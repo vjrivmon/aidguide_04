@@ -6,6 +6,8 @@ import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { AuthProvider } from "@/context/auth-context"
 import { RobotProvider } from "@/context/robot-context"
+import { ChatbotProvider } from "@/context/chatbot-context"
+import Chatbot from "@/components/ui/chatbot"
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -29,9 +31,12 @@ export default function RootLayout({
       <body className={`${montserrat.className} min-h-screen flex flex-col`}>
         <AuthProvider>
           <RobotProvider>
-            <Header />
-            <main className="flex-grow">{children}</main>
-            <Footer />
+            <ChatbotProvider>
+              <Header />
+              <main className="flex-grow">{children}</main>
+              <Footer />
+              <Chatbot />
+            </ChatbotProvider>
           </RobotProvider>
         </AuthProvider>
       </body>
