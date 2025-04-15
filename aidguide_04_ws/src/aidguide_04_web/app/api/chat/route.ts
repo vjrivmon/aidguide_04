@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 // Ruta para verificar la disponibilidad del servicio de Ollama
 export async function GET() {
   try {
-    const response = await fetch('http://localhost:11434/api/health', {
+    const response = await fetch('http://localhost:11434/', {
       method: 'GET',
     });
 
