@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# Colores para los mensajes
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}║  ${YELLOW}🚀 AIDGUIDE 04 - SERVICIO DE CHATBOT CON OLLAMA ${CYAN}        ║${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo ""
+
+# Verificar si Ollama está instalado
+if ! command -v ollama &> /dev/null; then
+    echo -e "${RED}❌ Ollama no está instalado en este sistema${NC}"
+    echo -e "${YELLOW}📝 Instalando Ollama...${NC}"
+    
+    # Instalación de Ollama
+    curl -fsSL https://ollama.com/install.sh | sh
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ No se pudo instalar Ollama. Por favor, instálelo manualmente desde https://ollama.com${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Ollama instalado correctamente${NC}"
+fi
+
+# Verificar si el modelo Mistral está disponible
+echo -e "${YELLOW}📝 Verificando si el modelo Mistral está disponible...${NC}"
+if ! ollama list | grep -q "mistral"; then
+    echo -e "${YELLOW}📝 Descargando el modelo Mistral...${NC}"
+    ollama pull mistral
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ No se pudo descargar el modelo Mistral. Vuelva a intentarlo más tarde.${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Modelo Mistral descargado correctamente${NC}"
+else
+    echo -e "${GREEN}✅ El modelo Mistral ya está disponible${NC}"
+fi
+
+# Iniciar el servidor Ollama
+echo -e "${YELLOW}📝 Iniciando el servidor Ollama...${NC}"
+ollama serve &
+OLLAMA_PID=$!
+sleep 2
+
+# Verificar si el servidor está en funcionamiento
+if ! curl -s http://localhost:11434/api/health &> /dev/null; then
+    echo -e "${RED}❌ No se pudo iniciar el servidor Ollama${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ Servidor Ollama iniciado correctamente${NC}"
+echo -e "${CYAN}🌐 API de Ollama disponible en: http://localhost:11434${NC}"
+echo -e "${YELLOW}💡 El chatbot ahora puede utilizar el modelo Mistral${NC}"
+echo -e "${YELLOW}⚠️ Este terminal debe permanecer abierto para que el servicio funcione${NC}"
+echo -e "${YELLOW}⚠️ Presione Ctrl+C para detener el servicio${NC}"
+
+# Mantener el script en ejecución
+wait $OLLAMA_PID 

@@ -39,6 +39,162 @@ check_and_install_jsyaml() {
     fi
 }
 
+# Función para verificar e instalar Node.js y npm
+check_and_install_nodejs() {
+    echo -e "${YELLOW}🔍 Verificando instalación de Node.js y npm...${NC}"
+    
+    # Verificar si Node.js está instalado
+    if ! command -v node &> /dev/null; then
+        echo -e "${YELLOW}⚠️ Node.js no está instalado${NC}"
+        echo -e "${CYAN}❓ ¿Deseas instalar Node.js? (s/n)${NC}"
+        read -p "> " install_nodejs
+        
+        if [ "$install_nodejs" = "s" ] || [ "$install_nodejs" = "S" ]; then
+            echo -e "${YELLOW}📦 Instalando Node.js y npm...${NC}"
+            if curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash - &&
+               sudo apt-get install -y nodejs; then
+                echo -e "${GREEN}✅ Node.js y npm instalados correctamente${NC}"
+            else
+                echo -e "${RED}❌ Error al instalar Node.js y npm${NC}"
+                echo -e "${YELLOW}📝 Intenta instalarlo manualmente siguiendo las instrucciones en: https://nodejs.org/es/download/package-manager/${NC}"
+                return 1
+            fi
+        else
+            echo -e "${YELLOW}⚠️ Continuando sin instalar Node.js. La interfaz web y el chatbot no estarán disponibles.${NC}"
+            return 1
+        fi
+    else
+        echo -e "${GREEN}✅ Node.js está instalado ($(node -v))${NC}"
+        
+        # Verificar si npm está instalado
+        if ! command -v npm &> /dev/null; then
+            echo -e "${YELLOW}⚠️ npm no está instalado${NC}"
+            echo -e "${CYAN}❓ ¿Deseas instalar npm? (s/n)${NC}"
+            read -p "> " install_npm
+            
+            if [ "$install_npm" = "s" ] || [ "$install_npm" = "S" ]; then
+                echo -e "${YELLOW}📦 Instalando npm...${NC}"
+                if sudo apt-get install -y npm; then
+                    echo -e "${GREEN}✅ npm instalado correctamente${NC}"
+                else
+                    echo -e "${RED}❌ Error al instalar npm${NC}"
+                    echo -e "${YELLOW}📝 Intenta instalarlo manualmente con: sudo apt-get install -y npm${NC}"
+                    return 1
+                fi
+            else
+                echo -e "${YELLOW}⚠️ Continuando sin instalar npm. La interfaz web y el chatbot no estarán disponibles.${NC}"
+                return 1
+            fi
+        else
+            echo -e "${GREEN}✅ npm está instalado ($(npm -v))${NC}"
+        fi
+    fi
+    
+    return 0
+}
+
+# Función para verificar e instalar Ollama
+check_and_install_ollama() {
+    echo -e "${YELLOW}🔍 Verificando instalación de Ollama...${NC}"
+    
+    # Verificar si Ollama está instalado o si está corriendo como servicio
+    if ! command -v ollama &> /dev/null && ! pgrep -f ollama > /dev/null; then
+        echo -e "${YELLOW}⚠️ Ollama no está instalado o no está en ejecución${NC}"
+        echo -e "${CYAN}❓ ¿Deseas instalar Ollama? (s/n)${NC}"
+        read -p "> " install_ollama
+        
+        if [ "$install_ollama" = "s" ] || [ "$install_ollama" = "S" ]; then
+            echo -e "${YELLOW}📦 Instalando Ollama...${NC}"
+            if curl -fsSL https://ollama.com/install.sh | sh; then
+                echo -e "${GREEN}✅ Ollama instalado correctamente${NC}"
+                
+                # Verificar disponibilidad del modelo mistral
+                echo -e "${YELLOW}🔍 Verificando disponibilidad del modelo 'mistral'...${NC}"
+                if ollama list | grep -q "mistral"; then
+                    echo -e "${GREEN}✅ Modelo 'mistral' ya está disponible${NC}"
+                else
+                    echo -e "${YELLOW}⚠️ El modelo 'mistral' no está disponible${NC}"
+                    echo -e "${CYAN}❓ ¿Deseas descargar el modelo 'mistral'? (s/n)${NC}"
+                    read -p "> " download_mistral
+                    
+                    if [ "$download_mistral" = "s" ] || [ "$download_mistral" = "S" ]; then
+                        echo -e "${YELLOW}📦 Descargando modelo 'mistral'...${NC}"
+                        if ollama pull mistral; then
+                            echo -e "${GREEN}✅ Modelo 'mistral' descargado correctamente${NC}"
+                        else
+                            echo -e "${RED}❌ Error al descargar el modelo 'mistral'${NC}"
+                            echo -e "${YELLOW}📝 El chatbot no funcionará correctamente sin este modelo${NC}"
+                        fi
+                    else
+                        echo -e "${YELLOW}⚠️ Continuando sin descargar el modelo 'mistral'. El chatbot no funcionará correctamente.${NC}"
+                    fi
+                fi
+            else
+                echo -e "${RED}❌ Error al instalar Ollama${NC}"
+                echo -e "${YELLOW}📝 Intenta instalarlo manualmente siguiendo las instrucciones en: https://ollama.com/download${NC}"
+                return 1
+            fi
+        else
+            echo -e "${YELLOW}⚠️ Continuando sin instalar Ollama. El chatbot no estará disponible.${NC}"
+            return 1
+        fi
+    else
+        if pgrep -f ollama > /dev/null; then
+            echo -e "${GREEN}✅ Ollama está en ejecución${NC}"
+        else
+            echo -e "${GREEN}✅ Ollama está instalado${NC}"
+            # Intentar iniciar Ollama
+            echo -e "${YELLOW}🔍 Iniciando servicio Ollama...${NC}"
+            ollama serve &
+            sleep 2
+            if pgrep -f ollama > /dev/null; then
+                echo -e "${GREEN}✅ Servicio Ollama iniciado correctamente${NC}"
+            else
+                echo -e "${RED}❌ No se pudo iniciar el servicio Ollama${NC}"
+                echo -e "${YELLOW}📝 Intenta iniciarlo manualmente con: ollama serve${NC}"
+                return 1
+            fi
+        fi
+        
+        # Verificar disponibilidad del modelo mistral
+        echo -e "${YELLOW}🔍 Verificando disponibilidad del modelo 'mistral'...${NC}"
+        if ollama list | grep -q "mistral"; then
+            echo -e "${GREEN}✅ Modelo 'mistral' está disponible${NC}"
+        else
+            echo -e "${YELLOW}⚠️ El modelo 'mistral' no está disponible${NC}"
+            echo -e "${CYAN}❓ ¿Deseas descargar el modelo 'mistral'? (s/n)${NC}"
+            read -p "> " download_mistral
+            
+            if [ "$download_mistral" = "s" ] || [ "$download_mistral" = "S" ]; then
+                echo -e "${YELLOW}📦 Descargando modelo 'mistral'...${NC}"
+                if ollama pull mistral; then
+                    echo -e "${GREEN}✅ Modelo 'mistral' descargado correctamente${NC}"
+                else
+                    echo -e "${RED}❌ Error al descargar el modelo 'mistral'${NC}"
+                    echo -e "${YELLOW}📝 El chatbot no funcionará correctamente sin este modelo${NC}"
+                    return 1
+                fi
+            else
+                echo -e "${YELLOW}⚠️ Continuando sin descargar el modelo 'mistral'. El chatbot no funcionará correctamente.${NC}"
+                return 1
+            fi
+        fi
+    fi
+    
+    # Verificar conexión con el endpoint raíz de Ollama
+    echo -e "${YELLOW}🔍 Verificando conexión con Ollama...${NC}"
+    if curl -s http://localhost:11434/ | grep -q "Ollama is running"; then
+        echo -e "${GREEN}✅ Servicio Ollama responde correctamente${NC}"
+    else
+        echo -e "${RED}❌ No se puede conectar con el servicio Ollama${NC}"
+        echo -e "${YELLOW}📝 Verifica que el servicio esté en ejecución con: ps aux | grep ollama${NC}"
+        echo -e "${YELLOW}📝 Intenta reiniciar el servicio o ejecutarlo manualmente con: ollama serve${NC}"
+        return 1
+    fi
+    
+    return 0
+}
+
 # Función para verificar si ROS2 está instalado y configurado
 check_ros() {
     if ! command -v ros2 &> /dev/null; then
@@ -219,6 +375,14 @@ echo ""
 echo -e "${YELLOW}🔍 Verificando instalación de ROS2...${NC}"
 check_ros
 echo -e "${GREEN}✅ ROS2 está correctamente instalado${NC}"
+
+# Verificar instalación de Node.js y npm
+check_and_install_nodejs
+NODEJS_OK=$?
+
+# Verificar instalación de Ollama
+check_and_install_ollama
+OLLAMA_OK=$?
 
 # Verificar dependencia js-yaml
 check_and_install_jsyaml
@@ -548,129 +712,46 @@ TERMINAL10_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     ros2 run aidguide_04_my_nav2_system web_waypoint_bridge && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
-# Terminal 11: Robot Monitoring
-TERMINAL11_COMMANDS="cd \"$WORKSPACE_PATH\" && \
-    echo -e \"${MAGENTA}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${MAGENTA}║  TERMINAL 11: MONITOR DE ROBOT CON PANTALLAS SEPARADAS  ║${NC}\" && \
-    echo -e \"${MAGENTA}╚════════════════════════════════════════════╝${NC}\" && \
-    echo -e \"${YELLOW}🔨 Compilando sistema de monitoreo personalizado...${NC}\" && \
-    cd ~/turtlebot3_ws && colcon build --packages-select show_msg && \
-    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
-    source ~/turtlebot3_ws/install/setup.bash && \
-    echo -e \"${CYAN}🔌 Iniciando simulador de datos del robot...${NC}\" && \
-    ros2 launch show_msg robot_simulator.launch.py & \
-    sleep 3 && \
-    echo -e \"${CYAN}🔋 Iniciando monitor de robot con pantallas separadas...${NC}\" && \
-    ros2 launch show_msg robot_monitor.launch.py && \
-    read -p \"Presiona Enter para cerrar esta terminal...\""
+# Terminal 11: Servicio Ollama
+TERMINAL11_COMMANDS="(echo -e \"${MAGENTA}║  TERMINAL 11: SERVICIO OLLAMA            ║${NC}\" && \
+echo && \
+if pgrep -f ollama > /dev/null; then \
+  echo -e \"${CYAN}🤖 Ollama ya está en ejecución...${NC}\" && \
+  echo -e \"${YELLOW}📝 Si experimentas problemas, reinicia el servicio con: ollama serve${NC}\"; \
+else \
+  echo -e \"${CYAN}🤖 Iniciando servicio Ollama...${NC}\" && \
+  ollama serve; \
+fi)"
 
-# Terminal 12: Monitor datos del robot
-TERMINAL12_COMMANDS="cd \"$WORKSPACE_PATH\" && \
-    echo -e \"${BLUE}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${BLUE}║  TERMINAL 12: MONITOR EN CONSOLA ÚNICA   ║${NC}\" && \
-    echo -e \"${BLUE}╚════════════════════════════════════════════╝${NC}\" && \
-    source ~/turtlebot3_ws/install/setup.bash && \
-    echo -e \"${YELLOW}🕒 Esperando 20 segundos para que todos los servicios estén activos...${NC}\" && \
-    sleep 20 && \
-    
-    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${CYAN}║  MONITOR DE DATOS DEL ROBOT              ║${NC}\" && \
-    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
-
-    # Batería
-    echo -e \"${GREEN}🔋 BATERÍA DEL ROBOT:${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    ros2 topic echo /battery_status --once 2>/dev/null || echo -e \"${RED}❌ Datos de batería no disponibles${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    echo && \
-    
-    # Estado del hardware
-    echo -e \"${GREEN}🔧 ESTADO DEL HARDWARE:${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    ros2 topic echo /hardware_health --once 2>/dev/null || echo -e \"${RED}❌ Datos de hardware no disponibles${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    echo && \
-    
-    # Temperatura
-    echo -e \"${GREEN}🌡️ TEMPERATURA:${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    ros2 topic echo /temperature_sensor --once 2>/dev/null || echo -e \"${RED}❌ Datos de temperatura no disponibles${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    echo && \
-    
-    # Logs
-    echo -e \"${GREEN}📋 MENSAJES DE LOG:${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    ros2 topic echo /rosout --once 2>/dev/null || echo -e \"${RED}❌ Mensajes de log no disponibles${NC}\" && \
-    echo -e \"${YELLOW}--------------------------------------------${NC}\" && \
-    echo && \
-    
-    # Menú interactivo para monitoreo continuo
-    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${CYAN}║  MONITOREO CONTINUO DE DATOS            ║${NC}\" && \
-    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
-    echo -e \"${YELLOW}Selecciona un tópico para monitorizar continuamente:${NC}\" && \
-    echo -e \"${GREEN}   1) /battery_status - Nivel de batería${NC}\" && \
-    echo -e \"${GREEN}   2) /hardware_health - Estado del hardware${NC}\" && \
-    echo -e \"${GREEN}   3) /temperature_sensor - Temperatura${NC}\" && \
-    echo -e \"${GREEN}   4) /rosout - Mensajes de log${NC}\" && \
-    echo -e \"${GREEN}   5) Monitorear todos simultáneamente (refresco cada 5s)${NC}\" && \
-    echo -e \"${GREEN}   q) Salir${NC}\" && \
-    
-    read -p \"> \" selection && \
-    
-    case \$selection in
-        1)
-            echo -e \"${CYAN}🔄 Monitorizando nivel de batería continuamente. Presiona Ctrl+C para detener.${NC}\"
-            ros2 topic echo /battery_status
-            ;;
-        2)
-            echo -e \"${CYAN}🔄 Monitorizando estado del hardware continuamente. Presiona Ctrl+C para detener.${NC}\"
-            ros2 topic echo /hardware_health
-            ;;
-        3)
-            echo -e \"${CYAN}🔄 Monitorizando temperatura continuamente. Presiona Ctrl+C para detener.${NC}\"
-            ros2 topic echo /temperature_sensor
-            ;;
-        4)
-            echo -e \"${CYAN}🔄 Monitorizando mensajes de log continuamente. Presiona Ctrl+C para detener.${NC}\"
-            ros2 topic echo /rosout
-            ;;
-        5)
-            echo -e \"${CYAN}🔄 Monitorizando todos los datos (refresco cada 5s). Presiona Ctrl+C para detener.${NC}\"
-            while true; do
-                clear
-                echo -e \"${GREEN}🔋 BATERÍA:${NC}\"
-                ros2 topic echo /battery_status --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
-                echo -e \"\\n${GREEN}🔧 HARDWARE:${NC}\"
-                ros2 topic echo /hardware_health --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
-                echo -e \"\\n${GREEN}🌡️ TEMPERATURA:${NC}\"
-                ros2 topic echo /temperature_sensor --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
-                echo -e \"\\n${GREEN}📋 LOGS:${NC}\"
-                ros2 topic echo /rosout --once 2>/dev/null || echo -e \"${RED}❌ No disponible${NC}\"
-                echo -e \"\\n${YELLOW}Actualizando en 5 segundos... Presiona Ctrl+C para detener.${NC}\"
-                sleep 5
-            done
-            ;;
-        *)
-            echo -e \"${YELLOW}📝 Saliendo del monitor de datos${NC}\"
-            ;;
-    esac && \
-    echo -e \"${CYAN}🔄 Monitoreo de datos finalizado${NC}\" && \
-    read -p \"Presiona Enter para cerrar esta terminal...\" dummy"
-
-# Terminal 13: Monitor de Clima
-TERMINAL13_COMMANDS="cd \"$WORKSPACE_PATH\" && \
-    echo -e \"${CYAN}╔════════════════════════════════════════════╗${NC}\" && \
-    echo -e \"${CYAN}║  TERMINAL 13: MONITOR DE CLIMA           ║${NC}\" && \
-    echo -e \"${CYAN}╚════════════════════════════════════════════╝${NC}\" && \
-    echo -e \"${YELLOW}🔨 Compilando aidguide_04_weather...${NC}\" && \
-    colcon build --packages-select aidguide_04_weather && \
-    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
-    source install/setup.bash && \
-    echo -e \"${CYAN}🌦️ Iniciando monitor del clima...${NC}\" && \
-    ros2 run aidguide_04_weather weather_monitor && \
-    read -p \"Presiona Enter para cerrar esta terminal...\""
+# Terminal 12: Chatbot con Ollama
+TERMINAL12_COMMANDS="(echo -e \"${MAGENTA}║  TERMINAL 12: CHATBOT CON OLLAMA         ║${NC}\" && \
+echo && \
+if [ $NODEJS_OK -eq 0 ] && [ $OLLAMA_OK -eq 0 ]; then \
+  echo -e \"${CYAN}🤖 Iniciando el chatbot con Ollama...${NC}\" && \
+  if [ ! -d \"$WORKSPACE_PATH/src/aidguide_04_web\" ]; then \
+    echo -e \"${RED}❌ No se encontró el directorio del frontend web en $WORKSPACE_PATH/src/aidguide_04_web${NC}\"; \
+  else \
+    cd \"$WORKSPACE_PATH/src/aidguide_04_web\" && \
+    echo -e \"${CYAN}📦 Verificando dependencias...${NC}\" && \
+    if [ ! -d \"node_modules\" ] || [ ! -f \"node_modules/.package-lock.json\" ]; then \
+      echo -e \"${YELLOW}📦 Instalando dependencias...${NC}\" && \
+      npm install; \
+    fi && \
+    echo -e \"${CYAN}🚀 Iniciando el servidor web con chatbot...${NC}\" && \
+    npm run dev; \
+  fi \
+else \
+  if [ $NODEJS_OK -ne 0 ]; then \
+    echo -e \"${RED}❌ Node.js o npm no están disponibles. No se puede iniciar el chatbot.${NC}\"; \
+  fi && \
+  if [ $OLLAMA_OK -ne 0 ]; then \
+    echo -e \"${RED}❌ Ollama no está disponible. No se puede iniciar el chatbot.${NC}\"; \
+  fi && \
+  echo -e \"${YELLOW}📝 Para iniciar el chatbot manualmente:${NC}\" && \
+  echo -e \"${YELLOW}   1. Instala Node.js y npm${NC}\" && \
+  echo -e \"${YELLOW}   2. Instala Ollama y descarga el modelo 'mistral'${NC}\" && \
+  echo -e \"${YELLOW}   3. Ejecuta 'cd $WORKSPACE_PATH/src/aidguide_04_web && npm run dev'${NC}\"; \
+fi)"
 
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
@@ -721,14 +802,16 @@ start_terminal "Terminal 9: Monitor de Sensores" "$TERMINAL9_COMMANDS" "${GREEN}
 # Terminal 10: Puente Web-Waypoint
 start_terminal "Terminal 10: Puente Web-Waypoint" "$TERMINAL10_COMMANDS" "${RED}"
 
-# Terminal 11: Robot Monitoring
-start_terminal "Terminal 11: Robot Monitoring" "$TERMINAL11_COMMANDS" "${MAGENTA}"
+# Terminal 11: Servicio Ollama
+start_terminal "Terminal 11: Servicio Ollama" "$TERMINAL11_COMMANDS" "${MAGENTA}"
 
-# Terminal 12: Monitor datos del robot
-start_terminal "Terminal 12: Monitor datos del robot" "$TERMINAL12_COMMANDS" "${BLUE}"
-
-# Terminal 13: Monitor de Clima
-start_terminal "Terminal 13: Monitor de Clima" "$TERMINAL13_COMMANDS" "${CYAN}"
+# Terminal 12: Chatbot con Ollama
+if [ $NODEJS_OK -eq 0 ] && [ $OLLAMA_OK -eq 0 ]; then
+  start_terminal "Terminal 12: Chatbot con Ollama" "$TERMINAL12_COMMANDS" "${MAGENTA}"
+  echo -e "${GREEN}✅ Chatbot iniciado en http://localhost:3000${NC}"
+else
+  echo -e "${YELLOW}⚠️ No se pudo iniciar el chatbot debido a dependencias faltantes${NC}"
+fi
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
@@ -739,6 +822,8 @@ else
     echo -e "${YELLOW}⚠️ La comunicación con el navegador (frontend) no estará disponible hasta que instales rosbridge_server${NC}"
 fi
 echo ""
+echo -e "${CYAN}🌐 Puedes acceder al chatbot inteligente desde la interfaz web cuando esté iniciado${NC}"
+echo -e "${YELLOW}💡 El chatbot utiliza el modelo 'mistral' de Ollama para responder consultas sobre AidGuide${NC}"
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Sistema completo en funcionamiento                     ${CYAN}  ║${NC}"
