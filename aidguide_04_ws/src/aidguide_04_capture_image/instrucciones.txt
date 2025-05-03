@@ -1,0 +1,8 @@
+1- Compilar el paquete
+ colcon build --packages-select aidguide_04_capture_image
+
+2-source install
+source install/setup.bash
+
+3-Lanzar el servicio
+ros2 run aidguide_04_capture_image capture_image
