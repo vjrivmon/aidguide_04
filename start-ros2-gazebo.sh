@@ -832,3 +832,32 @@ echo -e "${CYAN}╚════════════════════�
 
 # Nota: Los archivos originales se restaurarán automáticamente cuando se cierre el script
 # gracias al comando trap configurado anteriormente 
+
+# ------------------------------------------------
+# Procesamiento de imágenes con OpenCV
+# ------------------------------------------------
+echo ""
+echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Iniciando procesamiento de imágenes con OpenCV         ${CYAN}  ║${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+
+# Verificar si OpenCV está instalado
+if python3 -c "import cv2" 2>/dev/null; then
+  echo -e "${GREEN}✅ OpenCV está instalado. Procesando imágenes...${NC}"
+  
+  # Ejecutar el procesamiento de imágenes
+  cd "$SCRIPT_DIR/aidguide_04_ws/src"
+  python3 process_all_images.py
+  
+  echo -e "${GREEN}✅ Procesamiento de imágenes completado${NC}"
+  echo -e "${CYAN}🖼️ Puedes ver las imágenes procesadas en la interfaz web en la sección 'Imágenes captadas por el robot'${NC}"
+  echo -e "${YELLOW}💡 También puedes ejecutar 'python3 view_processed_images.py' para ver los resultados directamente${NC}"
+else
+  echo -e "${YELLOW}⚠️ OpenCV no está instalado. No se procesarán las imágenes.${NC}"
+  echo -e "${YELLOW}⚠️ Para instalar OpenCV, ejecuta: pip install opencv-python numpy${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}✅ Sistema completamente iniciado${NC}" 

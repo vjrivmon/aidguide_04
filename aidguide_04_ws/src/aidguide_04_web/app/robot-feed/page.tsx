@@ -5,6 +5,7 @@ import Image from "next/image"
 import { Camera, TrafficCone, Signpost, Bus, Users, Footprints, Wrench, Video, Maximize2, Minimize2 } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 import ROSLIB from "roslib"
+import ImageGrid from "@/app/components/ImageGrid"
 
 export default function RobotFeed() {
   const { user } = useAuth()
@@ -191,22 +192,7 @@ export default function RobotFeed() {
               <h2 className="text-2xl font-bold text-button mb-6">
                 {categories.find(c => c.id === selectedCategory)?.name || "Imágenes detectadas"}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Grid de imágenes */}
-                {[1, 2, 3, 4].map((index) => (
-                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                    <div className="relative h-48 bg-gray-200 rounded-lg overflow-hidden">
-                      <Image
-                        src="/placeholder.svg?height=200&width=200"
-                        alt={`Imagen ${index}`}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <p className="text-sm text-gray-500 mt-2">Detectado: 15/03/2024, 10:30</p>
-                  </div>
-                ))}
-              </div>
+              <ImageGrid categoryId={selectedCategory} />
             </div>
           )}
         </div>
