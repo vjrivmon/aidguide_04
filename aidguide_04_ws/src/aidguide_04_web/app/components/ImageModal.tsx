@@ -29,10 +29,10 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
   }, [isOpen, imagePath]);
 
   // Aplicar transformación a la imagen
-  const applyTransformation = (type: TransformationType) => {
+  const applyTransformation = async (type: TransformationType) => {
     setIsTransformationLoading(true);
     setTransformationError(null);
-    
+
     try {
       if (type === 'original') {
         setTransformedImagePath(imagePath);
@@ -62,6 +62,24 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
         
         // Establecer la ruta de la imagen transformada
         setTransformedImagePath(contourImagePath);
+      } else if (type === 'colors') {
+        const fileName = imagePath.split('/').pop();
+        const response = await fetch('http://localhost:5000/api/transform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: fileName,
+            transform_type: 'color'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('No se pudo procesar la imagen por color');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setTransformedImagePath(url);
       } else {
         // Para otros tipos de transformación (aún no implementados), usar la imagen original
         setTransformedImagePath(imagePath);
@@ -110,7 +128,7 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
   const transformations = [
     { id: 'original', name: 'Original', icon: Camera, available: true },
     { id: 'edges', name: 'Bordes', icon: Square, available: true },
-    { id: 'colors', name: 'Colores', icon: PaintBucket, available: false },
+    { id: 'colors', name: 'Colores', icon: PaintBucket, available: true },
     { id: 'shapes', name: 'Formas', icon: Maximize, available: false }
   ];
 
