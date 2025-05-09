@@ -41,7 +41,7 @@ def create_directories():
 
 def detect_contours(image_path, output_path):
     """
-    Detecta los contornos en una imagen y guarda la imagen resultante.
+    Detecta los contornos en una imagen usando el algoritmo de Canny y guarda la imagen resultante.
     
     Args:
         image_path (str): Ruta a la imagen de origen
@@ -60,19 +60,29 @@ def detect_contours(image_path, output_path):
         # Convertir a escala de grises
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Aplicar umbralización binaria
-        ret, umbral = cv2.threshold(img_gray, 155, 255, cv2.THRESH_BINARY)
+        # Aplicar suavizado Gaussiano para reducir ruido
+        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
         
-        # Encontrar contornos
-        contornos, jerarquia = cv2.findContours(umbral, cv2.RETR_TREE, cv2.CHAIN_APPROX_NONE)
+        # Aplicar algoritmo de Canny para detección de bordes
+        # Los umbrales 50 y 150 son valores comunes, pero pueden ajustarse
+        edges = cv2.Canny(img_blur, 50, 150)
+        
+        # Dilatación para mejorar la visibilidad de los bordes
+        kernel = np.ones((3, 3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
+        
+        # Encontrar contornos a partir de los bordes detectados
+        contornos, jerarquia = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Crear una imagen en color para mostrar los contornos
+        img_contornos = img.copy()
         
         # Dibujar contornos en la imagen original
-        img_contornos = img.copy()
-        cv2.drawContours(img_contornos, contornos, -1, (0, 165, 255), 3)
+        cv2.drawContours(img_contornos, contornos, -1, (0, 165, 255), 2)
         
         # Guardar la imagen con contornos
         cv2.imwrite(output_path, img_contornos)
-        print(f"Imagen procesada guardada en: {output_path}")
+        print(f"Imagen procesada con Canny guardada en: {output_path}")
         
         return True
     except Exception as e:

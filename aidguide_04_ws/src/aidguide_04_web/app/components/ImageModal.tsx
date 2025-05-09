@@ -32,38 +32,40 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
   const applyTransformation = async (type: TransformationType) => {
     setIsTransformationLoading(true);
     setTransformationError(null);
-
+    
     try {
       if (type === 'original') {
         setTransformedImagePath(imagePath);
       } else if (type === 'edges') {
+        // Usar la API para obtener bordes en tiempo real (método Canny)
+        const fileName = imagePath.split('/').pop();
+        if (!fileName) {
+          throw new Error('No se pudo determinar el nombre del archivo');
+        }
+        
+        const response = await fetch('http://localhost:5000/api/transform', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            filename: fileName,
+            transform_type: 'edges'
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('No se pudo procesar la imagen por bordes');
+        }
+
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        setTransformedImagePath(url);
+      } else if (type === 'colors') {
         // Extraer información de la ruta de la imagen original
         const fileName = imagePath.split('/').pop();
         if (!fileName) {
           throw new Error('No se pudo determinar el nombre del archivo');
         }
         
-        // Determinar la ubicación de la imagen de contornos basada en categorías conocidas
-        // Ejemplo: /señales_trafico/imagen.jpg -> /señales_trafico/contorno_imagen.jpg
-        const basePath = imagePath.substring(0, imagePath.lastIndexOf('/'));
-        
-        // Si la imagen está en "senyales", necesitamos buscar en la carpeta correspondiente
-        let contourImagePath;
-        if (basePath.includes('senyales')) {
-          // La imagen está en la carpeta "senyales", pero los contornos estarán en "señales_trafico"
-          contourImagePath = '/señales_trafico/contorno_' + fileName;
-        } else {
-          // Mantener en la misma carpeta pero añadir prefijo "contorno_"
-          contourImagePath = `${basePath}/contorno_${fileName}`;
-        }
-        
-        console.log('Ruta original:', imagePath);
-        console.log('Ruta de contornos:', contourImagePath);
-        
-        // Establecer la ruta de la imagen transformada
-        setTransformedImagePath(contourImagePath);
-      } else if (type === 'colors') {
-        const fileName = imagePath.split('/').pop();
         const response = await fetch('http://localhost:5000/api/transform', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

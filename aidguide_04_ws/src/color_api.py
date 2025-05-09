@@ -55,6 +55,49 @@ def detectar_colores(img_path):
     
     return res
 
+def aplicar_canny(img_path):
+    """
+    Aplica el algoritmo de Canny para detectar bordes en una imagen.
+    
+    Args:
+        img_path (str): Ruta a la imagen de origen
+        
+    Returns:
+        numpy.ndarray: Imagen con los bordes detectados o None si hay error
+    """
+    try:
+        # Cargar la imagen
+        img = cv2.imread(img_path)
+        if img is None:
+            return None
+            
+        # Convertir a escala de grises
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Aplicar suavizado Gaussiano para reducir ruido
+        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+        
+        # Aplicar algoritmo de Canny para detección de bordes
+        edges = cv2.Canny(img_blur, 50, 150)
+        
+        # Dilatación para mejorar la visibilidad de los bordes
+        kernel = np.ones((3, 3), np.uint8)
+        edges = cv2.dilate(edges, kernel, iterations=1)
+        
+        # Convertir bordes a BGR para poder colorearlos
+        edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+        
+        # Colorear los bordes (naranja)
+        edges_color[np.where((edges_color == [255, 255, 255]).all(axis=2))] = [0, 165, 255]
+        
+        # Combinar con la imagen original para mejor visualización
+        result = cv2.addWeighted(img, 0.7, edges_color, 0.9, 0)
+        
+        return result
+    except Exception as e:
+        print(f"Error al aplicar Canny: {str(e)}")
+        return None
+
 @app.route('/api/transform', methods=['POST'])
 def transform_image():
     data = request.json
@@ -85,6 +128,18 @@ def transform_image():
             mimetype='image/png',
             as_attachment=False,
             download_name='color.png'
+        )
+    elif transform_type == 'edges':
+        res = aplicar_canny(img_path)
+        if res is None:
+            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+
+        _, buffer = cv2.imencode('.png', res)
+        return send_file(
+            io.BytesIO(buffer.tobytes()),
+            mimetype='image/png',
+            as_attachment=False,
+            download_name='edges.png'
         )
     else:
         return jsonify({'error': 'Transformación no soportada'}), 400
