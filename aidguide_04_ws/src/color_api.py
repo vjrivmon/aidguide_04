@@ -71,31 +71,98 @@ def aplicar_canny(img_path):
         if img is None:
             return None
             
-        # Convertir a escala de grises
+        # Crear una copia para los resultados
+        result = img.copy()
+        
+        # 1. Convertir a escala de grises
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         
-        # Aplicar suavizado Gaussiano para reducir ruido
+        # 2. Aplicar suavizado Gaussiano para reducir ruido
+        # Usamos un kernel de 5x5 con desviación estándar 0
         img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
         
-        # Aplicar algoritmo de Canny para detección de bordes
-        edges = cv2.Canny(img_blur, 50, 150)
+        # 3. Aplicar algoritmo de Canny para detección de bordes
+        # Ajustamos los umbrales para una mejor detección
+        edges_canny = cv2.Canny(img_blur, 50, 150)
         
+        # 4. Encontrar contornos a partir de los bordes detectados
+        contornos, _ = cv2.findContours(
+            edges_canny, 
+            cv2.RETR_EXTERNAL,  # Solo contornos externos
+            cv2.CHAIN_APPROX_SIMPLE  # Comprime segmentos horizontales/verticales
+        )
+        
+        # Crear tres imágenes de resultado para una visualización más completa
+        
+        # Imagen 1: Bordes en blanco y negro (Canny original)
+        edges_bw = cv2.cvtColor(edges_canny, cv2.COLOR_GRAY2BGR)
+        
+        # Imagen 2: Bordes en color sobre imagen original
+        # Dibujar los contornos encontrados en verde sobre la imagen original
+        edges_contours = result.copy()
+        cv2.drawContours(
+            edges_contours, 
+            contornos, 
+            -1,  # Dibujar todos los contornos
+            (0, 255, 0),  # Color verde
+            2,  # Grosor de línea
+            cv2.LINE_AA  # Tipo de línea suavizada
+        )
+        
+        # Imagen 3: Bordes en naranja sobre imagen original (estilo anterior)
         # Dilatación para mejorar la visibilidad de los bordes
         kernel = np.ones((3, 3), np.uint8)
-        edges = cv2.dilate(edges, kernel, iterations=1)
+        edges_dilated = cv2.dilate(edges_canny, kernel, iterations=1)
         
         # Convertir bordes a BGR para poder colorearlos
-        edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+        edges_color = cv2.cvtColor(edges_dilated, cv2.COLOR_GRAY2BGR)
         
         # Colorear los bordes (naranja)
         edges_color[np.where((edges_color == [255, 255, 255]).all(axis=2))] = [0, 165, 255]
         
         # Combinar con la imagen original para mejor visualización
-        result = cv2.addWeighted(img, 0.7, edges_color, 0.9, 0)
+        edges_overlay = cv2.addWeighted(img, 0.7, edges_color, 0.9, 0)
         
-        return result
+        # Combinar las tres vistas en una sola imagen
+        # Primero ajustamos todas las imágenes al mismo tamaño
+        height, width = img.shape[:2]
+        
+        # Crear un lienzo para las tres imágenes
+        combined = np.zeros((height, width * 3, 3), dtype=np.uint8)
+        
+        # Colocar las tres imágenes lado a lado
+        combined[:, 0:width] = edges_bw
+        combined[:, width:width*2] = edges_contours
+        combined[:, width*2:width*3] = edges_overlay
+        
+        # Agregar textos explicativos
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(combined, "Canny", (10, 30), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(combined, "Contornos", (width + 10, 30), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(combined, "Superpuesto", (width * 2 + 10, 30), font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        # Agregar líneas divisorias
+        cv2.line(combined, (width, 0), (width, height), (255, 255, 255), 2)
+        cv2.line(combined, (width * 2, 0), (width * 2, height), (255, 255, 255), 2)
+        
+        # Información de contornos
+        num_contornos = len(contornos)
+        cv2.putText(
+            combined, 
+            f"Contornos: {num_contornos}", 
+            (width + 10, height - 20), 
+            font, 
+            0.7, 
+            (0, 255, 0), 
+            2, 
+            cv2.LINE_AA
+        )
+        
+        return combined
     except Exception as e:
         print(f"Error al aplicar Canny: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def detectar_formas(img_path):
@@ -427,6 +494,100 @@ def detectar_blobs(img_path):
         traceback.print_exc()
         return None
 
+def aplicar_canny_simple(img_path):
+    """
+    Implementa el algoritmo de Canny de forma simple y directa.
+    Muestra la imagen original, la imagen con desenfoque gaussiano y la imagen con detección de bordes.
+    
+    Args:
+        img_path (str): Ruta a la imagen de origen
+        
+    Returns:
+        numpy.ndarray: Imagen procesada con Canny o None si hay error
+    """
+    try:
+        # Cargar la imagen
+        img = cv2.imread(img_path)
+        if img is None:
+            return None
+            
+        # Crear una copia para dibujar los resultados
+        result = img.copy()
+        
+        # 1. Convertir a escala de grises
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # 2. Aplicar suavizado Gaussiano para reducir ruido
+        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+        
+        # 3. Aplicar algoritmo de Canny para detección de bordes
+        # Usando los mismos umbrales para min y max como en el ejemplo (50, 50)
+        edges = cv2.Canny(img_blur, 50, 50)
+        
+        # 4. Encontrar contornos en la imagen con bordes
+        contornos, _ = cv2.findContours(
+            edges.copy(),  # Usamos una copia para no alterar la imagen original
+            cv2.RETR_EXTERNAL,  # Solo contornos externos
+            cv2.CHAIN_APPROX_SIMPLE  # Comprime segmentos horizontales/verticales
+        )
+        
+        # 5. Crear las tres imágenes para la visualización
+        # Convertir imágenes a color para mostrarlas juntas
+        img_blur_color = cv2.cvtColor(img_blur, cv2.COLOR_GRAY2BGR)
+        edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+        
+        # Dibujar contornos en verde sobre la imagen original
+        img_contours = result.copy()
+        cv2.drawContours(
+            image=img_contours,
+            contours=contornos,
+            contourIdx=-1,  # Dibujar todos los contornos
+            color=(0, 255, 0),  # Color verde
+            thickness=2,  # Grosor de línea
+            lineType=cv2.LINE_AA  # Antialiasing para líneas más suaves
+        )
+        
+        # Combinar las tres imágenes para la visualización
+        height, width = img.shape[:2]
+        
+        # Crear un lienzo para las tres imágenes
+        combined = np.zeros((height, width * 3, 3), dtype=np.uint8)
+        
+        # Colocar las tres imágenes lado a lado
+        combined[:, 0:width] = img_blur_color  # Imagen desenfocada
+        combined[:, width:width*2] = edges_color  # Imagen con bordes
+        combined[:, width*2:width*3] = img_contours  # Imagen con contornos
+        
+        # Agregar textos explicativos
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        cv2.putText(combined, "Desenfocada", (10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(combined, "Bordes Canny", (width + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(combined, "Contornos", (width * 2 + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        
+        # Agregar líneas divisorias
+        cv2.line(combined, (width, 0), (width, height), (255, 255, 255), 2)
+        cv2.line(combined, (width * 2, 0), (width * 2, height), (255, 255, 255), 2)
+        
+        # Información adicional
+        num_contornos = len(contornos)
+        cv2.putText(
+            combined, 
+            f"Umbral: 50-50, Contornos: {num_contornos}", 
+            (width + 10, height - 20), 
+            font, 
+            0.6, 
+            (255, 255, 255), 
+            1, 
+            cv2.LINE_AA
+        )
+        
+        return combined
+    except Exception as e:
+        print(f"Error al aplicar Canny simple: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 @app.route('/api/transform', methods=['POST'])
 def transform_image():
     data = request.json
@@ -469,6 +630,18 @@ def transform_image():
             mimetype='image/png',
             as_attachment=False,
             download_name='edges.png'
+        )
+    elif transform_type == 'canny':
+        res = aplicar_canny_simple(img_path)
+        if res is None:
+            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+
+        _, buffer = cv2.imencode('.png', res)
+        return send_file(
+            io.BytesIO(buffer.tobytes()),
+            mimetype='image/png',
+            as_attachment=False,
+            download_name='canny.png'
         )
     elif transform_type == 'shapes':
         res = detectar_formas(img_path)

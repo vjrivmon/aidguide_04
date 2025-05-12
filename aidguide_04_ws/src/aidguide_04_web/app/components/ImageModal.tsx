@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Camera, PaintBucket, Square, Maximize, Circle } from 'lucide-react';
+import { X, Check, Camera, PaintBucket, Square, Maximize, Circle, FileSearch } from 'lucide-react';
 import Image from 'next/image';
 
 // Tipos de transformación disponibles
-type TransformationType = 'original' | 'edges' | 'colors' | 'shapes' | 'blobs';
+type TransformationType = 'original' | 'edges' | 'colors' | 'shapes' | 'blobs' | 'canny';
 
 // Props del componente
 interface ImageModalProps {
@@ -37,14 +37,14 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
     try {
       if (type === 'original') {
         setTransformedImagePath(imagePath);
-      } else if (type === 'edges' || type === 'colors' || type === 'shapes' || type === 'blobs') {
+      } else if (type === 'edges' || type === 'colors' || type === 'shapes' || type === 'blobs' || type === 'canny') {
         // Extraer información de la ruta de la imagen original
         const fileName = imagePath.split('/').pop();
         if (!fileName) {
           throw new Error('No se pudo determinar el nombre del archivo');
         }
         
-        const response = await fetch('http://localhost:5000/api/transform', {
+        const response = await fetch('http://192.168.0.17:5000/api/transform', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -108,6 +108,7 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
   const transformations = [
     { id: 'original', name: 'Original', icon: Camera, available: true },
     { id: 'edges', name: 'Bordes', icon: Square, available: true },
+    { id: 'canny', name: 'Canny', icon: FileSearch, available: true },
     { id: 'colors', name: 'Colores', icon: PaintBucket, available: true },
     { id: 'shapes', name: 'Formas', icon: Maximize, available: true },
     { id: 'blobs', name: 'Blobs', icon: Circle, available: true }
