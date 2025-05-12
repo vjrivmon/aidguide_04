@@ -7,6 +7,7 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image 
 from rclpy.node import Node  
 from rclpy.qos import ReliabilityPolicy, QoSProfile 
+from datetime import datetime
 
 # Clase que convierte imágenes de ROS2 a OpenCV y detecta coches con un clasificador Haar
 class Ros2OpenCVImageConverter(Node):   
@@ -29,12 +30,15 @@ class Ros2OpenCVImageConverter(Node):
         self.car_cascade = cv2.CascadeClassifier(cascade_path)
 
         if self.car_cascade.empty():
-            print("Error: No se pudo cargar el clasificador Haar. Asegúrate de que haarcascade_car.xml está en la carpeta correcta.")
+            print("Error: No se pudo cargar el clasificador Haar.")
             return
+
+        # Carpeta donde se guardarán las imágenes
+        self.output_folder = os.path.join(package_share_directory, 'fotos_detectadas')
+        os.makedirs(self.output_folder, exist_ok=True)
         
     def camera_callback(self, data):
         try:
-            # Convertimos la imagen de ROS a formato OpenCV
             cv_image = self.bridge_object.imgmsg_to_cv2(data, desired_encoding="bgr8")
         except CvBridgeError as e:
             print("Error al convertir la imagen:", e)
@@ -49,6 +53,14 @@ class Ros2OpenCVImageConverter(Node):
             minSize=(30, 30)
         )
 
+        if len(cars) > 0:
+            # Si hay coches, guardar la imagen
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+            filename = os.path.join(self.output_folder, f'coche_{timestamp}.jpg')
+            cv2.imwrite(filename, cv_image)
+            print(f"[INFO] Imagen guardada: {filename}")
+
+        # Mostrar la imagen con los rectángulos
         for (x, y, w, h) in cars:
             cv2.rectangle(cv_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
             cv2.putText(cv_image, 'Coche', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
