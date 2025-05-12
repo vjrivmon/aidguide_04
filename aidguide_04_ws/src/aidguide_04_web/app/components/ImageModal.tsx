@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { X, Check, Camera, PaintBucket, Square, Maximize } from 'lucide-react';
+import { X, Check, Camera, PaintBucket, Square, Maximize, Circle } from 'lucide-react';
 import Image from 'next/image';
 
 // Tipos de transformación disponibles
-type TransformationType = 'original' | 'edges' | 'colors' | 'shapes';
+type TransformationType = 'original' | 'edges' | 'colors' | 'shapes' | 'blobs';
 
 // Props del componente
 interface ImageModalProps {
@@ -37,7 +37,7 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
     try {
       if (type === 'original') {
         setTransformedImagePath(imagePath);
-      } else if (type === 'edges' || type === 'colors' || type === 'shapes') {
+      } else if (type === 'edges' || type === 'colors' || type === 'shapes' || type === 'blobs') {
         // Extraer información de la ruta de la imagen original
         const fileName = imagePath.split('/').pop();
         if (!fileName) {
@@ -109,7 +109,8 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
     { id: 'original', name: 'Original', icon: Camera, available: true },
     { id: 'edges', name: 'Bordes', icon: Square, available: true },
     { id: 'colors', name: 'Colores', icon: PaintBucket, available: true },
-    { id: 'shapes', name: 'Formas', icon: Maximize, available: true }
+    { id: 'shapes', name: 'Formas', icon: Maximize, available: true },
+    { id: 'blobs', name: 'Blobs', icon: Circle, available: true }
   ];
 
   return (

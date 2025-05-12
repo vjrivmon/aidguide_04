@@ -290,6 +290,143 @@ def detectar_formas(img_path):
         traceback.print_exc()
         return None
 
+def detectar_blobs(img_path):
+    """
+    Detecta blobs (objetos binarios grandes) en una imagen y marca sus centroides.
+    
+    Args:
+        img_path (str): Ruta a la imagen de origen
+        
+    Returns:
+        numpy.ndarray: Imagen con los blobs detectados y sus centroides o None si hay error
+    """
+    try:
+        # Cargar la imagen
+        img = cv2.imread(img_path)
+        if img is None:
+            return None
+            
+        # Crear una copia para dibujar los resultados
+        result = img.copy()
+        
+        # Convertir a escala de grises
+        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        
+        # Aplicar suavizado para reducir ruido
+        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+        
+        # Aplicar umbralización adaptativa
+        thresh = cv2.adaptiveThreshold(
+            img_blur,
+            255,
+            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            cv2.THRESH_BINARY_INV,
+            11,
+            2
+        )
+        
+        # Limpieza de la imagen binaria
+        kernel = np.ones((3, 3), np.uint8)
+        thresh_clean = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel)
+        thresh_clean = cv2.morphologyEx(thresh_clean, cv2.MORPH_CLOSE, kernel)
+        
+        # Detectar blobs usando SimpleBlobDetector
+        # Configurar los parámetros del detector
+        params = cv2.SimpleBlobDetector_Params()
+        
+        # Filtro por área
+        params.filterByArea = True
+        params.minArea = 100
+        params.maxArea = 10000
+        
+        # Filtro por circularidad
+        params.filterByCircularity = True
+        params.minCircularity = 0.1
+        
+        # Filtro por convexidad
+        params.filterByConvexity = True
+        params.minConvexity = 0.5
+        
+        # Filtro por inercia (forma alargada vs. circular)
+        params.filterByInertia = True
+        params.minInertiaRatio = 0.1
+        
+        # Crear el detector de blobs
+        detector = cv2.SimpleBlobDetector_create(params)
+        
+        # Detectar blobs
+        keypoints = detector.detect(thresh_clean)
+        
+        # Dibujar los blobs detectados como círculos
+        img_with_keypoints = cv2.drawKeypoints(
+            result, 
+            keypoints, 
+            np.array([]), 
+            (0, 0, 255), 
+            cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS
+        )
+        
+        # Usar el método de contornos para encontrar centroides
+        # Encontrar contornos en la imagen binaria
+        contornos, _ = cv2.findContours(
+            thresh_clean, 
+            cv2.RETR_EXTERNAL, 
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+        
+        # Número de blobs encontrados por contornos
+        num_blobs = len(contornos)
+        
+        # Dibujar contornos y centroides
+        for i, contorno in enumerate(contornos):
+            # Calcular el área para filtrar contornos muy pequeños
+            area = cv2.contourArea(contorno)
+            if area < 100:  # Ignorar áreas muy pequeñas
+                continue
+                
+            # Dibujar el contorno
+            cv2.drawContours(img_with_keypoints, [contorno], -1, (0, 255, 0), 2)
+            
+            # Calcular momentos
+            M = cv2.moments(contorno)
+            
+            # Calcular el centroide solo si el área no es cero
+            if M["m00"] != 0:
+                cx = int(M["m10"] / M["m00"])
+                cy = int(M["m01"] / M["m00"])
+                
+                # Dibujar el centro como un círculo
+                cv2.circle(img_with_keypoints, (cx, cy), 5, (255, 0, 0), -1)
+                
+                # Añadir etiqueta con el número de blob
+                cv2.putText(
+                    img_with_keypoints, 
+                    f"Blob {i+1}", 
+                    (cx - 25, cy - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 
+                    0.5, 
+                    (255, 0, 0), 
+                    2
+                )
+        
+        # Añadir información total de blobs en la esquina superior
+        cv2.putText(
+            img_with_keypoints,
+            f"Total: {num_blobs} blobs",
+            (20, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 0, 0),
+            2
+        )
+        
+        return img_with_keypoints
+    except Exception as e:
+        print(f"Error al detectar blobs: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return None
+
 @app.route('/api/transform', methods=['POST'])
 def transform_image():
     data = request.json
@@ -344,6 +481,18 @@ def transform_image():
             mimetype='image/png',
             as_attachment=False,
             download_name='shapes.png'
+        )
+    elif transform_type == 'blobs':
+        res = detectar_blobs(img_path)
+        if res is None:
+            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+
+        _, buffer = cv2.imencode('.png', res)
+        return send_file(
+            io.BytesIO(buffer.tobytes()),
+            mimetype='image/png',
+            as_attachment=False,
+            download_name='blobs.png'
         )
     else:
         return jsonify({'error': 'Transformación no soportada'}), 400
