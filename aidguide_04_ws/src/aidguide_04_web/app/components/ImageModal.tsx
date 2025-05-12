@@ -5,6 +5,7 @@ import Image from 'next/image';
 // Tipos de transformación disponibles
 type TransformationType = 'original' | 'edges' | 'colors' | 'shapes';
 
+// Props del componente
 interface ImageModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -36,30 +37,7 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
     try {
       if (type === 'original') {
         setTransformedImagePath(imagePath);
-      } else if (type === 'edges') {
-        // Usar la API para obtener bordes en tiempo real (método Canny)
-        const fileName = imagePath.split('/').pop();
-        if (!fileName) {
-          throw new Error('No se pudo determinar el nombre del archivo');
-        }
-        
-        const response = await fetch('http://localhost:5000/api/transform', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            filename: fileName,
-            transform_type: 'edges'
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('No se pudo procesar la imagen por bordes');
-        }
-
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        setTransformedImagePath(url);
-      } else if (type === 'colors') {
+      } else if (type === 'edges' || type === 'colors' || type === 'shapes') {
         // Extraer información de la ruta de la imagen original
         const fileName = imagePath.split('/').pop();
         if (!fileName) {
@@ -71,12 +49,12 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: fileName,
-            transform_type: 'color'
+            transform_type: type === 'colors' ? 'color' : type
           })
         });
 
         if (!response.ok) {
-          throw new Error('No se pudo procesar la imagen por color');
+          throw new Error(`No se pudo procesar la imagen (${type})`);
         }
 
         const blob = await response.blob();
@@ -131,28 +109,29 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
     { id: 'original', name: 'Original', icon: Camera, available: true },
     { id: 'edges', name: 'Bordes', icon: Square, available: true },
     { id: 'colors', name: 'Colores', icon: PaintBucket, available: true },
-    { id: 'shapes', name: 'Formas', icon: Maximize, available: false }
+    { id: 'shapes', name: 'Formas', icon: Maximize, available: true }
   ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-70">
-      <div className="relative w-full max-w-5xl h-[80vh] bg-white rounded-lg shadow-xl overflow-hidden">
-        {/* Cabecera con botón de cierre */}
-        <div className="absolute top-0 right-0 p-3 z-10">
+      <div className="bg-white rounded-lg overflow-hidden shadow-2xl w-full max-w-6xl h-[80vh] flex flex-col">
+        {/* Cabecera */}
+        <div className="flex justify-between items-center px-4 py-3 border-b">
+          <h3 className="text-lg font-semibold text-gray-900">Visualizador de Imágenes</h3>
           <button 
             onClick={onClose}
-            className="bg-white rounded-full p-2 shadow-md hover:bg-gray-100 transition-colors"
-            aria-label="Cerrar"
+            className="text-gray-500 hover:text-gray-700 focus:outline-none"
           >
-            <X size={24} className="text-gray-700" />
+            <X size={24} />
           </button>
         </div>
         
         {/* Contenido principal */}
-        <div className="flex h-full">
-          {/* Menú lateral izquierdo con fondo claro */}
-          <div className="w-40 md:w-48 bg-gray-100 border-r border-gray-200 flex flex-col py-4 px-2">
-            <h3 className="text-gray-700 font-medium px-3 mb-3 text-sm">Transformaciones</h3>
+        <div className="flex flex-1 overflow-hidden">
+          {/* Panel lateral con opciones */}
+          <div className="w-64 border-r p-4 bg-gray-50 overflow-y-auto">
+            <h4 className="text-sm font-semibold mb-3 text-gray-700">Transformaciones</h4>
+            
             {transformations.map((transform) => (
               <button
                 key={transform.id}
