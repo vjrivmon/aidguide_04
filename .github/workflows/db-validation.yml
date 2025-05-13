@@ -107,24 +107,26 @@ jobs:
       - name: Ejecutar verificación completa de DB
         run: |
           cd aidguide_04_ws/src/aidguide_04_backend
+          mkdir -p scripts
+          
           # Verificar que el mapper de variables de entorno exista
           if [ ! -f "scripts/db-env-mapper.js" ]; then
             echo "⚠️ El archivo db-env-mapper.js no existe, creando..."
             # Crear estructura mínima del mapper si no existe
-            cat > scripts/db-env-mapper.js << 'EOF'
-module.exports = function() {
-  // Mapeo básico de DATABASE_* a DB_*
-  if (process.env.DATABASE_HOST && !process.env.DB_HOST) process.env.DB_HOST = process.env.DATABASE_HOST;
-  if (process.env.DATABASE_USER && !process.env.DB_USER) process.env.DB_USER = process.env.DATABASE_USER;
-  if (process.env.DATABASE_PASSWORD && !process.env.DB_PASSWORD) process.env.DB_PASSWORD = process.env.DATABASE_PASSWORD;
-  if (process.env.DATABASE_NAME && !process.env.DB_NAME) process.env.DB_NAME = process.env.DATABASE_NAME;
-  // Y viceversa
-  if (process.env.DB_HOST && !process.env.DATABASE_HOST) process.env.DATABASE_HOST = process.env.DB_HOST;
-  if (process.env.DB_USER && !process.env.DATABASE_USER) process.env.DATABASE_USER = process.env.DB_USER;
-  if (process.env.DB_PASSWORD && !process.env.DATABASE_PASSWORD) process.env.DATABASE_PASSWORD = process.env.DB_PASSWORD;
-  if (process.env.DB_NAME && !process.env.DATABASE_NAME) process.env.DATABASE_NAME = process.env.DB_NAME;
-};
-EOF
+            cat > scripts/db-env-mapper.js <<-'EOF'
+            module.exports = function() {
+              // Mapeo básico de DATABASE_* a DB_*
+              if (process.env.DATABASE_HOST && !process.env.DB_HOST) process.env.DB_HOST = process.env.DATABASE_HOST;
+              if (process.env.DATABASE_USER && !process.env.DB_USER) process.env.DB_USER = process.env.DATABASE_USER;
+              if (process.env.DATABASE_PASSWORD && !process.env.DB_PASSWORD) process.env.DB_PASSWORD = process.env.DATABASE_PASSWORD;
+              if (process.env.DATABASE_NAME && !process.env.DB_NAME) process.env.DB_NAME = process.env.DATABASE_NAME;
+              // Y viceversa
+              if (process.env.DB_HOST && !process.env.DATABASE_HOST) process.env.DATABASE_HOST = process.env.DB_HOST;
+              if (process.env.DB_USER && !process.env.DATABASE_USER) process.env.DATABASE_USER = process.env.DB_USER;
+              if (process.env.DB_PASSWORD && !process.env.DATABASE_PASSWORD) process.env.DATABASE_PASSWORD = process.env.DB_PASSWORD;
+              if (process.env.DB_NAME && !process.env.DATABASE_NAME) process.env.DATABASE_NAME = process.env.DB_NAME;
+            };
+            EOF
           fi
           
           # Primero verificar conexión
@@ -136,41 +138,41 @@ EOF
             # Crear script de verificación de estructura si no existe
             if [ ! -f "scripts/verify-db-structure.js" ]; then
               echo "⚠️ El archivo verify-db-structure.js no existe, creando..."
-              cat > scripts/verify-db-structure.js << 'EOF'
-const mysql = require('mysql2/promise');
-
-async function verifyDatabaseStructure() {
-  console.log('🔍 Verificando estructura de la base de datos...');
-  
-  const connection = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'test'
-  });
-  
-  try {
-    // Verificar tablas principales
-    console.log('📋 Verificando tablas...');
-    const [tables] = await connection.execute(
-      "SELECT table_name FROM information_schema.tables WHERE table_schema = ?",
-      [process.env.DB_NAME || 'test']
-    );
-    
-    const tableNames = tables.map(t => t.table_name || t.TABLE_NAME);
-    console.log(`📊 Tablas encontradas: ${tableNames.join(', ')}`);
-    
-    await connection.end();
-    console.log('✅ Verificación básica completada');
-  } catch (error) {
-    console.error('❌ Error:', error.message);
-    await connection.end();
-    process.exit(1);
-  }
-}
-
-verifyDatabaseStructure();
-EOF
+              cat > scripts/verify-db-structure.js <<-'EOF'
+              const mysql = require('mysql2/promise');
+              
+              async function verifyDatabaseStructure() {
+                console.log('🔍 Verificando estructura de la base de datos...');
+                
+                const connection = await mysql.createConnection({
+                  host: process.env.DB_HOST || 'localhost',
+                  user: process.env.DB_USER || 'root',
+                  password: process.env.DB_PASSWORD || '',
+                  database: process.env.DB_NAME || 'test'
+                });
+                
+                try {
+                  // Verificar tablas principales
+                  console.log('📋 Verificando tablas...');
+                  const [tables] = await connection.execute(
+                    "SELECT table_name FROM information_schema.tables WHERE table_schema = ?",
+                    [process.env.DB_NAME || 'test']
+                  );
+                  
+                  const tableNames = tables.map(t => t.table_name || t.TABLE_NAME);
+                  console.log(`📊 Tablas encontradas: ${tableNames.join(', ')}`);
+                  
+                  await connection.end();
+                  console.log('✅ Verificación básica completada');
+                } catch (error) {
+                  console.error('❌ Error:', error.message);
+                  await connection.end();
+                  process.exit(1);
+                }
+              }
+              
+              verifyDatabaseStructure();
+              EOF
             fi
             
             # Ejecutar verificación de estructura
