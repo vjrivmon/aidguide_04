@@ -4,17 +4,19 @@
 """
 Generador de Informes de Tests y Scripts para AidGuide 04
 Este script genera un informe PDF de los tests y scripts disponibles en el proyecto.
+También sugiere tests unitarios adicionales basados en las historias de usuario.
 """
 
 import os
 import glob
 import subprocess
 from datetime import datetime
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, ListFlowable, ListItem
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, ListFlowable, ListItem, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+from reportlab.lib.units import inch, cm
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 
 # Función para obtener información sobre un archivo .sh
 def get_script_info(script_path):
@@ -127,18 +129,234 @@ def get_test_info(test_file):
         'funciones': test_functions
     }
 
+# Función para generar tests unitarios sugeridos basados en las historias de usuario
+def get_suggested_tests():
+    """
+    Genera una lista de tests unitarios sugeridos basados en las historias de usuario
+    y los módulos del proyecto.
+    
+    Returns:
+        list: Lista de diccionarios con los tests sugeridos
+    """
+    suggested_tests = [
+        {
+            'modulo': 'Detección de Obstáculos',
+            'tests': [
+                {
+                    'nombre': 'test_obstacle_detection_accuracy',
+                    'descripcion': 'Verificar la precisión en la detección de obstáculos a diferentes distancias y condiciones de iluminación',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Ayuda a garantizar que el robot identifique correctamente obstáculos en diferentes condiciones ambientales'
+                },
+                {
+                    'nombre': 'test_obstacle_classification',
+                    'descripcion': 'Comprobar que el sistema clasifica correctamente los diferentes tipos de obstáculos (estáticos, dinámicos, personas)',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Asegura que el robot pueda diferenciar entre obstáculos fijos y personas en movimiento'
+                }
+            ]
+        },
+        {
+            'modulo': 'Reconocimiento de Señales de Tráfico',
+            'tests': [
+                {
+                    'nombre': 'test_traffic_sign_recognition',
+                    'descripcion': 'Probar el reconocimiento de señales de tráfico en imágenes estáticas',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Verifica que el algoritmo de visión puede identificar correctamente las señales de tráfico'
+                },
+                {
+                    'nombre': 'test_traffic_sign_distance_estimation',
+                    'descripcion': 'Evaluar la precisión en la estimación de distancia a señales de tráfico',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Permite conocer con anticipación las señales para tomar decisiones de navegación'
+                }
+            ]
+        },
+        {
+            'modulo': 'Sistema de Batería',
+            'tests': [
+                {
+                    'nombre': 'test_battery_level_monitoring',
+                    'descripcion': 'Verificar que el sistema monitorea correctamente el nivel de batería',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Garantiza que el robot siempre tenga información precisa sobre su nivel de energía'
+                },
+                {
+                    'nombre': 'test_low_battery_alert',
+                    'descripcion': 'Comprobar que se generan alertas cuando la batería está baja',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Previene quedarse sin batería durante el guiado de una persona invidente'
+                }
+            ]
+        },
+        {
+            'modulo': 'Navegación y Guiado',
+            'tests': [
+                {
+                    'nombre': 'test_pathfinding',
+                    'descripcion': 'Probar la generación de rutas óptimas entre puntos',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Asegura que el robot calcule el mejor camino considerando obstáculos y preferencias'
+                },
+                {
+                    'nombre': 'test_navigation_accuracy',
+                    'descripcion': 'Evaluar la precisión del seguimiento de ruta',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Verifica que el robot siga fielmente la ruta planificada'
+                }
+            ]
+        },
+        {
+            'modulo': 'Reconocimiento de Voz',
+            'tests': [
+                {
+                    'nombre': 'test_voice_command_recognition',
+                    'descripcion': 'Probar el reconocimiento de comandos de voz específicos',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Garantiza que el robot entienda correctamente las instrucciones verbales del usuario'
+                },
+                {
+                    'nombre': 'test_voice_command_execution',
+                    'descripcion': 'Verificar que los comandos de voz se traducen en las acciones correctas',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Asegura que el robot ejecute la acción correspondiente al comando recibido'
+                }
+            ]
+        },
+        {
+            'modulo': 'Detección de Escaleras y Desniveles',
+            'tests': [
+                {
+                    'nombre': 'test_stair_detection',
+                    'descripcion': 'Probar la detección de escaleras ascendentes y descendentes',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Evita accidentes en cambios de nivel del terreno'
+                },
+                {
+                    'nombre': 'test_uneven_surface_detection',
+                    'descripcion': 'Verificar la detección de superficies irregulares o con desniveles',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Permite alertar al usuario sobre terrenos peligrosos o inestables'
+                }
+            ]
+        },
+        {
+            'modulo': 'Interfaz Web',
+            'tests': [
+                {
+                    'nombre': 'test_web_interface_accessibility',
+                    'descripcion': 'Comprobar que la interfaz web cumple con estándares de accesibilidad',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Garantiza que la interfaz sea usable por personas con discapacidad visual'
+                },
+                {
+                    'nombre': 'test_web_robot_control',
+                    'descripcion': 'Verificar que los comandos enviados desde la web se ejecutan correctamente en el robot',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Asegura que el control remoto del robot funcione correctamente'
+                }
+            ]
+        },
+        {
+            'modulo': 'Detección de Personas',
+            'tests': [
+                {
+                    'nombre': 'test_person_detection',
+                    'descripcion': 'Probar la detección de personas en el entorno del robot',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Permite alertar sobre la presencia de personas cercanas para evitar colisiones'
+                },
+                {
+                    'nombre': 'test_person_tracking',
+                    'descripcion': 'Verificar el seguimiento de personas en movimiento',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Mejora la interacción social y la seguridad en entornos concurridos'
+                }
+            ]
+        },
+        {
+            'modulo': 'Localización de Puntos de Interés',
+            'tests': [
+                {
+                    'nombre': 'test_bus_stop_detection',
+                    'descripcion': 'Probar la detección de paradas de bus/tren/metro',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Facilita la ubicación de medios de transporte público'
+                },
+                {
+                    'nombre': 'test_poi_navigation',
+                    'descripcion': 'Verificar la navegación hacia puntos de interés predefinidos',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Permite guiar al usuario hacia destinos específicos de manera autónoma'
+                }
+            ]
+        },
+        {
+            'modulo': 'Procesamiento de Imágenes',
+            'tests': [
+                {
+                    'nombre': 'test_image_processing_performance',
+                    'descripcion': 'Evaluar el rendimiento del procesamiento de imágenes en tiempo real',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Asegura que el análisis visual no introduzca retrasos en la toma de decisiones'
+                },
+                {
+                    'nombre': 'test_contour_detection',
+                    'descripcion': 'Verificar la precisión en la detección de contornos en diferentes condiciones',
+                    'tipo': 'Unit Test',
+                    'utilidad': 'Mejora la identificación de objetos y obstáculos en el entorno'
+                }
+            ]
+        }
+    ]
+    
+    return suggested_tests
+
+# Función para formatear texto largo en párrafos para tablas
+def create_paragraph_cell(text, style):
+    """Crea un párrafo formateado para usar en celdas de tablas"""
+    return Paragraph(text, style)
+
 # Función para generar el PDF
 def generate_pdf():
     """Genera el informe PDF con toda la información recopilada"""
     # Crear documento
     pdf_filename = "Informe_Tests_Scripts_AidGuide04.pdf"
-    doc = SimpleDocTemplate(pdf_filename, pagesize=letter)
+    doc = SimpleDocTemplate(pdf_filename, pagesize=letter, leftMargin=0.75*cm, rightMargin=0.75*cm, topMargin=1*cm, bottomMargin=1*cm)
     styles = getSampleStyleSheet()
     
     # Crear estilos personalizados
     title_style = styles['Heading1']
+    title_style.alignment = TA_CENTER
+    
     subtitle_style = styles['Heading2']
+    subtitle_style.spaceAfter = 12
+    
+    subsubtitle_style = styles['Heading3']
+    
     normal_style = styles['Normal']
+    normal_style.fontSize = 10
+    normal_style.leading = 14
+    
+    cell_style = ParagraphStyle(
+        'CellStyle',
+        parent=styles['Normal'],
+        fontSize=9,
+        leading=12,
+        wordWrap='CJK',
+        alignment=TA_LEFT
+    )
+    
+    header_style = ParagraphStyle(
+        'HeaderStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        leading=12,
+        alignment=TA_CENTER,
+        fontName='Helvetica-Bold'
+    )
+    
     code_style = ParagraphStyle(
         'Code',
         parent=styles['Normal'],
@@ -164,26 +382,31 @@ def generate_pdf():
     
     # Tabla de tests
     if test_files:
-        test_data = [["Nombre", "Tipo", "Descripción"]]
+        test_data = [[
+            create_paragraph_cell("Nombre", header_style),
+            create_paragraph_cell("Tipo", header_style),
+            create_paragraph_cell("Descripción", header_style)
+        ]]
         test_details = []
         
         for test_file in test_files:
             test_info = get_test_info(test_file)
             test_data.append([
-                test_info['nombre'], 
-                test_info['tipo'], 
-                test_info['descripcion'][:100] + "..." if len(test_info['descripcion']) > 100 else test_info['descripcion']
+                create_paragraph_cell(test_info['nombre'], cell_style),
+                create_paragraph_cell(test_info['tipo'], cell_style),
+                create_paragraph_cell(test_info['descripcion'], cell_style)
             ])
             test_details.append(test_info)
         
-        t = Table(test_data, colWidths=[1.5*inch, 1*inch, 3.5*inch])
+        t = Table(test_data, colWidths=[3.5*cm, 2.5*cm, 11*cm])
         t.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
         ]))
         elements.append(t)
         elements.append(Spacer(1, 0.2*inch))
@@ -202,13 +425,13 @@ def generate_pdf():
             if test_info['funciones']:
                 elements.append(Paragraph("<b>Funciones de Test:</b>", normal_style))
                 for func in test_info['funciones']:
-                    elements.append(Paragraph(f"- {func}", normal_style))
+                    elements.append(Paragraph(f"• {func}", normal_style))
             
             elements.append(Spacer(1, 0.2*inch))
     else:
         elements.append(Paragraph("No se encontraron archivos de test en el proyecto.", normal_style))
     
-    elements.append(Spacer(1, 0.5*inch))
+    elements.append(Spacer(1, 0.3*inch))
     
     # Sección 2: Scripts disponibles
     elements.append(Paragraph("2. Scripts disponibles (.sh)", subtitle_style))
@@ -220,25 +443,29 @@ def generate_pdf():
     sh_files.extend(glob.glob(os.path.join(workspace_path, "scripts", "*.sh")))
     
     if sh_files:
-        script_data = [["Nombre", "Descripción"]]
+        script_data = [[
+            create_paragraph_cell("Nombre", header_style),
+            create_paragraph_cell("Descripción", header_style)
+        ]]
         script_details = []
         
         for sh_file in sh_files:
             script_info = get_script_info(sh_file)
             script_data.append([
-                script_info['nombre'],
-                script_info['descripcion'][:100] + "..." if len(script_info['descripcion']) > 100 else script_info['descripcion']
+                create_paragraph_cell(script_info['nombre'], cell_style),
+                create_paragraph_cell(script_info['descripcion'], cell_style)
             ])
             script_details.append(script_info)
         
-        t = Table(script_data, colWidths=[2*inch, 4*inch])
+        t = Table(script_data, colWidths=[5*cm, 12*cm])
         t.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
             ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
         ]))
         elements.append(t)
         elements.append(Spacer(1, 0.2*inch))
@@ -250,24 +477,75 @@ def generate_pdf():
         for i, script_info in enumerate(script_details):
             elements.append(Paragraph(f"<b>{i+1}. {script_info['nombre']}</b>", normal_style))
             elements.append(Paragraph(f"<b>Ruta:</b> {script_info['ruta']}", normal_style))
-            elements.append(Paragraph(f"<b>Descripción:</b> {script_info['descripcion']}", normal_style))
+            elements.append(Paragraph(f"<b>Descripción:</b>", normal_style))
+            elements.append(Paragraph(script_info['descripcion'], normal_style))
             elements.append(Spacer(1, 0.2*inch))
     else:
         elements.append(Paragraph("No se encontraron scripts .sh en el proyecto.", normal_style))
     
-    # Crear el PDF
+    elements.append(PageBreak())
+    
+    # Nueva sección: Tests unitarios sugeridos
+    elements.append(Paragraph("3. Tests Unitarios Sugeridos", subtitle_style))
+    elements.append(Spacer(1, 0.1*inch))
+    
+    suggested_tests = get_suggested_tests()
+    
+    elements.append(Paragraph("Basados en las historias de usuario del proyecto, se sugieren los siguientes tests unitarios para mejorar la calidad y cobertura del código:", normal_style))
+    elements.append(Spacer(1, 0.2*inch))
+    
+    for module_tests in suggested_tests:
+        module_name = module_tests['modulo']
+        elements.append(Paragraph(f"{module_name}", subsubtitle_style))
+        
+        test_table_data = [[
+            create_paragraph_cell("Nombre del Test", header_style),
+            create_paragraph_cell("Descripción", header_style),
+            create_paragraph_cell("Utilidad", header_style)
+        ]]
+        
+        for test in module_tests['tests']:
+            test_table_data.append([
+                create_paragraph_cell(test['nombre'], cell_style),
+                create_paragraph_cell(test['descripcion'], cell_style),
+                create_paragraph_cell(test['utilidad'], cell_style)
+            ])
+        
+        t = Table(test_table_data, colWidths=[5*cm, 6.5*cm, 5.5*cm])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightgreen),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 0.2*inch))
+    
+    elements.append(PageBreak())
+    
+    elements.append(Paragraph("4. Conclusiones y Recomendaciones", subtitle_style))
+    elements.append(Spacer(1, 0.1*inch))
+    
+    elements.append(Paragraph("Basado en el análisis del código existente y las historias de usuario, se recomienda:", normal_style))
+    recommendations = [
+        "Implementar tests unitarios independientes de ROS2 para todas las funciones críticas.",
+        "Desarrollar tests de integración para validar la interacción entre módulos.",
+        "Automatizar pruebas de aceptación basadas en las historias de usuario.",
+        "Establecer un sistema de CI/CD para ejecutar tests automáticamente.",
+        "Crear mocks y fixtures para simular sensores y actuadores del robot.",
+        "Implementar tests de rendimiento para funciones críticas en tiempo real.",
+        "Desarrollar tests específicos para la interfaz web accesible."
+    ]
+    
+    for rec in recommendations:
+        elements.append(Paragraph(f"• {rec}", normal_style))
+    
+    # Generar el documento
     doc.build(elements)
-    print(f"Informe PDF generado: {pdf_filename}")
-    return pdf_filename
+    print(f"Informe generado: {pdf_filename}")
 
 if __name__ == "__main__":
-    pdf_file = generate_pdf()
-    print(f"Informe creado exitosamente: {pdf_file}")
-    # Intentar abrir automáticamente el PDF
-    try:
-        if os.name == 'nt':  # Windows
-            os.startfile(pdf_file)
-        elif os.name == 'posix':  # Linux/Mac
-            subprocess.call(['xdg-open', pdf_file])
-    except:
-        print("No se pudo abrir el archivo automáticamente. Por favor, ábralo manualmente.") 
+    generate_pdf() 

@@ -13,39 +13,6 @@ BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 NC='\033[0m' # No Color
 
-# Inicializar ROS2 Galactic
-echo -e "${YELLOW}🔍 Inicializando entorno ROS2 Galactic...${NC}"
-if [ -f "/opt/ros/galactic/setup.bash" ]; then
-    source /opt/ros/galactic/setup.bash
-    echo -e "${GREEN}✅ Entorno ROS2 Galactic inicializado${NC}"
-else
-    echo -e "${RED}❌ No se encontró /opt/ros/galactic/setup.bash${NC}"
-    echo -e "${YELLOW}📝 Verificando otras versiones de ROS2...${NC}"
-    
-    # Buscar otras instalaciones de ROS2
-    if [ -d "/opt/ros" ]; then
-        ros_versions=$(ls /opt/ros)
-        if [ -n "$ros_versions" ]; then
-            echo -e "${YELLOW}⚠️ Versiones de ROS2 encontradas: $ros_versions${NC}"
-            read -p "¿Cuál versión deseas usar? " ros_version
-            if [ -f "/opt/ros/$ros_version/setup.bash" ]; then
-                source "/opt/ros/$ros_version/setup.bash"
-                echo -e "${GREEN}✅ Entorno ROS2 $ros_version inicializado${NC}"
-            else
-                echo -e "${RED}❌ Versión no válida${NC}"
-                exit 1
-            fi
-        else
-            echo -e "${RED}❌ No se encontraron instalaciones de ROS2${NC}"
-            exit 1
-        fi
-    else
-        echo -e "${RED}❌ ROS2 no está instalado${NC}"
-        echo -e "${YELLOW}📝 Por favor, instala ROS2 siguiendo las instrucciones en: https://docs.ros.org/en/galactic/Installation.html${NC}"
-        exit 1
-    fi
-fi
-
 # Función para verificar e instalar js-yaml para manipular archivos YAML
 check_and_install_jsyaml() {
     echo -e "${YELLOW}🔍 Verificando dependencia: js-yaml${NC}"
@@ -865,3 +832,32 @@ echo -e "${CYAN}╚════════════════════�
 
 # Nota: Los archivos originales se restaurarán automáticamente cuando se cierre el script
 # gracias al comando trap configurado anteriormente 
+
+# ------------------------------------------------
+# Procesamiento de imágenes con OpenCV
+# ------------------------------------------------
+echo ""
+echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Iniciando procesamiento de imágenes con OpenCV         ${CYAN}  ║${NC}"
+echo -e "${CYAN}║                                                            ║${NC}"
+echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
+
+# Verificar si OpenCV está instalado
+if python3 -c "import cv2" 2>/dev/null; then
+  echo -e "${GREEN}✅ OpenCV está instalado. Procesando imágenes...${NC}"
+  
+  # Ejecutar el procesamiento de imágenes
+  cd "$SCRIPT_DIR/aidguide_04_ws/src"
+  python3 process_all_images.py
+  
+  echo -e "${GREEN}✅ Procesamiento de imágenes completado${NC}"
+  echo -e "${CYAN}🖼️ Puedes ver las imágenes procesadas en la interfaz web en la sección 'Imágenes captadas por el robot'${NC}"
+  echo -e "${YELLOW}💡 También puedes ejecutar 'python3 view_processed_images.py' para ver los resultados directamente${NC}"
+else
+  echo -e "${YELLOW}⚠️ OpenCV no está instalado. No se procesarán las imágenes.${NC}"
+  echo -e "${YELLOW}⚠️ Para instalar OpenCV, ejecuta: pip install opencv-python numpy${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}✅ Sistema completamente iniciado${NC}" 
