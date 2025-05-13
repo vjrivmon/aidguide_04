@@ -44,7 +44,9 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
           throw new Error('No se pudo determinar el nombre del archivo');
         }
         
-        const response = await fetch('http://192.168.0.17:5000/api/transform', {
+        console.log(`Aplicando transformación ${type} a la imagen ${fileName}`);
+        
+        const response = await fetch('/api/transform', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -53,11 +55,27 @@ export default function ImageModal({ isOpen, onClose, imagePath, imageAlt, detec
           })
         });
 
+        console.log(`Respuesta recibida con status: ${response.status}`);
+
         if (!response.ok) {
-          throw new Error(`No se pudo procesar la imagen (${type})`);
+          const errorText = await response.text();
+          console.error('Error en respuesta:', errorText);
+          throw new Error(`No se pudo procesar la imagen (${type}) - ${response.status} ${response.statusText}`);
+        }
+
+        // Verificar el tipo de contenido
+        const contentType = response.headers.get('content-type');
+        console.log(`Tipo de contenido: ${contentType}`);
+        
+        if (!contentType || !contentType.includes('image/')) {
+          const errorText = await response.text();
+          console.error('Contenido inesperado:', errorText);
+          throw new Error(`Respuesta inválida (${contentType})`);
         }
 
         const blob = await response.blob();
+        console.log(`Blob recibido, tamaño: ${blob.size} bytes`);
+        
         const url = URL.createObjectURL(blob);
         setTransformedImagePath(url);
       } else {
