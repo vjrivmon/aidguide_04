@@ -395,6 +395,50 @@ check_ros_package "web_video_server" "ros-galactic-web-video-server" true
 WEB_VIDEO_OK=$?
 echo
 
+# Iniciar el servicio Ollama para el chatbot si es necesario
+if ! pgrep -f "ollama serve" > /dev/null; then
+    echo -e "${YELLOW}🔄 Iniciando servicio Ollama para el chatbot...${NC}"
+    if command -v ollama &> /dev/null; then
+        # Verificar si el modelo Mistral está disponible
+        if ! ollama list | grep -q "mistral"; then
+            echo -e "${YELLOW}⚠️ El modelo Mistral no está disponible. Descargando...${NC}"
+            ollama pull mistral
+        else
+            echo -e "${GREEN}✅ Modelo Mistral ya disponible${NC}"
+        fi
+        
+        # Iniciar Ollama en segundo plano
+        echo -e "${CYAN}🚀 Iniciando servidor Ollama...${NC}"
+        ollama serve &
+        OLLAMA_PID=$!
+        sleep 3
+        echo -e "${GREEN}✅ Servidor Ollama iniciado (PID: $OLLAMA_PID)${NC}"
+    else
+        echo -e "${RED}❌ Ollama no está instalado. Instalando...${NC}"
+        curl -fsSL https://ollama.com/install.sh | sh
+        if [ $? -eq 0 ]; then
+            echo -e "${GREEN}✅ Ollama instalado correctamente${NC}"
+            echo -e "${YELLOW}🔄 Descargando modelo Mistral...${NC}"
+            ollama pull mistral
+            echo -e "${CYAN}🚀 Iniciando servidor Ollama...${NC}"
+            ollama serve &
+            OLLAMA_PID=$!
+            sleep 3
+        else
+            echo -e "${RED}❌ Error al instalar Ollama. El chatbot no estará disponible.${NC}"
+        fi
+    fi
+else
+    echo -e "${GREEN}✅ Servicio Ollama ya está en ejecución${NC}"
+fi
+
+# Mostrar información sobre API de Ollama si está en ejecución
+if pgrep -f "ollama serve" > /dev/null || [ -n "$OLLAMA_PID" ]; then
+    echo -e "${CYAN}ℹ️ API de Ollama disponible en: http://localhost:11434${NC}"
+    echo -e "${CYAN}ℹ️ El chatbot puede utilizar el modelo Mistral${NC}"
+    echo
+fi
+
 # Obtener la ruta del workspace
 WORKSPACE_PATH=$(get_workspace_path)
 echo -e "${YELLOW}📂 Workspace detectado en: ${CYAN}$WORKSPACE_PATH${NC}"
@@ -753,12 +797,73 @@ else \
   echo -e \"${YELLOW}   3. Ejecuta 'cd $WORKSPACE_PATH/src/aidguide_04_web && npm run dev'${NC}\"; \
 fi)"
 
+# Terminal 13: TurtleBot Cámara
+TERMINAL13_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${BLUE}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${BLUE}║  TERMINAL 13: TURTLEBOT CÁMARA         ║${NC}\" && \
+    echo -e \"${BLUE}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔄 Conectando a TurtleBot por SSH...${NC}\" && \
+    echo -e \"${CYAN}📝 Usando IP: 192.168.0.63 - Contraseña: turtlebot${NC}\" && \
+    ssh -o \"StrictHostKeyChecking=no\" ubuntu@192.168.0.63 \"ros2 run image_tools cam2image --ros-args -p burger_mode:=false -p frequency:=10.0 -p reliability:=best_effort\" || { \
+        echo -e \"${RED}❌ Error al conectar con el TurtleBot o ejecutar el comando${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el TurtleBot esté encendido y conectado a la red${NC}\"; \
+        echo -e \"${YELLOW}📝 IP: 192.168.0.63 - Usuario: ubuntu - Contraseña: turtlebot${NC}\"; \
+    } && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
+# Terminal 14: Captura de Imágenes
+TERMINAL14_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${GREEN}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${GREEN}║  TERMINAL 14: CAPTURA DE IMÁGENES      ║${NC}\" && \
+    echo -e \"${GREEN}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando aidguide_04_capture_image...${NC}\" && \
+    colcon build --packages-select aidguide_04_capture_image || { \
+        echo -e \"${RED}❌ Error al compilar aidguide_04_capture_image${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete exista y no tenga errores${NC}\"; \
+    } && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash || echo -e \"${RED}❌ Error al actualizar el entorno${NC}\" && \
+    echo -e \"${CYAN}📷 Iniciando captura de imágenes...${NC}\" && \
+    ros2 run aidguide_04_capture_image capture_image || { \
+        echo -e \"${RED}❌ Error al ejecutar el nodo de captura de imágenes${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete se haya compilado correctamente${NC}\"; \
+    } && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
+# Terminal 15: Web Video Server Avanzado
+TERMINAL15_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${MAGENTA}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${MAGENTA}║  TERMINAL 15: WEB VIDEO SERVER AVANZADO ║${NC}\" && \
+    echo -e \"${MAGENTA}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando async_web_server_cpp...${NC}\" && \
+    colcon build --packages-select async_web_server_cpp || { \
+        echo -e \"${RED}❌ Error al compilar async_web_server_cpp${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete exista en el workspace${NC}\"; \
+        echo -e \"${YELLOW}📝 Puedes intentar instalarlo con: sudo apt install ros-galactic-async-web-server-cpp${NC}\"; \
+    } && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash || echo -e \"${RED}❌ Error al actualizar el entorno${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando web_video_server...${NC}\" && \
+    colcon build --packages-select web_video_server || { \
+        echo -e \"${RED}❌ Error al compilar web_video_server${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete exista en el workspace${NC}\"; \
+        echo -e \"${YELLOW}📝 Puedes intentar instalarlo con: sudo apt install ros-galactic-web-video-server${NC}\"; \
+    } && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash || echo -e \"${RED}❌ Error al actualizar el entorno${NC}\" && \
+    echo -e \"${CYAN}🎥 Iniciando Web Video Server Avanzado...${NC}\" && \
+    ros2 run web_video_server web_video_server || { \
+        echo -e \"${RED}❌ Error al ejecutar web_video_server${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete se haya compilado correctamente${NC}\"; \
+    } && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 13 terminales con los diferentes componentes ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 15 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -813,6 +918,15 @@ else
   echo -e "${YELLOW}⚠️ No se pudo iniciar el chatbot debido a dependencias faltantes${NC}"
 fi
 
+# Terminal 13: TurtleBot Cámara
+start_terminal "Terminal 13: TurtleBot Cámara" "$TERMINAL13_COMMANDS" "${BLUE}"
+
+# Terminal 14: Captura de Imágenes
+start_terminal "Terminal 14: Captura de Imágenes" "$TERMINAL14_COMMANDS" "${GREEN}"
+
+# Terminal 15: Web Video Server Avanzado
+start_terminal "Terminal 15: Web Video Server Avanzado" "$TERMINAL15_COMMANDS" "${MAGENTA}"
+
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"
 echo -e "${YELLOW}📝 Para interactuar con la navegación, utiliza RViz y las herramientas proporcionadas${NC}"
@@ -848,8 +962,8 @@ if python3 -c "import cv2" 2>/dev/null; then
   echo -e "${GREEN}✅ OpenCV está instalado. Procesando imágenes...${NC}"
   
   # Ejecutar el procesamiento de imágenes
-  cd "$SCRIPT_DIR/aidguide_04_ws/src"
-  python3 process_all_images.py
+  cd "$WORKSPACE_PATH/src"
+  python3 process_all_images.py 2>/dev/null || echo -e "${YELLOW}⚠️ No se pudo ejecutar el procesamiento de imágenes${NC}"
   
   echo -e "${GREEN}✅ Procesamiento de imágenes completado${NC}"
   echo -e "${CYAN}🖼️ Puedes ver las imágenes procesadas en la interfaz web en la sección 'Imágenes captadas por el robot'${NC}"
@@ -860,4 +974,15 @@ else
 fi
 
 echo ""
-echo -e "${GREEN}✅ Sistema completamente iniciado${NC}" 
+echo -e "${GREEN}✅ Sistema completamente iniciado${NC}"
+
+# Configurar la trampa para asegurar una terminación limpia
+trap 'echo -e "${YELLOW}🔄 Finalizando servicios...${NC}"; if [ -n "$OLLAMA_PID" ]; then kill $OLLAMA_PID 2>/dev/null; echo -e "${GREEN}✅ Servicio Ollama finalizado${NC}"; fi; echo -e "${GREEN}✅ Terminación completada${NC}"; exit' INT TERM EXIT
+
+# Mantener el script en ejecución si Ollama está activo
+if [ -n "$OLLAMA_PID" ]; then
+  echo -e "${CYAN}ℹ️ Manteniendo el servicio Ollama activo...${NC}"
+  echo -e "${YELLOW}⚠️ Presiona Ctrl+C para finalizar todos los servicios${NC}"
+  # Esperar a que Ollama termine
+  wait $OLLAMA_PID
+fi 
