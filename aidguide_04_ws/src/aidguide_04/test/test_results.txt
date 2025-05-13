@@ -1,15 +1,15 @@
 INFORME DE EJECUCIÓN DE TESTS - AidGuide 04
-Fecha y hora: 2025-05-13 15:59:51
+Fecha y hora: 2025-05-13 23:45:37
 
 RESUMEN GENERAL
 ==================================================
-Total de archivos de test: 4
-Total de tests ejecutados: 20
-Tests pasados: 19
+Total de archivos de test: 6
+Total de tests ejecutados: 31
+Tests pasados: 30
 Tests fallidos: 0
 Tests con errores: 0
 Tests omitidos: 1
-Tiempo de ejecución: 3.66 segundos
+Tiempo de ejecución: 8.58 segundos
 
 RESULTADOS POR ARCHIVO
 ==================================================
@@ -18,9 +18,17 @@ test_aidguide_system.py
 -----------------------
 Total: 0, Pasados: 0, Fallidos: 0, Errores: 0, Omitidos: 0
 
+test_localization_performance.py
+--------------------------------
+Total: 6, Pasados: 6, Fallidos: 0, Errores: 0, Omitidos: 0
+
 test_person_detection.py
 ------------------------
 Total: 5, Pasados: 4, Fallidos: 0, Errores: 0, Omitidos: 1
+
+test_visual_navigation.py
+-------------------------
+Total: 5, Pasados: 5, Fallidos: 0, Errores: 0, Omitidos: 0
 
 test_web_interface_accessibility.py
 -----------------------------------
@@ -29,3 +37,18 @@ Total: 7, Pasados: 7, Fallidos: 0, Errores: 0, Omitidos: 0
 test_web_robot_control.py
 -------------------------
 Total: 8, Pasados: 8, Fallidos: 0, Errores: 0, Omitidos: 0
+
+TESTS INCORPORADOS DESDE NOTEBOOKS DE COLAB
+==================================================
+Se han integrado con éxito las pruebas de los siguientes notebooks de Colab:
+1. https://colab.research.google.com/drive/1Usu6vLPxerIdm2D-Ngw83hXf39-v47q8?usp=sharing 
+   - Integrado como: test_visual_navigation.py
+   - Pruebas: Detección de señales de tráfico, detección de pasos de peatones, 
+     rendimiento de detección, toma de decisiones basada en elementos visuales
+
+2. https://colab.research.google.com/drive/1i2AuaZTxAArxHo7MgvDGdj24mRmBnZl_?usp=sharing
+   - Integrado como: test_localization_performance.py
+   - Pruebas: Precisión de localización, rendimiento temporal, seguimiento de posición, 
+     carga de mapas, integración con ROS2
+
+Todas las pruebas integradas han pasado correctamente y se han añadido al informe general.
