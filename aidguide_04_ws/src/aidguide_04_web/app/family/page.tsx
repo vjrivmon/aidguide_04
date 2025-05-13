@@ -190,7 +190,7 @@ export default function FamilyPage() {
   useEffect(() => {
     const updateCameraFeed = () => {
       const timestamp = new Date().getTime();
-      setCameraSrc(`http://localhost:8080/stream?topic=/camera/image_raw&t=${timestamp}`);
+      setCameraSrc(`http://localhost:8080/stream?topic=/image&t=${timestamp}`);
     };
     updateCameraFeed();
     const interval = setInterval(updateCameraFeed, 1000);

@@ -46,7 +46,7 @@ export default function RobotFeed() {
     // Actualizar el feed de la cámara cada segundo
     const updateCameraFeed = () => {
       const timestamp = new Date().getTime()
-      setCameraSrc(`http://0.0.0.0:8080/stream?topic=/camera/image_raw&t=${timestamp}`)
+      setCameraSrc(`http://localhost:8080/stream?topic=/image&t=${timestamp}`);
     }
     updateCameraFeed() // Llamada inicial
     const interval = setInterval(updateCameraFeed, 1000) // Actualiza cada segundo
