@@ -506,84 +506,120 @@ def aplicar_canny_simple(img_path):
         numpy.ndarray: Imagen procesada con Canny o None si hay error
     """
     try:
+        print(f"Iniciando aplicar_canny_simple en: {img_path}")
+        # Verificar que el archivo existe
+        if not os.path.exists(img_path):
+            print(f"¡ERROR! El archivo no existe: {img_path}")
+            return None
+            
         # Cargar la imagen
         img = cv2.imread(img_path)
         if img is None:
+            print(f"¡ERROR! No se pudo cargar la imagen: {img_path}")
             return None
             
+        print(f"Imagen cargada correctamente, tamaño: {img.shape}")
+        
         # Crear una copia para dibujar los resultados
         result = img.copy()
         
         # 1. Convertir a escala de grises
-        img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        try:
+            img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            print("Conversión a escala de grises exitosa")
+        except Exception as e:
+            print(f"Error en conversión a escala de grises: {str(e)}")
+            return None
         
         # 2. Aplicar suavizado Gaussiano para reducir ruido
-        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+        try:
+            img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+            print("Aplicación de desenfoque gaussiano exitosa")
+        except Exception as e:
+            print(f"Error en aplicación de desenfoque: {str(e)}")
+            return None
         
         # 3. Aplicar algoritmo de Canny para detección de bordes
-        # Usando los mismos umbrales para min y max como en el ejemplo (50, 50)
-        edges = cv2.Canny(img_blur, 50, 50)
+        try:
+            edges = cv2.Canny(img_blur, 50, 50)
+            print("Aplicación de algoritmo Canny exitosa")
+        except Exception as e:
+            print(f"Error en aplicación de Canny: {str(e)}")
+            return None
         
         # 4. Encontrar contornos en la imagen con bordes
-        contornos, _ = cv2.findContours(
-            edges.copy(),  # Usamos una copia para no alterar la imagen original
-            cv2.RETR_EXTERNAL,  # Solo contornos externos
-            cv2.CHAIN_APPROX_SIMPLE  # Comprime segmentos horizontales/verticales
-        )
+        try:
+            contornos, _ = cv2.findContours(
+                edges.copy(),
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE
+            )
+            print(f"Encontrados {len(contornos)} contornos")
+        except Exception as e:
+            print(f"Error al encontrar contornos: {str(e)}")
+            return None
         
         # 5. Crear las tres imágenes para la visualización
-        # Convertir imágenes a color para mostrarlas juntas
-        img_blur_color = cv2.cvtColor(img_blur, cv2.COLOR_GRAY2BGR)
-        edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
-        
-        # Dibujar contornos en verde sobre la imagen original
-        img_contours = result.copy()
-        cv2.drawContours(
-            image=img_contours,
-            contours=contornos,
-            contourIdx=-1,  # Dibujar todos los contornos
-            color=(0, 255, 0),  # Color verde
-            thickness=2,  # Grosor de línea
-            lineType=cv2.LINE_AA  # Antialiasing para líneas más suaves
-        )
-        
-        # Combinar las tres imágenes para la visualización
-        height, width = img.shape[:2]
-        
-        # Crear un lienzo para las tres imágenes
-        combined = np.zeros((height, width * 3, 3), dtype=np.uint8)
-        
-        # Colocar las tres imágenes lado a lado
-        combined[:, 0:width] = img_blur_color  # Imagen desenfocada
-        combined[:, width:width*2] = edges_color  # Imagen con bordes
-        combined[:, width*2:width*3] = img_contours  # Imagen con contornos
-        
-        # Agregar textos explicativos
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(combined, "Desenfocada", (10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(combined, "Bordes Canny", (width + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-        cv2.putText(combined, "Contornos", (width * 2 + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
-        
-        # Agregar líneas divisorias
-        cv2.line(combined, (width, 0), (width, height), (255, 255, 255), 2)
-        cv2.line(combined, (width * 2, 0), (width * 2, height), (255, 255, 255), 2)
-        
-        # Información adicional
-        num_contornos = len(contornos)
-        cv2.putText(
-            combined, 
-            f"Umbral: 50-50, Contornos: {num_contornos}", 
-            (width + 10, height - 20), 
-            font, 
-            0.6, 
-            (255, 255, 255), 
-            1, 
-            cv2.LINE_AA
-        )
-        
-        return combined
+        try:
+            # Convertir imágenes a color para mostrarlas juntas
+            img_blur_color = cv2.cvtColor(img_blur, cv2.COLOR_GRAY2BGR)
+            edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+            
+            # Dibujar contornos en verde sobre la imagen original
+            img_contours = result.copy()
+            cv2.drawContours(
+                image=img_contours,
+                contours=contornos,
+                contourIdx=-1,
+                color=(0, 255, 0),
+                thickness=2,
+                lineType=cv2.LINE_AA
+            )
+            
+            # Combinar las tres imágenes para la visualización
+            height, width = img.shape[:2]
+            print(f"Dimensiones de la imagen: {width}x{height}")
+            
+            # Crear un lienzo para las tres imágenes
+            combined = np.zeros((height, width * 3, 3), dtype=np.uint8)
+            
+            # Colocar las tres imágenes lado a lado
+            combined[:, 0:width] = img_blur_color
+            combined[:, width:width*2] = edges_color
+            combined[:, width*2:width*3] = img_contours
+            
+            # Agregar textos explicativos
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(combined, "Desenfocada", (10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(combined, "Bordes Canny", (width + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(combined, "Contornos", (width * 2 + 10, 30), font, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+            
+            # Agregar líneas divisorias
+            cv2.line(combined, (width, 0), (width, height), (255, 255, 255), 2)
+            cv2.line(combined, (width * 2, 0), (width * 2, height), (255, 255, 255), 2)
+            
+            # Información adicional
+            num_contornos = len(contornos)
+            cv2.putText(
+                combined, 
+                f"Umbral: 50-50, Contornos: {num_contornos}", 
+                (width + 10, height - 20), 
+                font, 
+                0.6, 
+                (255, 255, 255), 
+                1, 
+                cv2.LINE_AA
+            )
+            
+            print("Imagen combinada creada exitosamente")
+            return combined
+        except Exception as e:
+            print(f"Error al crear la imagen combinada: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return None
     except Exception as e:
-        print(f"Error al aplicar Canny simple: {str(e)}")
+        print(f"Error general en aplicar_canny_simple: {str(e)}")
         import traceback
         traceback.print_exc()
         return None
@@ -594,6 +630,8 @@ def transform_image():
     filename = data.get('filename')
     transform_type = data.get('transform_type')
 
+    print(f"Procesando transformación: {transform_type} para archivo: {filename}")
+
     if not filename or not transform_type:
         return jsonify({'error': 'Faltan parámetros'}), 400
 
@@ -602,73 +640,87 @@ def transform_image():
     for root, dirs, files in os.walk(PUBLIC_DIR):
         if filename in files:
             img_path = os.path.join(root, filename)
+            print(f"Imagen encontrada en: {img_path}")
             break
 
     if not img_path or not os.path.exists(img_path):
+        print(f"¡ERROR! Imagen no encontrada: {filename}")
         return jsonify({'error': 'Imagen no encontrada'}), 404
 
-    if transform_type == 'color':
-        res = detectar_colores(img_path)
-        if res is None:
-            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+    try:
+        if transform_type == 'color':
+            res = detectar_colores(img_path)
+            if res is None:
+                return jsonify({'error': 'No se pudo procesar la imagen'}), 500
 
-        _, buffer = cv2.imencode('.png', res)
-        return send_file(
-            io.BytesIO(buffer.tobytes()),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name='color.png'
-        )
-    elif transform_type == 'edges':
-        res = aplicar_canny(img_path)
-        if res is None:
-            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(
+                io.BytesIO(buffer.tobytes()),
+                mimetype='image/png',
+                as_attachment=False,
+                download_name='color.png'
+            )
+        elif transform_type == 'edges':
+            print(f"Aplicando transformación de bordes a {img_path}")
+            res = aplicar_canny(img_path)
+            if res is None:
+                print("Error: aplicar_canny devolvió None")
+                return jsonify({'error': 'No se pudo procesar la imagen'}), 500
 
-        _, buffer = cv2.imencode('.png', res)
-        return send_file(
-            io.BytesIO(buffer.tobytes()),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name='edges.png'
-        )
-    elif transform_type == 'canny':
-        res = aplicar_canny_simple(img_path)
-        if res is None:
-            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(
+                io.BytesIO(buffer.tobytes()),
+                mimetype='image/png',
+                as_attachment=False,
+                download_name='edges.png'
+            )
+        elif transform_type == 'canny':
+            print(f"Aplicando transformación Canny simple a {img_path}")
+            res = aplicar_canny_simple(img_path)
+            if res is None:
+                print("Error: aplicar_canny_simple devolvió None")
+                return jsonify({'error': 'No se pudo procesar la imagen'}), 500
 
-        _, buffer = cv2.imencode('.png', res)
-        return send_file(
-            io.BytesIO(buffer.tobytes()),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name='canny.png'
-        )
-    elif transform_type == 'shapes':
-        res = detectar_formas(img_path)
-        if res is None:
-            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+            print(f"Imagen procesada exitosamente con tamaño: {res.shape}")
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(
+                io.BytesIO(buffer.tobytes()),
+                mimetype='image/png',
+                as_attachment=False,
+                download_name='canny.png'
+            )
+        elif transform_type == 'shapes':
+            res = detectar_formas(img_path)
+            if res is None:
+                return jsonify({'error': 'No se pudo procesar la imagen'}), 500
 
-        _, buffer = cv2.imencode('.png', res)
-        return send_file(
-            io.BytesIO(buffer.tobytes()),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name='shapes.png'
-        )
-    elif transform_type == 'blobs':
-        res = detectar_blobs(img_path)
-        if res is None:
-            return jsonify({'error': 'No se pudo procesar la imagen'}), 500
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(
+                io.BytesIO(buffer.tobytes()),
+                mimetype='image/png',
+                as_attachment=False,
+                download_name='shapes.png'
+            )
+        elif transform_type == 'blobs':
+            res = detectar_blobs(img_path)
+            if res is None:
+                return jsonify({'error': 'No se pudo procesar la imagen'}), 500
 
-        _, buffer = cv2.imencode('.png', res)
-        return send_file(
-            io.BytesIO(buffer.tobytes()),
-            mimetype='image/png',
-            as_attachment=False,
-            download_name='blobs.png'
-        )
-    else:
-        return jsonify({'error': 'Transformación no soportada'}), 400
+            _, buffer = cv2.imencode('.png', res)
+            return send_file(
+                io.BytesIO(buffer.tobytes()),
+                mimetype='image/png',
+                as_attachment=False,
+                download_name='blobs.png'
+            )
+        else:
+            print(f"Transformación no soportada: {transform_type}")
+            return jsonify({'error': 'Transformación no soportada'}), 400
+    except Exception as e:
+        print(f"ERROR al procesar imagen {filename} con transformación {transform_type}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Error interno: {str(e)}'}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
