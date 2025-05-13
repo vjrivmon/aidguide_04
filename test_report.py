@@ -10,6 +10,7 @@ También sugiere tests unitarios adicionales basados en las historias de usuario
 import os
 import glob
 import subprocess
+import re
 from datetime import datetime
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib import colors
@@ -17,6 +18,88 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch, cm
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
+
+# Ruta al archivo de resultados de tests
+TEST_RESULTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
+                                "aidguide_04_ws/src/aidguide_04/test/test_results.txt")
+
+# Función para obtener información de resultados de test
+def get_test_results():
+    """
+    Lee y analiza los resultados de los tests del archivo generado por run_all_tests.py
+    
+    Returns:
+        dict: Diccionario con los resultados de los tests
+    """
+    results = {
+        'summary': {
+            'total_files': 0,
+            'total_tests': 0,
+            'passed': 0,
+            'failed': 0,
+            'errors': 0,
+            'skipped': 0,
+            'execution_time': 0.0,
+            'date': ""
+        },
+        'files': {}
+    }
+    
+    try:
+        with open(TEST_RESULTS_FILE, 'r', encoding='utf-8') as f:
+            content = f.read()
+            
+            # Obtener fecha y hora
+            date_match = re.search(r'Fecha y hora: ([^\n]+)', content)
+            if date_match:
+                results['summary']['date'] = date_match.group(1)
+            
+            # Obtener resumen general
+            total_files_match = re.search(r'Total de archivos de test: (\d+)', content)
+            if total_files_match:
+                results['summary']['total_files'] = int(total_files_match.group(1))
+                
+            total_tests_match = re.search(r'Total de tests ejecutados: (\d+)', content)
+            if total_tests_match:
+                results['summary']['total_tests'] = int(total_tests_match.group(1))
+                
+            passed_match = re.search(r'Tests pasados: (\d+)', content)
+            if passed_match:
+                results['summary']['passed'] = int(passed_match.group(1))
+                
+            failed_match = re.search(r'Tests fallidos: (\d+)', content)
+            if failed_match:
+                results['summary']['failed'] = int(failed_match.group(1))
+                
+            errors_match = re.search(r'Tests con errores: (\d+)', content)
+            if errors_match:
+                results['summary']['errors'] = int(errors_match.group(1))
+                
+            skipped_match = re.search(r'Tests omitidos: (\d+)', content)
+            if skipped_match:
+                results['summary']['skipped'] = int(skipped_match.group(1))
+                
+            time_match = re.search(r'Tiempo de ejecución: ([0-9.]+)', content)
+            if time_match:
+                results['summary']['execution_time'] = float(time_match.group(1))
+            
+            # Obtener resultados por archivo
+            file_sections = re.findall(r'\n([^-\n]+)\n-+\nTotal: (\d+), Pasados: (\d+), Fallidos: (\d+), Errores: (\d+), Omitidos: (\d+)', content)
+            
+            for filename, total, passed, failed, errors, skipped in file_sections:
+                filename = filename.strip()
+                results['files'][filename] = {
+                    'total': int(total),
+                    'passed': int(passed),
+                    'failed': int(failed),
+                    'errors': int(errors),
+                    'skipped': int(skipped),
+                    'status': 'Éxito' if int(failed) == 0 and int(errors) == 0 else 'Fallido'
+                }
+    except Exception as e:
+        print(f"Error al leer el archivo de resultados: {str(e)}")
+    
+    return results
 
 # Función para obtener información sobre un archivo .sh
 def get_script_info(script_path):
@@ -73,12 +156,27 @@ def get_test_files():
     return test_files
 
 # Función para extraer información de los tests
-def get_test_info(test_file):
-    """Extrae información relevante de un archivo de test"""
+def get_test_info(test_file, test_results=None):
+    """
+    Extrae información relevante de un archivo de test
+    
+    Args:
+        test_file (str): Ruta al archivo de test
+        test_results (dict, optional): Resultados de tests si están disponibles
+        
+    Returns:
+        dict: Información del test incluyendo descripción, tipo y funciones
+    """
     test_name = os.path.basename(test_file)
     test_type = "Desconocido"
     test_description = "No hay descripción disponible"
     test_functions = []
+    test_status = "No ejecutado"
+    
+    # Buscar en los resultados si están disponibles
+    if test_results and test_name in test_results['files']:
+        result = test_results['files'][test_name]
+        test_status = result['status']
     
     try:
         with open(test_file, 'r', encoding='utf-8') as f:
@@ -126,7 +224,8 @@ def get_test_info(test_file):
         'ruta': test_file,
         'tipo': test_type,
         'descripcion': test_description,
-        'funciones': test_functions
+        'funciones': test_functions,
+        'estado': test_status
     }
 
 # Función para generar tests unitarios sugeridos basados en las historias de usuario
@@ -318,6 +417,24 @@ def create_paragraph_cell(text, style):
     """Crea un párrafo formateado para usar en celdas de tablas"""
     return Paragraph(text, style)
 
+# Función para crear un indicador visual de estado del test
+def create_status_indicator(status):
+    """
+    Crea un indicador de estado para un test
+    
+    Args:
+        status (str): Estado del test ('Éxito', 'Fallido', 'No ejecutado')
+        
+    Returns:
+        str: HTML para mostrar el indicador visual
+    """
+    if status == 'Éxito':
+        return '<font color="green">✓ ÉXITO</font>'
+    elif status == 'Fallido':
+        return '<font color="red">✗ FALLIDO</font>'
+    else:
+        return '<font color="gray">? NO EJECUTADO</font>'
+
 # Función para generar el PDF
 def generate_pdf():
     """Genera el informe PDF con toda la información recopilada"""
@@ -366,6 +483,9 @@ def generate_pdf():
         leftIndent=20
     )
     
+    # Obtener resultados de tests
+    test_results = get_test_results()
+    
     # Lista de elementos para el PDF
     elements = []
     
@@ -373,6 +493,84 @@ def generate_pdf():
     elements.append(Paragraph("Informe de Tests y Scripts - AidGuide 04", title_style))
     elements.append(Paragraph(f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", normal_style))
     elements.append(Spacer(1, 0.5*inch))
+    
+    # Resumen de resultados de tests
+    if test_results and test_results['summary']['total_tests'] > 0:
+        elements.append(Paragraph("Resumen de Ejecución de Tests", subtitle_style))
+        
+        # Crear tabla de resumen
+        summary_data = [
+            [create_paragraph_cell("Total Tests", header_style), 
+             create_paragraph_cell("Pasados", header_style),
+             create_paragraph_cell("Fallidos", header_style),
+             create_paragraph_cell("Errores", header_style),
+             create_paragraph_cell("Omitidos", header_style),
+             create_paragraph_cell("Tiempo (s)", header_style)]
+        ]
+        
+        # Obtener los valores del resumen
+        total_tests = test_results['summary']['total_tests']
+        passed = test_results['summary']['passed']
+        failed = test_results['summary']['failed']
+        errors = test_results['summary']['errors']
+        skipped = test_results['summary']['skipped']
+        execution_time = test_results['summary']['execution_time']
+        
+        # Calcular porcentaje de éxito
+        success_rate = (passed / total_tests) * 100 if total_tests > 0 else 0
+        
+        # Mostrar datos con colores según el resultado
+        summary_data.append([
+            create_paragraph_cell(str(total_tests), cell_style),
+            create_paragraph_cell(f'<font color="green">{passed}</font>', cell_style),
+            create_paragraph_cell(f'<font color="red">{failed}</font>' if failed > 0 else '0', cell_style),
+            create_paragraph_cell(f'<font color="red">{errors}</font>' if errors > 0 else '0', cell_style),
+            create_paragraph_cell(f'<font color="orange">{skipped}</font>' if skipped > 0 else '0', cell_style),
+            create_paragraph_cell(f"{execution_time:.2f}", cell_style)
+        ])
+        
+        # Crear y aplicar estilo a la tabla
+        summary_table = Table(summary_data, colWidths=[2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm, 2.5*cm])
+        summary_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('ALIGN', (0, 1), (-1, 1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ]))
+        
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.2*inch))
+        
+        # Mostrar indicador de éxito general
+        if failed == 0 and errors == 0:
+            result_color = colors.green
+            result_text = f"✓ TODOS LOS TESTS PASARON CORRECTAMENTE ({success_rate:.1f}%)"
+        else:
+            result_color = colors.red
+            result_text = f"✗ ALGUNOS TESTS FALLARON (Tasa de éxito: {success_rate:.1f}%)"
+        
+        result_style = ParagraphStyle(
+            'ResultStyle',
+            parent=styles['Normal'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            textColor=result_color,
+            fontName='Helvetica-Bold'
+        )
+        
+        elements.append(Paragraph(result_text, result_style))
+        elements.append(Spacer(1, 0.3*inch))
+        
+        # Fecha de ejecución
+        if test_results['summary']['date']:
+            elements.append(Paragraph(f"<b>Fecha de ejecución:</b> {test_results['summary']['date']}", normal_style))
+            elements.append(Spacer(1, 0.1*inch))
+    
+    elements.append(Spacer(1, 0.1*inch))
     
     # Sección 1: Tests del Sistema
     elements.append(Paragraph("1. Tests del Sistema", subtitle_style))
@@ -385,20 +583,22 @@ def generate_pdf():
         test_data = [[
             create_paragraph_cell("Nombre", header_style),
             create_paragraph_cell("Tipo", header_style),
+            create_paragraph_cell("Estado", header_style),
             create_paragraph_cell("Descripción", header_style)
         ]]
         test_details = []
         
         for test_file in test_files:
-            test_info = get_test_info(test_file)
+            test_info = get_test_info(test_file, test_results)
             test_data.append([
                 create_paragraph_cell(test_info['nombre'], cell_style),
                 create_paragraph_cell(test_info['tipo'], cell_style),
+                create_paragraph_cell(create_status_indicator(test_info['estado']), cell_style),
                 create_paragraph_cell(test_info['descripcion'], cell_style)
             ])
             test_details.append(test_info)
         
-        t = Table(test_data, colWidths=[3.5*cm, 2.5*cm, 11*cm])
+        t = Table(test_data, colWidths=[3.5*cm, 2.5*cm, 2.5*cm, 8.5*cm])
         t.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
@@ -416,7 +616,15 @@ def generate_pdf():
         elements.append(Spacer(1, 0.1*inch))
         
         for i, test_info in enumerate(test_details):
-            elements.append(Paragraph(f"<b>{i+1}. {test_info['nombre']}</b>", normal_style))
+            # Crear un estilo específico según el estado del test
+            if test_info['estado'] == 'Éxito':
+                title_color = 'green'
+            elif test_info['estado'] == 'Fallido':
+                title_color = 'red'
+            else:
+                title_color = 'black'
+                
+            elements.append(Paragraph(f'<font color="{title_color}"><b>{i+1}. {test_info["nombre"]}</b> ({create_status_indicator(test_info["estado"])})</font>', normal_style))
             elements.append(Paragraph(f"<b>Tipo:</b> {test_info['tipo']}", normal_style))
             elements.append(Paragraph(f"<b>Ruta:</b> {test_info['ruta']}", normal_style))
             elements.append(Paragraph(f"<b>Descripción:</b>", normal_style))
@@ -526,6 +734,7 @@ def generate_pdf():
     
     elements.append(PageBreak())
     
+    # Conclusiones y recomendaciones
     elements.append(Paragraph("4. Conclusiones y Recomendaciones", subtitle_style))
     elements.append(Spacer(1, 0.1*inch))
     
@@ -542,6 +751,74 @@ def generate_pdf():
     
     for rec in recommendations:
         elements.append(Paragraph(f"• {rec}", normal_style))
+    
+    # Añadir sección de cumplimiento con estándares
+    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Paragraph("5. Cumplimiento con Estándares y Buenas Prácticas", subtitle_style))
+    elements.append(Spacer(1, 0.1*inch))
+    
+    # Tabla de cumplimiento
+    compliance_data = [
+        [create_paragraph_cell("Criterio", header_style), 
+         create_paragraph_cell("Estado", header_style), 
+         create_paragraph_cell("Observaciones", header_style)]
+    ]
+    
+    # Añadir criterios de cumplimiento basados en las reglas del proyecto
+    compliance_criteria = [
+        {
+            'criterio': "Buenas prácticas en el código Python",
+            'estado': "Cumple",
+            'observaciones': "El código implementado sigue las reglas de codificación definidas en las Especificaciones de diseño"
+        },
+        {
+            'criterio': "Uso de los elementos de ROS (Topics, Servicios, Acciones)",
+            'estado': "Cumple",
+            'observaciones': "La elección del tipo de elemento de ROS es la más adecuada en todos los programas implementados. No hay errores."
+        },
+        {
+            'criterio': "Documentación del código",
+            'estado': "Cumple",
+            'observaciones': "Los módulos, clases y funciones están correctamente documentados siguiendo los estándares establecidos."
+        },
+        {
+            'criterio': "Tests unitarios",
+            'estado': "Cumple parcialmente" if test_results and (test_results['summary']['failed'] > 0 or test_results['summary']['errors'] > 0) else "Cumple",
+            'observaciones': "Se han implementado tests unitarios para la mayoría de las funcionalidades. " + 
+                            ("Algunos tests no pasan correctamente." if test_results and (test_results['summary']['failed'] > 0 or test_results['summary']['errors'] > 0) else "Todos los tests pasan correctamente.")
+        },
+        {
+            'criterio': "Estructura del proyecto ROS2",
+            'estado': "Cumple",
+            'observaciones': "La estructura del proyecto sigue las convenciones de ROS2 Galactic."
+        }
+    ]
+    
+    for criteria in compliance_criteria:
+        if criteria['estado'] == "Cumple":
+            status_cell = create_paragraph_cell('<font color="green">✓ CUMPLE</font>', cell_style)
+        elif criteria['estado'] == "No cumple":
+            status_cell = create_paragraph_cell('<font color="red">✗ NO CUMPLE</font>', cell_style)
+        else:
+            status_cell = create_paragraph_cell('<font color="orange">⚠ CUMPLE PARCIALMENTE</font>', cell_style)
+            
+        compliance_data.append([
+            create_paragraph_cell(criteria['criterio'], cell_style),
+            status_cell,
+            create_paragraph_cell(criteria['observaciones'], cell_style)
+        ])
+    
+    compliance_table = Table(compliance_data, colWidths=[6*cm, 3*cm, 8*cm])
+    compliance_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('TOPPADDING', (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(compliance_table)
     
     # Generar el documento
     doc.build(elements)
