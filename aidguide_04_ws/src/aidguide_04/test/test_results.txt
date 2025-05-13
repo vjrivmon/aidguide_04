@@ -1,0 +1,31 @@
+INFORME DE EJECUCIÓN DE TESTS - AidGuide 04
+Fecha y hora: 2025-05-13 15:59:51
+
+RESUMEN GENERAL
+==================================================
+Total de archivos de test: 4
+Total de tests ejecutados: 20
+Tests pasados: 19
+Tests fallidos: 0
+Tests con errores: 0
+Tests omitidos: 1
+Tiempo de ejecución: 3.66 segundos
+
+RESULTADOS POR ARCHIVO
+==================================================
+
+test_aidguide_system.py
+-----------------------
+Total: 0, Pasados: 0, Fallidos: 0, Errores: 0, Omitidos: 0
+
+test_person_detection.py
+------------------------
+Total: 5, Pasados: 4, Fallidos: 0, Errores: 0, Omitidos: 1
+
+test_web_interface_accessibility.py
+-----------------------------------
+Total: 7, Pasados: 7, Fallidos: 0, Errores: 0, Omitidos: 0
+
+test_web_robot_control.py
+-------------------------
+Total: 8, Pasados: 8, Fallidos: 0, Errores: 0, Omitidos: 0
