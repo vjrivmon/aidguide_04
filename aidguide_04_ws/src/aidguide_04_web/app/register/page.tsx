@@ -75,7 +75,7 @@ export default function Register() {
     // Simulación de registro
     setTimeout(() => {
       // Aquí iría la lógica real de registro
-      router.push("/login?registered=true")
+      router.push("/link-robot")
       setLoading(false)
     }, 1500)
   }

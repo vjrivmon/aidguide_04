@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Menu, X, User, LogOut } from "lucide-react"
+import { Menu, X, User, LogOut, Trophy } from "lucide-react"
 import { useAuth } from "@/context/auth-context"
 
 export default function Header() {
@@ -52,6 +52,10 @@ export default function Header() {
                 <Link href="/robot-feed" className="text-text hover:text-button transition-colors">
                   Imágenes
                 </Link>
+                <Link href="/profile/gamification" className="text-text hover:text-button transition-colors flex items-center">
+                  <Trophy size={18} className="mr-1" />
+                  Recompensas
+                </Link>
                 <Link href="/profile" className="text-text hover:text-button transition-colors">
                   Perfil
                 </Link>
@@ -93,7 +97,7 @@ export default function Header() {
                   <div className="w-8 h-8 bg-button rounded-full flex items-center justify-center text-white">
                     <User size={18} />
                   </div>
-                  <span className="ml-2 font-medium">{user.name}</span>
+                  <span className="ml-2 font-medium">{user.nombre}</span>
                 </div>
                 <button onClick={logout} className="btn-secondary flex items-center">
                   <LogOut size={18} className="mr-2" />
@@ -176,6 +180,14 @@ export default function Header() {
                   Imágenes
                 </Link>
                 <Link
+                  href="/profile/gamification"
+                  className="text-text hover:text-button transition-colors flex items-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Trophy size={18} className="mr-1" />
+                  Recompensas
+                </Link>
+                <Link
                   href="/profile"
                   className="text-text hover:text-button transition-colors"
                   onClick={() => setIsMenuOpen(false)}
@@ -232,7 +244,7 @@ export default function Header() {
                   <div className="w-8 h-8 bg-button rounded-full flex items-center justify-center text-white">
                     <User size={18} />
                   </div>
-                  <span className="ml-2 font-medium">{user.name}</span>
+                  <span className="ml-2 font-medium">{user.nombre}</span>
                 </div>
                 <button
                   onClick={() => {

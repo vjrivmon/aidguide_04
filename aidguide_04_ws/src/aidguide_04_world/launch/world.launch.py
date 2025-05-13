@@ -6,6 +6,10 @@ from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.substitutions import FindPackageShare
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch_ros.actions import Node
 
 # Definir el modelo de TurtleBot3
@@ -14,6 +18,11 @@ TURTLEBOT3_MODEL = os.getenv('TURTLEBOT3_MODEL', 'burger_pi')
 def generate_launch_description():
     # Obtener la ruta del paquete `world`
     #pkg_share = FindPackageShare(package='aidguide_04_world').find('world')
+    """Función Generate launch description.
+    
+    Returns:
+        Descripción del valor de retorno.
+    """
     pkg_share = FindPackageShare(package='aidguide_04_world').find('aidguide_04_world')
 
     # Asegurar que se carga `burger_pi.model`

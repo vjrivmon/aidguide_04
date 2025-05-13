@@ -18,6 +18,8 @@ class LocalizationNode(Node):
     Provee funcionalidades para controlar el proceso de localización.
     """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('aidguide_localization_node')
         self.get_logger().info('Iniciando nodo de localización...')
         

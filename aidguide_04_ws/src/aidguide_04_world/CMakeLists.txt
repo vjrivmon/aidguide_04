@@ -62,9 +62,14 @@ install(TARGETS ${EXEC_NAME}
   DESTINATION lib/${PROJECT_NAME}
 )
 
-
-
-
+# Instalar archivos de lanzamiento
+install(DIRECTORY
+  launch
+  world
+  urdf
+  models
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ################################################################################
 # Macro for ament package

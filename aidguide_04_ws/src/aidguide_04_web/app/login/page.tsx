@@ -13,7 +13,7 @@ export default function Login() {
   const searchParams = useSearchParams()
   const registered = searchParams.get("registered")
 
-  const { login } = useAuth()
+  const { login, isLoading } = useAuth()
 
   const [formData, setFormData] = useState({
     email: "",
@@ -41,18 +41,12 @@ export default function Login() {
     setSuccessMessage("")
 
     try {
-      const success = await login(formData.email, formData.password)
+      const success = await login({
+        email: formData.email,
+        password: formData.password
+      })
 
-      if (success) {
-        const user = JSON.parse(localStorage.getItem("aidguide-user") || "{}")
-        if (user.role === "admin") {
-          router.push("/admin/dashboard")
-        } else if (user.role === "family") {
-          router.push("/family")
-        } else {
-          router.push("/welcome")
-        }
-      } else {
+      if (!success) {
         setError("Credenciales incorrectas. Por favor, inténtalo de nuevo.")
       }
     } catch (err) {
@@ -159,8 +153,8 @@ export default function Login() {
           </div>
 
           <div>
-            <button type="submit" className="btn-primary w-full flex justify-center items-center" disabled={loading}>
-              {loading ? (
+            <button type="submit" className="btn-primary w-full flex justify-center items-center" disabled={loading || isLoading}>
+              {(loading || isLoading) ? (
                 <span className="flex items-center">
                   <svg
                     className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -240,10 +234,11 @@ export default function Login() {
               </svg>
             </button>
 
+
             <button
               type="button"
               className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white p-2 hover:bg-gray-50"
-              aria-label="Iniciar sesión con huella dactilar"
+              aria-label="Registrarse con huella dactilar"
             >
               <svg viewBox="0 0 24 24" className="h-6 w-6">
                 <path
@@ -256,7 +251,7 @@ export default function Login() {
             <button
               type="button"
               className="flex w-full items-center justify-center rounded-md border border-gray-300 bg-white p-2 hover:bg-gray-50"
-              aria-label="Iniciar sesión con Face ID"
+              aria-label="Registrarse con Face ID"
             >
               <svg viewBox="0 0 24 24" className="h-6 w-6">
                 <path

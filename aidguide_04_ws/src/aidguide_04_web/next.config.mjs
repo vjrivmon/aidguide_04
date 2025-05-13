@@ -21,6 +21,19 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  output: 'standalone',
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:5000/api/:path*'
+      },
+      {
+        source: '/api/ros2/:path*',
+        destination: 'http://localhost:5000/api/ros2/:path*'
+      }
+    ]
+  }
 }
 
 mergeConfig(nextConfig, userConfig)

@@ -1,5 +1,9 @@
 from setuptools import setup
 import os
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from glob import glob
 
 package_name = 'aidguide_04_my_nav2_system'
@@ -26,8 +30,9 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'punto_inicial = aidguide_04_my_nav2_system.punto_inicial:main'
+            'punto_inicial = aidguide_04_my_nav2_system.punto_inicial:main',
+            'my_waypoint_follower = aidguide_04_my_nav2_system.my_waypoint_follower:main',
+            'web_waypoint_bridge = aidguide_04_my_nav2_system.web_waypoint_bridge:main',
         ],
     },
 )
-

@@ -4,10 +4,21 @@ import launch.actions
 import launch_ros.actions
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    
+    """
+    Genera una descripción de lanzamiento (LaunchDescription) para iniciar el servidor de mapas,
+    un transformador estático entre `map` y `odom`, y el gestor de ciclo de vida para la localización.
+
+    Returns:
+        LaunchDescription: Configuración del lanzamiento para los nodos de localización.
+    """
+
     map_file = os.path.join(get_package_share_directory('aidguide_04_provide_map'), 'map', 'aidguide_04_map.yaml')
 
     return LaunchDescription([

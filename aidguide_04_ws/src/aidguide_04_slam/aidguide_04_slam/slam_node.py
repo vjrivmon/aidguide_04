@@ -18,6 +18,8 @@ class SlamNode(Node):
     Provee funcionalidades para controlar el proceso de SLAM.
     """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('aidguide_slam_node')
         self.get_logger().info('Iniciando nodo de SLAM...')
         
