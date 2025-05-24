@@ -33,6 +33,7 @@ setup(
             'punto_inicial = aidguide_04_my_nav2_system.punto_inicial:main',
             'my_waypoint_follower = aidguide_04_my_nav2_system.my_waypoint_follower:main',
             'web_waypoint_bridge = aidguide_04_my_nav2_system.web_waypoint_bridge:main',
+            'bus_stop_alert = aidguide_04_my_nav2_system.bus_stop_alert:main',
         ],
     },
 )
