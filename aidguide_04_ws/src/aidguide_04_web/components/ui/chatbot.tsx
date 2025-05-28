@@ -42,10 +42,72 @@ export function ChatbotWindow() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Efecto para asegurar que las voces de síntesis de voz estén cargadas
+  useEffect(() => {
+    const logAndCheckVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      console.log("[ChatbotWindow] Voices changed/loaded. Count:", voices.length, "es-ES voices:", voices.filter(v => v.lang === 'es-ES').map(v => v.name));
+      if (voices.length === 0 && 'onvoiceschanged' in window.speechSynthesis) {
+        // This handler might be needed if getVoices() is initially empty
+        console.log("[ChatbotWindow] No voices loaded yet, waiting for onvoiceschanged event.");
+      }
+    };
+
+    if ('onvoiceschanged' in window.speechSynthesis) {
+      window.speechSynthesis.addEventListener('voiceschanged', logAndCheckVoices);
+    }
+    logAndCheckVoices(); // Initial check
+
+    return () => {
+      if ('onvoiceschanged' in window.speechSynthesis) {
+        window.speechSynthesis.removeEventListener('voiceschanged', logAndCheckVoices);
+      }
+    };
+  }, []);
+
   // Auto-scroll al último mensaje
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  // Efecto para leer en voz alta los mensajes del asistente
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.role === 'assistant' && lastMessage.content) {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length === 0) {
+          console.warn("[ChatbotWindow] No speech synthesis voices loaded yet. Cannot speak.");
+          return;
+        }
+        
+        // Prefer an 'es-ES' voice
+        let spanishVoice = voices.find(voice => voice.lang === 'es-ES');
+        if (!spanishVoice) {
+            console.warn("[ChatbotWindow] No 'es-ES' voice available. Using default voice.");
+        }
+
+        console.log("[ChatbotWindow] Assistant message. Attempting to speak:", lastMessage.content);
+        window.speechSynthesis.cancel(); 
+        const utterance = new SpeechSynthesisUtterance(lastMessage.content);
+        utterance.lang = 'es-ES'; 
+        if (spanishVoice) {
+          utterance.voice = spanishVoice;
+          console.log(`[ChatbotWindow] Using voice: ${spanishVoice.name} for lang ${spanishVoice.lang}`);
+        }
+        utterance.onerror = (event) => {
+          console.error("[ChatbotWindow] SpeechSynthesisUtterance error:", event.error, event);
+        };
+        setTimeout(() => {
+          if (window.speechSynthesis) {
+            window.speechSynthesis.speak(utterance);
+          } else {
+            console.warn("[ChatbotWindow] window.speechSynthesis not available at speak time.");
+          }
+        }, 0); 
+      }
     }
   }, [messages]);
 
@@ -59,6 +121,17 @@ export function ChatbotWindow() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (inputValue.trim() && !isLoading) {
+      // Prime speech synthesis on user gesture
+      if (window.speechSynthesis && window.speechSynthesis.getVoices().length > 0) {
+        const isCurrentlyActive = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+        if (!isCurrentlyActive) {
+          console.log("[ChatbotWindow] Priming speech synthesis on submit.");
+          const primer = new SpeechSynthesisUtterance(' '); // Speak a single space
+          primer.volume = 0; // Make it silent
+          primer.lang = 'es-ES'; // Ensure it doesn't fail due to lang issues if possible
+          window.speechSynthesis.speak(primer);
+        }
+      }
       await sendMessage(inputValue);
       setInputValue('');
     }

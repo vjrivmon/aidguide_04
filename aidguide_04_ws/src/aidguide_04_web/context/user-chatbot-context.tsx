@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { ollamaService, ChatMessage } from '@/services/ollama'; // Asumimos que ollamaService se puede reutilizar o se creará uno específico si es necesario
+import { useUserProfileData, UserProfileData } from '@/hooks/useUserProfileData'; // Importar el nuevo hook y tipo
 
 // Interfaz para el contexto del chatbot de usuario
 interface UserChatbotContextType {
@@ -36,16 +37,14 @@ export function UserChatbotProvider({ children }: { children: ReactNode }) {
   // Verificar si Ollama está disponible al cargar el componente
   useEffect(() => {
     const checkAvailability = async () => {
-      // Asumimos que el servicio ollama tiene un método isAvailable o usamos /api/user-chat para verificar
-      const available = await ollamaService.isAvailable(); // Podría necesitar una URL diferente o un nuevo servicio
+      const available = await ollamaService.isAvailable();
       setIsAvailable(available);
       
-      // Agregar mensaje de bienvenida específico del perfil de usuario
       if (messages.length === 0) {
         setMessages([
           {
             role: 'assistant',
-            content: '¡Hola! Soy tu asistente del perfil de robot. Puedo informarte sobre la batería, alertas y más. ¿Qué necesitas saber?'
+            content: '¡Hola! Soy tu asistente de perfil. Puedo darte detalles sobre tus rutas, batería del robot, puntos de gamificación y más. ¿En qué te ayudo hoy?'
           }
         ]);
       }
@@ -70,10 +69,59 @@ export function UserChatbotProvider({ children }: { children: ReactNode }) {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
+    // Obtener los datos del perfil del usuario ANTES de enviar el mensaje
+    const userProfile = useUserProfileData(); // Usar el hook aquí
+
     try {
+      // Convertir los datos del perfil a una cadena JSON para incluirla en el prompt
+      // Seleccionar cuidadosamente qué datos son más relevantes o resumirlos si son muy extensos
+      const profileContextString = JSON.stringify({
+        userName: userProfile.userName,
+        robotName: userProfile.robotName,
+        batteryLevel: userProfile.batteryLevel,
+        robotStatus: userProfile.robotStatus,
+        currentLocation: userProfile.currentLocation,
+        recentAlerts: userProfile.recentAlerts?.map(a => ({ type: a.type, message: a.message, date: a.timestamp })).slice(0, 3), // Limitar alertas
+        gamification: {
+          totalPoints: userProfile.gamification.totalPoints,
+          level: userProfile.gamification.level,
+          pointsToNextLevel: userProfile.gamification.pointsToNextLevel,
+        },
+        recentActivities: userProfile.recentActivities?.slice(0, 3), // Limitar actividades
+        frequentSites: userProfile.frequentSites,
+        lastKnownRoute: userProfile.lastKnownRoute,
+        // Añadir más campos si se considera esencial y no sobrecarga el prompt
+      }, null, 2);
+
+
       const contextMessage: ChatMessage = {
         role: 'system',
-        content: '''Eres un asistente virtual integrado en el perfil de usuario de la aplicación AidGuide. Tu propósito es responder preguntas sobre el estado y datos del robot conectado. Esto incluye, pero no se limita a: porcentaje de batería del robot, alertas activas, notificaciones recientes, descripción de imágenes detectadas por el robot, sugerencias para la mejor ruta basada en datos del robot, y otra información relevante del perfil del usuario o del estado del robot. Debes basar tus respuestas en la información que te sea proporcionada o que puedas inferir del contexto del perfil del usuario. Responde SIEMPRE en español. Sé conciso y directo.''''
+        content: `Eres un asistente virtual avanzado integrado en el perfil de usuario de la aplicación AidGuide. Tu propósito es responder preguntas sobre el estado y datos del robot conectado, así como información específica del perfil del usuario.
+
+Aquí tienes la información actual del usuario y su robot:
+\`\`\`json
+${profileContextString}
+\`\`\`
+
+Basándote ESTRICTAMENTE en esta información:
+1.  Responde preguntas sobre:
+    *   Nombre del usuario y del robot.
+    *   Porcentaje de batería del robot y su estado actual.
+    *   Ubicación actual del robot (si está disponible).
+    *   Alertas recientes del robot (tipo, mensaje, fecha).
+    *   Puntos de gamificación del usuario, nivel actual y puntos para el siguiente nivel.
+    *   Actividades recientes del usuario (descripción, fecha).
+    *   Sitios que el usuario suele visitar.
+    *   Información sobre la última ruta conocida (nombre, fecha, origen, destino, distancia).
+    *   Disponibilidad de recompensas o desafíos (basado en los puntos y actividades).
+2.  Si te preguntan por rutas de un día específico y no tienes esa información exacta en 'lastKnownRoute' o 'recentActivities', indica que solo tienes información general o la más reciente.
+3.  Si te preguntan por algo fuera de la información proporcionada (ej. el tiempo atmosférico detallado, noticias, etc.), indica amablemente que no tienes acceso a esa información y que te centres en los datos del perfil y del robot.
+4.  Sé conciso, amigable y directo.
+5.  Responde SIEMPRE en español.
+6.  No inventes información. Si no tienes un dato, dilo claramente.
+7.  Para preguntas sobre "puntos para canjear", refiérete a 'totalPoints' en 'gamification'.
+8.  Para "sitios que suele visitar más", usa 'frequentSites'.
+9.  Para "ruta de un día x", revisa 'lastKnownRoute' y 'recentActivities' y responde con la información más relevante que encuentres, especificando la fecha si es diferente a la solicitada.`
       };
       
       if (isAvailable) {
@@ -132,7 +180,7 @@ export function UserChatbotProvider({ children }: { children: ReactNode }) {
     setMessages([
       {
         role: 'assistant',
-        content: '¡Hola! Soy tu asistente del perfil de robot. ¿En qué puedo ayudarte?'
+        content: '¡Hola! Soy tu asistente de perfil. Puedo darte detalles sobre tus rutas, batería del robot, puntos de gamificación y más. ¿En qué te ayudo hoy?'
       }
     ]);
   };
