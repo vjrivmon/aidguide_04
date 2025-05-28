@@ -97,7 +97,7 @@ export function UserChatbotWindow() {
         }
 
         console.log("[UserChatbotWindow] Assistant message received, attempting to speak:", lastMessage.content);
-        window.speechSynthesis.cancel();
+        
         const utterance = new SpeechSynthesisUtterance(lastMessage.content);
         utterance.lang = 'es-ES';
         if (spanishVoice) {
@@ -105,18 +105,24 @@ export function UserChatbotWindow() {
           console.log(\`[UserChatbotWindow] Using voice: ${spanishVoice.name} for lang ${spanishVoice.lang}\`);
         }
         utterance.onerror = (event) => {
-          console.error("[UserChatbotWindow] SpeechSynthesisUtterance error:", event.error, event);
+          if (event.error === 'interrupted') {
+            console.log("[UserChatbotWindow] Speech utterance interrupted (expected behavior for new message).");
+          } else {
+            console.error("[UserChatbotWindow] SpeechSynthesisUtterance error:", event.error, event);
+          }
         };
 
-        setTimeout(() => {
-          if (window.speechSynthesis) {
-            console.log("[UserChatbotWindow] Calling window.speechSynthesis.speak()");
-            // alert("Intentando hablar ahora: " + utterance.text);
-            window.speechSynthesis.speak(utterance);
-          } else {
-            console.warn("[UserChatbotWindow] window.speechSynthesis not available at speak time.");
+        // Intentar hablar directamente sin setTimeout
+        if (window.speechSynthesis) {
+          if (window.speechSynthesis.state === 'suspended') {
+            window.speechSynthesis.resume();
+            console.log("[UserChatbotWindow] Speech synthesis resumed before speaking message.");
           }
-        }, 0);
+          window.speechSynthesis.cancel(); // Cancelar cualquier locución anterior
+          window.speechSynthesis.speak(utterance); // Hablar inmediatamente
+        } else {
+          console.warn("[UserChatbotWindow] window.speechSynthesis not available at speak time.");
+        }
       } else {
         console.log("[UserChatbotWindow] Conditions for speech not met. Role:", lastMessage.role, "Has content:", !!lastMessage.content);
       }
@@ -135,14 +141,23 @@ export function UserChatbotWindow() {
     e.preventDefault();
     if (inputValue.trim() && !isLoading) {
       // Prime speech synthesis on user gesture
-      if (window.speechSynthesis && window.speechSynthesis.getVoices().length > 0) {
-        const isCurrentlyActive = window.speechSynthesis.speaking || window.speechSynthesis.pending;
-        if (!isCurrentlyActive) {
-          console.log("[UserChatbotWindow] Priming speech synthesis on submit.");
-          const primer = new SpeechSynthesisUtterance(' ');
-          primer.volume = 0;
-          primer.lang = 'es-ES';
-          window.speechSynthesis.speak(primer);
+      if (window.speechSynthesis) {
+        if (window.speechSynthesis.state === 'suspended') {
+          window.speechSynthesis.resume();
+          console.log("[UserChatbotWindow] Speech synthesis resumed on submit.");
+        }
+        if (window.speechSynthesis.getVoices().length > 0) {
+          const isCurrentlyActive = window.speechSynthesis.speaking || window.speechSynthesis.pending;
+          if (!isCurrentlyActive) {
+            console.log("[UserChatbotWindow] Priming speech synthesis on submit.");
+            const primer = new SpeechSynthesisUtterance(' ');
+            primer.volume = 0;
+            primer.lang = 'es-ES';
+            primer.onerror = (event) => {
+              console.warn("[UserChatbotWindow] Primer utterance error:", event.error, event);
+            };
+            window.speechSynthesis.speak(primer);
+          }
         }
       }
       await sendMessage(inputValue);
