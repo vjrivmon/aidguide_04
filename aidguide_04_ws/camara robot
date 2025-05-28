@@ -1,0 +1,45 @@
+[TERMINAL 1]
+
+ssh ubuntu@192.168.0.63
+password: turtlebot
+
+ros2 run image_tools cam2image --ros-args -p burger_mode:=false -p frequency:=10.0 -p reliability:=best_effort
+
+
+
+[TERMINAL 2]
+cd aidguide_04
+cd aidguide_04_ws
+colcon build --packages-select aidguide_04_capture_image
+source install/setup.bash
+ros2 run aidguide_04_capture_image capture_image
+
+
+
+
+-----------------------------------------------------------------------
+
+[PARA LA WEB]
+
+./start-ros2-gazebo.sh
+
+cd aidguide_04
+cd aidguide_04_ws
+colcon build --packages-select async_web_server_cpp
+source install/setup.bash
+colcon build --packages-select web_video_server
+source install/setup.bash
+ros2 run web_video_server web_video_server
+
+ssh ubuntu@192.168.0.63
+password: turtlebot
+ros2 run image_tools cam2image --ros-args -p burger_mode:=false -p frequency:=10.0 -p reliability:=best_effort
+
+cd aidguide_04
+cd aidguide_04_ws
+colcon build --packages-select aidguide_04_capture_image
+source install/setup.bash
+ros2 run aidguide_04_capture_image capture_image
+
+
+
