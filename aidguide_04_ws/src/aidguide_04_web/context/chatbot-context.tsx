@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { ollamaService, ChatMessage } from '@/services/ollama';
+import ROSService from "@/services/ros-service";
 
 // Interfaz para el contexto del chatbot
 interface ChatbotContextType {
@@ -34,6 +35,24 @@ export function ChatbotProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isAvailable, setIsAvailable] = useState<boolean>(false);
+  const [rosService, setRosService] = useState<ROSService | null>(null);
+  const [isRosConnected, setIsRosConnected] = useState<boolean>(false);
+
+  // Inicializar el servicio ROS y verificar conexión
+  useEffect(() => {
+    const service = ROSService.getInstance();
+    setRosService(service);
+    
+    const handleConnectionStatus = (connected: boolean) => {
+      setIsRosConnected(connected);
+    };
+    
+    service.addConnectionListener(handleConnectionStatus);
+    
+    return () => {
+      service.removeConnectionListener(handleConnectionStatus);
+    };
+  }, []);
 
   // Verificar si Ollama está disponible al cargar el componente
   useEffect(() => {
@@ -60,6 +79,35 @@ export function ChatbotProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Manejar comando especial de navegación
+  const handleNavigationCommand = (content: string) => {
+    const navigationCommand = "ve en simulación al supermercado";
+    
+    if (content.toLowerCase().includes(navigationCommand.toLowerCase())) {
+      if (rosService && isRosConnected) {
+        const success = rosService.startWaypointFollowing();
+        if (success) {
+          return {
+            handled: true,
+            response: "Iniciando navegación en simulación hacia el supermercado. El robot comenzará a moverse ahora."
+          };
+        } else {
+          return {
+            handled: true,
+            response: "No se pudo iniciar la navegación. Hay un problema con el servicio ROS."
+          };
+        }
+      } else {
+        return {
+          handled: true,
+          response: "No puedo iniciar la navegación porque no hay conexión con ROS. Verifica que el servidor ROS esté en funcionamiento."
+        };
+      }
+    }
+    
+    return { handled: false };
+  };
+
   // Enviar mensaje al chatbot
   const sendMessage = async (content: string) => {
     if (!content.trim()) return;
@@ -74,7 +122,23 @@ export function ChatbotProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
     
     try {
-      // Preparar el contexto para el chatbot
+      // Primero verificamos si es un comando de navegación
+      const navigationResult = handleNavigationCommand(content);
+      
+      if (navigationResult.handled) {
+        // Si es un comando de navegación, agregamos la respuesta predefinida
+        setMessages(prev => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: navigationResult.response
+          }
+        ]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Si no es un comando de navegación, continuamos con el flujo normal
       const contextMessage: ChatMessage = {
         role: 'system',
         content: 'Eres un asistente virtual para la aplicación AidGuide, un robot guía para personas invidentes. Tu objetivo es proporcionar información útil sobre la aplicación, el producto, y ayudar a navegar por la interfaz. IMPORTANTE: Debes responder SIEMPRE en español. Tus respuestas deben ser concisas, claras y útiles. Limita tus respuestas a información sobre AidGuide y su uso.'
