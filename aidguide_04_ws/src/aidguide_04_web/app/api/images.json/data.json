@@ -2,17 +2,17 @@
   "traffic": [
     {
       "path": "/señales_trafico/contorno_senyales2.jpg",
-      "detected": "28/05/2025, 11:00",
+      "detected": "02/06/2025, 10:22",
       "confidence": 0.95
     },
     {
       "path": "/señales_trafico/contorno_senyales1.jpg",
-      "detected": "28/05/2025, 11:00",
+      "detected": "02/06/2025, 10:22",
       "confidence": 0.95
     },
     {
       "path": "/señales_trafico/contorno_senyales4.jpg",
-      "detected": "28/05/2025, 11:00",
+      "detected": "02/06/2025, 10:22",
       "confidence": 0.95
     }
   ]
