@@ -195,6 +195,51 @@ check_and_install_ollama() {
     return 0
 }
 
+# Función para verificar e instalar dependencias de Python para Deep Learning (NUEVA)
+check_and_install_python_deps() {
+    echo -e "${YELLOW}🔍 Verificando dependencias de Python para Deep Learning...${NC}"
+    local all_deps_installed=true
+
+    declare -A deps_to_check
+    deps_to_check=( [tensorflow]=tensorflow [opencv-python]=opencv-python [numpy]=numpy )
+    # Alternativamente, para un runtime más ligero:
+    # deps_to_check=( [tflite_runtime]=tflite_runtime [opencv-python]=opencv-python [numpy]=numpy )
+
+    for import_name in "${!deps_to_check[@]}"; do
+        local pip_name=${deps_to_check[$import_name]}
+        echo -e "${YELLOW}   Verificando $pip_name (import: $import_name)...${NC}"
+        if ! python3 -c "import $import_name" >/dev/null 2>&1; then
+            all_deps_installed=false
+            echo -e "${YELLOW}   ⚠️ $pip_name no está instalado.${NC}"
+            echo -e "${CYAN}   ❓ ¿Deseas instalar $pip_name con pip? (s/n)${NC}"
+            read -p "   > " install_dep
+            if [ "$install_dep" = "s" ] || [ "$install_dep" = "S" ]; then
+                echo -e "${YELLOW}   📦 Instalando $pip_name...${NC}"
+                if pip install "$pip_name"; then
+                    echo -e "${GREEN}   ✅ $pip_name instalado correctamente.${NC}"
+                else
+                    echo -e "${RED}   ❌ Error al instalar $pip_name.${NC}"
+                    echo -e "${YELLOW}   📝 Intenta instalarlo manualmente con: pip install $pip_name${NC}"
+                    # Podríamos decidir si continuar o no si una dependencia crítica falla
+                fi
+            else
+                echo -e "${YELLOW}   ⚠️ Continuando sin $pip_name. El nodo de detección de frutas podría no funcionar.${NC}"
+            fi
+        else
+            echo -e "${GREEN}   ✅ $pip_name ya está instalado.${NC}"
+        fi
+    done
+
+    if [ "$all_deps_installed" = true ]; then
+        echo -e "${GREEN}✅ Todas las dependencias de Python para Deep Learning están instaladas.${NC}"
+        return 0
+    else
+        # Se podría retornar un código de error si se considera crítico
+        echo -e "${YELLOW}⚠️ Algunas dependencias de Python para Deep Learning pueden faltar o no se instalaron.${NC}"
+        return 1
+    fi
+}
+
 # Función para verificar si ROS2 está instalado y configurado
 check_ros() {
     if ! command -v ros2 &> /dev/null; then
@@ -386,6 +431,10 @@ OLLAMA_OK=$?
 
 # Verificar dependencia js-yaml
 check_and_install_jsyaml
+
+# Verificar dependencias de Python para Deep Learning (NUEVA LLAMADA)
+check_and_install_python_deps
+DEEP_LEARNING_DEPS_OK=$?
 
 # Verificar paquetes ROS2 necesarios
 echo -e "${YELLOW}🔍 Verificando paquetes ROS2 necesarios...${NC}"
@@ -858,12 +907,31 @@ TERMINAL15_COMMANDS="cd \"$WORKSPACE_PATH\" && \
     } && \
     read -p \"Presiona Enter para cerrar esta terminal...\""
 
+# Terminal 16: Detección de Frutas (NUEVA)
+TERMINAL16_COMMANDS="cd \"$WORKSPACE_PATH\" && \
+    echo -e \"${CYAN}╔════════════════════════════════════════╗${NC}\" && \
+    echo -e \"${CYAN}║  TERMINAL 16: DETECCIÓN DE FRUTAS      ║${NC}\" && \
+    echo -e \"${CYAN}╚════════════════════════════════════════╝${NC}\" && \
+    echo -e \"${YELLOW}🔨 Compilando aidguide_04_deep_learning...${NC}\" && \
+    colcon build --packages-select aidguide_04_deep_learning || { \
+        echo -e \"${RED}❌ Error al compilar aidguide_04_deep_learning${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete exista y no tenga errores${NC}\"; \
+    } && \
+    echo -e \"${YELLOW}🔄 Actualizando entorno...${NC}\" && \
+    source install/setup.bash || echo -e \"${RED}❌ Error al actualizar el entorno${NC}\" && \
+    echo -e \"${CYAN}🍓 Iniciando detección de frutas...${NC}\" && \
+    ros2 run aidguide_04_deep_learning fruit_detector || { \
+        echo -e \"${RED}❌ Error al ejecutar el nodo de detección de frutas${NC}\"; \
+        echo -e \"${YELLOW}📝 Verifica que el paquete se haya compilado correctamente y el modelo .tflite esté en la carpeta resource/${NC}\"; \
+    } && \
+    read -p \"Presiona Enter para cerrar esta terminal...\""
+
 # Mostrar instrucciones de inicio
 echo -e "${CYAN}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}║  ${YELLOW}🚀 INICIANDO SISTEMA DE NAVEGACIÓN                     ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
-echo -e "${CYAN}║  ${GREEN}Se abrirán 15 terminales con los diferentes componentes ${CYAN}  ║${NC}"
+echo -e "${CYAN}║  ${GREEN}Se abrirán 16 terminales con los diferentes componentes ${CYAN}  ║${NC}"
 echo -e "${CYAN}║  ${GREEN}Espera a que cada uno inicie antes de continuar         ${CYAN}  ║${NC}"
 echo -e "${CYAN}║                                                            ║${NC}"
 echo -e "${CYAN}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -926,6 +994,9 @@ start_terminal "Terminal 14: Captura de Imágenes" "$TERMINAL14_COMMANDS" "${GRE
 
 # Terminal 15: Web Video Server Avanzado
 start_terminal "Terminal 15: Web Video Server Avanzado" "$TERMINAL15_COMMANDS" "${MAGENTA}"
+
+# Terminal 16: Detección de Frutas (NUEVA)
+start_terminal "Terminal 16: Detección de Frutas" "$TERMINAL16_COMMANDS" "${CYAN}"
 
 echo ""
 echo -e "${GREEN}✅ Todos los componentes han sido iniciados${NC}"

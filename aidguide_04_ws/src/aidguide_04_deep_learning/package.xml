@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>aidguide_04_deep_learning</name>
+  <version>0.0.1</version>
+  <description>Paquete ROS2 para la detección de frutas usando un modelo YOLO entrenado con TensorFlow Lite.</description>
+  <maintainer email="vicente.carrasco@gmail.com">Vicente</maintainer>
+  <license>Apache License 2.0</license> <!-- O la licencia que prefieras -->
+
+  <depend>rclpy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend> <!-- Útil para conversión de imágenes -->
+  <!-- Añade aquí otras dependencias de ROS2 que puedas necesitar -->
+
+  <test_depend>ament_copyright</test_depend>
+  <test_depend>ament_flake8</test_depend>
+  <test_depend>ament_pep257</test_depend>
+  <test_depend>python3-pytest</test_depend>
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package> 
