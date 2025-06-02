@@ -12,7 +12,9 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         # Include the clasificadores directory and its contents
-        (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/haarcascade_car.xml']),    ],
+        (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/haarcascade_car.xml']),
+        (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/haarcascade_frontalface_default.xml']),
+        ],
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='hugo',
