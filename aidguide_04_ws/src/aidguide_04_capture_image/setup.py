@@ -20,7 +20,7 @@ setup(
         (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/haarcascade_frontalface_default.xml']),
         (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/cascade_pesh_lbp14.xml']),
         (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/cascade_stop_3_15.xml']),
-        (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/cascade_zepr_lbp13.xml']),
+        #(os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/cascade_zapr_lbp13.xml']),
         (os.path.join('share', package_name, 'clasificadores'), ['aidguide_04_capture_image/clasificadores/TrafficLight_HAAR_16Stages.xml']),
         ],
         
