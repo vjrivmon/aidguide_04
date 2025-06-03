@@ -53,14 +53,14 @@ class Ros2OpenCVImageConverter(Node):
             return
         
         # Clasificador para pesh
-        pesh_cascade_path = os.path.join(package_share_directory, 'clasificadores', 'cascade_pesh_lbp14.xml')
-        self.pesh_cascade = cv2.CascadeClassifier(pesh_cascade_path)
-        if self.pesh_cascade.empty():
-            self.get_logger().error("Error: No se pudo cargar el clasificador de semáforos.")
-            return
+        #pesh_cascade_path = os.path.join(package_share_directory, 'clasificadores', 'cascade_pesh_lbp14.xml')
+        #self.pesh_cascade = cv2.CascadeClassifier(pesh_cascade_path)
+        #if self.pesh_cascade.empty():
+         #   self.get_logger().error("Error: No se pudo cargar el clasificador de personas.")
+          #  return
         
         # Clasificador para semáforos
-        z_cascade_path = os.path.join(package_share_directory, 'clasificadores', 'cascade_zepr_lbp13.xml')
+        z_cascade_path = os.path.join(package_share_directory, 'clasificadores', 'cascade_zapr_lbp13.xml')
         self.z_cascade = cv2.CascadeClassifier(z_cascade_path)
         if self.z_cascade.empty():
             self.get_logger().error("Error: No se pudo cargar el clasificador de semáforos.")
@@ -117,12 +117,12 @@ class Ros2OpenCVImageConverter(Node):
             )
             
             # Detectar peatones
-            peshes = self.pesh_cascade.detectMultiScale(
-                gray,
-                scaleFactor=1.1,
-                minNeighbors=5,
-                minSize=(30, 30)
-            )
+            #peshes = self.pesh_cascade.detectMultiScale(
+             #   gray,
+               # scaleFactor=1.1,
+              #  minNeighbors=5,
+                #minSize=(30, 30)
+            #)
             
             # Detectar semáforos
             traffic_lights = self.traffic_light_cascade.detectMultiScale(
@@ -148,18 +148,18 @@ class Ros2OpenCVImageConverter(Node):
                 cv2.putText(cv_image, 'Stop', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
             
             # Dibujar rectángulos alrededor de los peatones (amarillo)
-            for (x, y, w, h) in peshes:
-                cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 255), 2)
-                cv2.putText(cv_image, 'Peatón', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
+            #for (x, y, w, h) in peshes:
+             #   cv2.rectangle(cv_image, (x, y), (x+w, y+h), (0, 255, 255), 2)
+              #  cv2.putText(cv_image, 'Peaton', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
             
             # Dibujar rectángulos alrededor de los semáforos (morado)
             for (x, y, w, h) in traffic_lights:
                 cv2.rectangle(cv_image, (x, y), (x+w, y+h), (255, 0, 255), 2)
-                cv2.putText(cv_image, 'Semáforo', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
+                cv2.putText(cv_image, 'Semaforo', (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 255), 2)
             
             # Guardar imagen si se detectó algo y han pasado suficientes segundos
             current_time = time.time()
-            if (len(cars) > 0 or len(faces) > 0 or len(stops) > 0 or len(peshes) > 0 or len(traffic_lights) > 0) and current_time - self.last_capture_time >= self.capture_interval:
+            if (len(cars) > 0 or len(faces) > 0 or len(stops) > 0 or len(traffic_lights) > 0) and current_time - self.last_capture_time >= self.capture_interval:
                 timestamp = time.strftime("%Y%m%d-%H%M%S")
                 filename = os.path.join(self.output_folder, f'deteccion_{timestamp}.jpg')
                 cv2.imwrite(filename, cv_image)
