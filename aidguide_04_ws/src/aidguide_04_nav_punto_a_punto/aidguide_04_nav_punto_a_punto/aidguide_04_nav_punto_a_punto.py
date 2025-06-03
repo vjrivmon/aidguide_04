@@ -3,10 +3,20 @@ from rclpy.node import Node
 from nav2_msgs.action import NavigateToPose
 from rclpy.action import ActionClient
 from geometry_msgs.msg import PoseStamped
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from rclpy.duration import Duration
 
 class PuntoAPuntoNode(Node):
+    """Clase PuntoAPuntoNode.
+    
+    Implementa funcionalidad para PuntoAPuntoNode.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('punto_a_punto_node')
         self._client = ActionClient(self, NavigateToPose, '/navigate_to_pose')
 
@@ -30,6 +40,11 @@ class PuntoAPuntoNode(Node):
         send_goal_future.add_done_callback(self.goal_response_callback)
 
     def goal_response_callback(self, future):
+        """Función Goal response callback.
+        
+        Args:
+            future (Any): Descripción del parámetro.
+        """
         goal_handle = future.result()
         if not goal_handle.accepted:
             self.get_logger().info('La meta ha sido rechazada :(')
@@ -40,16 +55,31 @@ class PuntoAPuntoNode(Node):
         self._result_future.add_done_callback(self.get_result_callback)
 
     def get_result_callback(self, future):
+        """Función Get result callback.
+        
+        Args:
+            future (Any): Descripción del parámetro.
+        """
         result = future.result().result
         self.get_logger().info(f'El resultado de la navegación es: {result}')
         rclpy.shutdown()
 
     def feedback_callback(self, feedback_msg):
+        """Función Feedback callback.
+        
+        Args:
+            feedback_msg (Any): Descripción del parámetro.
+        """
         feedback = feedback_msg.feedback
         # Aquí puedes imprimir info sobre el feedback
         self.get_logger().info(f'Feedback de la navegación: distancia restante = {feedback.distance_remaining}')
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     node = PuntoAPuntoNode()
     rclpy.spin(node)

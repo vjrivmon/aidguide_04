@@ -16,7 +16,7 @@ interface MapData {
 }
 
 // ===================== INICIO DEL MAPA - Componente RobotMap =====================
-function RobotMap() {
+function RobotMap({ hasAnnouncedArrival, setHasAnnouncedArrival }: { hasAnnouncedArrival: boolean; setHasAnnouncedArrival: React.Dispatch<React.SetStateAction<boolean>> }) {
   const { robotPose } = useRobot() // Se asume que robotPose viene del contexto useRobot
 
   // Se tipan los estados para evitar errores en la asignación
@@ -158,19 +158,59 @@ function RobotMap() {
 
       // Dibujar el robot si la información está disponible
       if (robotPose) {
-        const { x, y } = rosToMap(robotPose.x, robotPose.y)
+        const { x: robotPixelX, y: robotPixelY } = rosToMap(robotPose.x, robotPose.y)
         ctx.beginPath()
-        ctx.arc(x, y, 5, 0, 2 * Math.PI)
+        ctx.arc(robotPixelX, robotPixelY, 5, 0, 2 * Math.PI)
         ctx.fillStyle = "green"
         ctx.fill()
-        console.log("Robot dibujado en:", x, y)
+        console.log("Robot dibujado en:", robotPixelX, robotPixelY)
+
+        // Comprobar si ha llegado al destino
+        if (
+          !hasAnnouncedArrival &&
+          Math.abs(robotPixelX - 201.17288289548898) < 5 &&
+          Math.abs(robotPixelY - 142.0169482641609) < 5
+        ) {
+          console.log("Llegada detectada!")
+          setHasAnnouncedArrival(true)
+          const utterance = new SpeechSynthesisUtterance("Has llegado a tu destino")
+          utterance.lang = "es-ES"
+          
+          // Asegurar que las voces estén cargadas y seleccionar una si es posible
+          const voices = window.speechSynthesis.getVoices()
+          if (voices.length > 0) {
+            let spanishVoice = voices.find(voice => voice.lang === 'es-ES')
+            if (spanishVoice) {
+              utterance.voice = spanishVoice
+              console.log(`[RobotMap] Using voice for arrival: ${spanishVoice.name}`)
+            }
+          } else {
+            console.warn("[RobotMap] No speech synthesis voices loaded for arrival. Using default.")
+          }
+          
+          utterance.onerror = (event) => {
+            if (event.error === 'interrupted') {
+              console.log("[RobotMap] Arrival speech interrupted.")
+            } else {
+              console.error("[RobotMap] Arrival SpeechSynthesisUtterance error:", event.error, event)
+            }
+          }
+          
+          if (window.speechSynthesis) {
+            if (window.speechSynthesis.state === 'suspended') {
+              window.speechSynthesis.resume()
+            }
+            window.speechSynthesis.cancel() // Cancelar cualquier anuncio anterior (por si acaso)
+            window.speechSynthesis.speak(utterance)
+          }
+        }
       } else {
         console.log("robotPose no está disponible")
       }
     }
 
     redrawMap()
-  }, [robotPose, mapData])
+  }, [robotPose, mapData, hasAnnouncedArrival, setHasAnnouncedArrival])
 
   return (
     // Se centra el canvas con flexbox
@@ -203,6 +243,7 @@ export default function Routes() {
   const [isConnected, setIsConnected] = useState(false)
   const [navigationStatus, setNavigationStatus] = useState<string | null>(null)
   const [currentWaypoint, setCurrentWaypoint] = useState<number | null>(null)
+  const [hasAnnouncedArrival, setHasAnnouncedArrival] = useState(false)
   const rosService = useRef<ROSService | null>(null)
   const statusListener = useRef<any>(null)
 
@@ -241,6 +282,7 @@ export default function Routes() {
     const success = rosService.current.startWaypointFollowing()
     if (success) {
       setIsNavigating(true)
+      setHasAnnouncedArrival(false)
       setNavigationStatus("Iniciando navegación...")
       
       // Suscribirse al estado de la navegación
@@ -414,7 +456,7 @@ export default function Routes() {
                 <>
                   {/* ===================== INICIO DEL MAPA INTEGRADO ===================== */}
                   <div className="bg-gray-200 rounded-lg h-64 md:h-80 mb-6 overflow-hidden">
-                    <RobotMap />
+                    <RobotMap hasAnnouncedArrival={hasAnnouncedArrival} setHasAnnouncedArrival={setHasAnnouncedArrival} />
                   </div>
                   {/* ===================== FIN DEL MAPA INTEGRADO ===================== */}
                   {selectedRoute && (

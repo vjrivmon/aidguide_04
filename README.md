@@ -27,17 +27,35 @@ sudo apt install ros-galactic-rosbridge-server ros-galactic-web-video-server
 ## 🛠️ Estructura del Proyecto
 ```
 aidguide_04/
+├── scripts/                    # Scripts para iniciar diferentes componentes
+│   ├── start-project.sh           # Script principal (inicia todo)
+│   ├── start-ros2-gazebo.sh       # Inicia ROS2 y Gazebo
+│   ├── start-frontend.sh          # Inicia la aplicación frontend
+│   ├── start-services.sh          # Inicia los servicios de backend
+│   ├── start-monitor.sh           # Inicia monitoreo del robot
+│   ├── start-web-with-chatbot.sh  # Inicia web con chatbot
+│   ├── start-standalone-web.sh    # Inicia web sin depender de ROS2
+│   ├── restart-ollama.sh          # Reinicia servicio Ollama para chatbot
+│   └── prueba-simple.sh           # Script para pruebas simples
 ├── aidguide_04_ws/            # Espacio de trabajo ROS2
-│   ├── src/
-│   │   ├── aidguide_04/               # Paquete principal
-│   │   ├── aidguide_04_nav/           # Navegación
-│   │   ├── aidguide_04_slam/          # SLAM
-│   │   ├── aidguide_04_backend/       # Backend API REST
-│   │   └── aidguide_04_web/           # Frontend
-│   └── start-services.sh       # Script para iniciar servicios backend
-├── start-project.sh           # Script principal (inicia todo)
-├── start-ros2-gazebo.sh       # Inicia ROS2 y Gazebo
-└── start-frontend.sh          # Inicia la aplicación frontend
+│   └── src/
+│       ├── aidguide_04/                   # Paquete principal
+│       ├── aidguide_04_backend/           # Backend API REST
+│       ├── aidguide_04_capture_image/     # Captura de imágenes
+│       ├── aidguide_04_imagenes_coches/   # Imágenes de coches
+│       ├── aidguide_04_nav/               # Navegación
+│       ├── aidguide_04_nav_punto_a_punto/ # Navegación punto a punto
+│       ├── aidguide_04_my_nav2_system/    # Sistema personalizado Nav2
+│       ├── aidguide_04_provide_map/       # Provisión de mapas
+│       ├── aidguide_04_robot_monitoring/  # Monitoreo del robot
+│       ├── aidguide_04_slam/              # SLAM
+│       ├── aidguide_04_weather/           # Información del clima
+│       ├── aidguide_04_web/               # Frontend
+│       ├── aidguide_04_world/             # Modelos y mundos para simulación
+│       ├── async_web_server_cpp/          # Servidor web asíncrono
+│       └── web_video_server/              # Servidor de video web
+├── docs/                      # Documentación del proyecto
+└── team_shared/               # Archivos compartidos del equipo
 ```
 
 ## 🚀 Ejecución del Proyecto
@@ -47,10 +65,10 @@ El script principal inicia todos los componentes del proyecto en un solo paso:
 
 ```bash
 # Dar permisos de ejecución si es necesario
-chmod +x start-project.sh
+chmod +x scripts/start-project.sh
 
 # Ejecutar el script principal
-./start-project.sh
+./scripts/start-project.sh
 ```
 
 Este script:
@@ -65,21 +83,26 @@ Si prefieres iniciar componentes individualmente:
 
 1. **Backend (API + Base de datos)**:
 ```bash
-cd aidguide_04_ws
-chmod +x start-services.sh
-./start-services.sh
+chmod +x scripts/start-services.sh
+./scripts/start-services.sh
 ```
 
 2. **ROS2 y Gazebo**:
 ```bash
-chmod +x start-ros2-gazebo.sh
-./start-ros2-gazebo.sh
+chmod +x scripts/start-ros2-gazebo.sh
+./scripts/start-ros2-gazebo.sh
 ```
 
 3. **Frontend**:
 ```bash
-chmod +x start-frontend.sh
-./start-frontend.sh
+chmod +x scripts/start-frontend.sh
+./scripts/start-frontend.sh
+```
+
+4. **Monitoreo del robot**:
+```bash
+chmod +x scripts/start-monitor.sh
+./scripts/start-monitor.sh
 ```
 
 ## 🔗 Acceso a los Servicios
@@ -173,12 +196,26 @@ aidguide_04/
 │       ├── aidguide_04_nav/               # Sistema de navegación base
 │       ├── aidguide_04_nav_punto_a_punto/ # Navegación punto a punto
 │       ├── aidguide_04_provide_map/       # Provisión de mapas
-│       └── aidguide_04_my_nav2_system/    # Sistema personalizado Nav2
-├── prueba-simple.sh                # Script para pruebas simples
-├── start-frontend.ps1              # Script PowerShell para iniciar frontend
-├── start-frontend.sh               # Script Bash para iniciar frontend
-├── start-nav.ps1                   # Script PowerShell para iniciar navegación
-└── start-ros2-gazebo.sh            # Script para iniciar ROS2 con Gazebo
+│       ├── aidguide_04_my_nav2_system/    # Sistema personalizado Nav2
+│       ├── aidguide_04_backend/           # Backend API REST
+│       ├── aidguide_04_robot_monitoring/  # Monitoreo del robot
+│       ├── aidguide_04_weather/           # Información del clima
+│       ├── aidguide_04_capture_image/     # Captura de imágenes
+│       ├── aidguide_04_imagenes_coches/   # Imágenes de coches
+│       ├── async_web_server_cpp/          # Servidor web asíncrono
+│       └── web_video_server/              # Servidor de video web
+├── scripts/                    # Scripts para iniciar diferentes componentes
+│   ├── start-project.sh           # Script principal (inicia todo)
+│   ├── start-ros2-gazebo.sh       # Inicia ROS2 y Gazebo
+│   ├── start-frontend.sh          # Inicia la aplicación frontend
+│   ├── start-services.sh          # Inicia los servicios de backend
+│   ├── start-monitor.sh           # Inicia monitoreo del robot
+│   ├── start-web-with-chatbot.sh  # Inicia web con chatbot
+│   ├── start-standalone-web.sh    # Inicia web sin depender de ROS2
+│   ├── restart-ollama.sh          # Reinicia servicio Ollama para chatbot
+│   └── prueba-simple.sh           # Script para pruebas simples
+├── docs/                      # Documentación del proyecto
+└── team_shared/               # Archivos compartidos del equipo
 ```
 
 ## 📋 Requisitos
@@ -218,30 +255,31 @@ El proyecto incluye varios scripts para automatizar tareas comunes:
 
 | Script | Plataforma | Descripción |
 |--------|------------|-------------|
-| `start-frontend.sh` | Linux/Unix | Inicia la aplicación web frontend |
-| `start-frontend.ps1` | Windows | Inicia la aplicación web frontend |
-| `start-nav.ps1` | Windows | Inicia el sistema de navegación |
-| `start-ros2-gazebo.sh` | Linux/Unix | Inicia ROS2 con el simulador Gazebo |
-| `prueba-simple.sh` | Linux/Unix | Ejecuta pruebas básicas del sistema |
+| `scripts/start-project.sh` | Linux/Unix | Inicia todo el proyecto (script principal) |
+| `scripts/start-frontend.sh` | Linux/Unix | Inicia la aplicación web frontend |
+| `scripts/start-ros2-gazebo.sh` | Linux/Unix | Inicia ROS2 con el simulador Gazebo |
+| `scripts/start-services.sh` | Linux/Unix | Inicia los servicios de backend |
+| `scripts/start-monitor.sh` | Linux/Unix | Inicia el monitoreo del robot |
+| `scripts/start-web-with-chatbot.sh` | Linux/Unix | Inicia la aplicación web con chatbot |
+| `scripts/start-standalone-web.sh` | Linux/Unix | Inicia la web sin depender de ROS2 |
+| `scripts/restart-ollama.sh` | Linux/Unix | Reinicia el servicio Ollama para el chatbot |
+| `scripts/prueba-simple.sh` | Linux/Unix | Ejecuta pruebas básicas del sistema |
 
 ### Ejecutar Scripts en Linux/Unix:
 ```bash
 # Dar permisos de ejecución
-chmod +x start-frontend.sh
-chmod +x start-ros2-gazebo.sh
-chmod +x prueba-simple.sh
+chmod +x scripts/start-project.sh
+chmod +x scripts/start-ros2-gazebo.sh
+chmod +x scripts/start-frontend.sh
+chmod +x scripts/start-monitor.sh
+chmod +x scripts/prueba-simple.sh
 
 # Ejecutar scripts
-./start-frontend.sh
-./start-ros2-gazebo.sh
-./prueba-simple.sh
-```
-
-### Ejecutar Scripts en Windows:
-```powershell
-# Ejecutar scripts de PowerShell
-.\start-frontend.ps1
-.\start-nav.ps1
+./scripts/start-project.sh
+./scripts/start-ros2-gazebo.sh
+./scripts/start-frontend.sh
+./scripts/start-monitor.sh
+./scripts/prueba-simple.sh
 ```
 
 ## 💻 Uso del Sistema
@@ -251,9 +289,7 @@ chmod +x prueba-simple.sh
 1. **Iniciar la simulación**:
    ```bash
    # Linux/Unix
-   ./start-ros2-gazebo.sh
-   
-   # Windows (necesitarás WSL o una solución similar para Gazebo)
+   ./scripts/start-ros2-gazebo.sh
    ```
 
 2. **Iniciar el sistema de navegación**:
@@ -262,18 +298,12 @@ chmod +x prueba-simple.sh
    cd aidguide_04_ws
    source install/setup.bash
    ros2 launch aidguide_04_nav navigation.launch.py
-   
-   # Windows
-   .\start-nav.ps1
    ```
 
 3. **Iniciar el frontend web**:
    ```bash
    # Linux/Unix
-   ./start-frontend.sh
-   
-   # Windows
-   .\start-frontend.ps1
+   ./scripts/start-frontend.sh
    ```
 
 4. **Acceder a la aplicación web**:
@@ -322,7 +352,7 @@ chmod +x prueba-simple.sh
    - Reinicia el simulador con:
    ```bash
    killall -9 gzserver gzclient
-   ./start-ros2-gazebo.sh
+   ./scripts/start-ros2-gazebo.sh
    ```
 
 ## Navegación Web-Waypoint
@@ -331,7 +361,7 @@ Para iniciar la integración entre la interfaz web y el sistema de navegación p
 
 1. Inicia el sistema ROS y Gazebo:
 ```bash
-./start-ros-gazebo.sh
+./scripts/start-ros2-gazebo.sh
 ```
 
 2. En una nueva terminal, inicia el puente entre la web y el seguidor de waypoints:
@@ -343,7 +373,7 @@ ros2 launch aidguide_04_my_nav2_system web_navigation_bridge.launch.py
 
 3. En una nueva terminal, inicia el frontend web:
 ```bash
-./start-frontend.sh
+./scripts/start-frontend.sh
 ```
 
 4. Abre tu navegador y visita la página de rutas en: [http://localhost:3000/routes](http://localhost:3000/routes)

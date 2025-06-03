@@ -17,6 +17,10 @@ from ament_flake8.main import main_with_errors
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import pytest
 
 

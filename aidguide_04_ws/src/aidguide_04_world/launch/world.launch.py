@@ -10,6 +10,10 @@ from launch_ros.substitutions import FindPackageShare
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch_ros.actions import Node
 
 # Definir el modelo de TurtleBot3

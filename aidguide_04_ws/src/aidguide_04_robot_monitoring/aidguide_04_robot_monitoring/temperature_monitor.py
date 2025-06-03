@@ -3,10 +3,20 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Temperature
 import random
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class TemperatureMonitor(Node):
+    """Clase TemperatureMonitor.
+    
+    Implementa funcionalidad para TemperatureMonitor.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('temperature_monitor')
         self.publisher = self.create_publisher(Temperature, '/temperature_sensor', 10)
         self.timer = self.create_timer(1.0, self.publish_temperature)
@@ -24,6 +34,8 @@ class TemperatureMonitor(Node):
 
     def publish_temperature(self):
         # Actualizar la temperatura simulada
+        """Función Publish temperature.
+        """
         current_time = time.time()
         elapsed_time = current_time - self.last_update
         self.last_update = current_time
@@ -59,6 +71,11 @@ class TemperatureMonitor(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     temperature_monitor = TemperatureMonitor()
     rclpy.spin(temperature_monitor)

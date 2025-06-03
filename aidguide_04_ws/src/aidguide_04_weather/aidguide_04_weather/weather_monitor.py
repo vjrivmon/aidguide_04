@@ -6,6 +6,10 @@ import random
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class WeatherMonitor(Node):

@@ -1,5 +1,9 @@
 from setuptools import setup
 import os
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from glob import glob
 
 package_name = 'aidguide_04_nav_punto_a_punto'
@@ -29,4 +33,3 @@ setup(
         ],
     },
 )
-

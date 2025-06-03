@@ -2,16 +2,30 @@
 
 import websocket
 import unittest
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class TestWebsocket(unittest.TestCase):
+    """Clase TestWebsocket.
+    
+    Implementa funcionalidad para TestWebsocket.
+    """
     def setUp(self):
+        """Función Setup.
+        """
         self.ws = websocket.create_connection("ws://localhost:9849/websocket_echo")
 
     def tearDown(self):
+        """Función Teardown.
+        """
         self.ws.close()
 
     def test_ok(self):
+        """Función Test ok.
+        """
         self.ws.send("hello")
         self.assertEqual("hello", self.ws.recv())
         self.ws.send("test")

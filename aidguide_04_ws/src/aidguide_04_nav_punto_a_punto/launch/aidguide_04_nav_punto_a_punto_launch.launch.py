@@ -10,6 +10,10 @@ from launch_ros.actions import Node
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from ament_index_python.packages import get_package_share_directory
 
 def generate_launch_description():
