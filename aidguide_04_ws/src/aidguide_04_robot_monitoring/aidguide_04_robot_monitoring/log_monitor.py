@@ -4,10 +4,20 @@ from rclpy.node import Node
 from std_msgs.msg import String
 import random
 import time
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import datetime
 
 class LogMonitor(Node):
+    """Clase LogMonitor.
+    
+    Implementa funcionalidad para LogMonitor.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('log_monitor')
         self.publisher = self.create_publisher(String, '/log_messages', 10)
         self.timer = self.create_timer(5.0, self.publish_log)
@@ -56,6 +66,8 @@ class LogMonitor(Node):
 
     def publish_log(self):
         # Incrementar contador
+        """Función Publish log.
+        """
         self.message_count += 1
         
         # Determinar tipo de mensaje basado en probabilidad
@@ -83,6 +95,11 @@ class LogMonitor(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     log_monitor = LogMonitor()
     rclpy.spin(log_monitor)

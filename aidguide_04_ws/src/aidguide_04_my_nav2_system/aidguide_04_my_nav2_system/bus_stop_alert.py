@@ -8,6 +8,10 @@ from std_msgs.msg import String
 import math
 import threading
 import queue
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class BusStopAlertNode(Node):
@@ -15,6 +19,8 @@ class BusStopAlertNode(Node):
     Nodo simple que detecta paradas, pregunta si ir, y termina en la parada si se elige si.
     """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('bus_stop_alert_node')
         self.action_client = ActionClient(self, FollowWaypoints, '/follow_waypoints')
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_callback, 10)
@@ -55,6 +61,8 @@ class BusStopAlertNode(Node):
         return pose
 
     def start_navigation(self):
+        """Función Start navigation.
+        """
         if not self.is_waiting and not self.is_done and self.goal_handle is None:
             if not self.action_client.wait_for_server(timeout_sec=5.0):
                 self.get_logger().error('Servidor no disponible.')
@@ -62,6 +70,11 @@ class BusStopAlertNode(Node):
             self._send_waypoints(self.current_waypoints)
 
     def odom_callback(self, msg):
+        """Función Odom callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         self.current_position = msg.pose.pose.position
         if not self.is_waiting and not self.is_done:
             self._check_proximity()
@@ -119,6 +132,11 @@ class BusStopAlertNode(Node):
             self.input_queue.put('no')
 
     def decision_callback(self, msg):
+        """Función Decision callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         if self.is_waiting and self.nearest_stop:
             response = msg.data.strip().lower()
             if response == 'si':
@@ -158,6 +176,8 @@ class BusStopAlertNode(Node):
             self.is_done = True
 
     def spin(self):
+        """Función Spin.
+        """
         while rclpy.ok():
             rclpy.spin_once(self, timeout_sec=0.1)
             if self.is_waiting and self.nearest_stop:
@@ -185,6 +205,11 @@ class BusStopAlertNode(Node):
                     pass
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     node = BusStopAlertNode()
     try:

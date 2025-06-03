@@ -1,4 +1,8 @@
 from setuptools import setup
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import os
 
 package_name = 'aidguide_04_capture_image'

@@ -6,10 +6,20 @@ from diagnostic_msgs.msg import DiagnosticArray
 from std_msgs.msg import String
 import time
 import os
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import datetime
 
 class MonitoringDashboard(Node):
+    """Clase MonitoringDashboard.
+    
+    Implementa funcionalidad para MonitoringDashboard.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('monitoring_dashboard')
         
         # QoS para suscripciones
@@ -64,6 +74,11 @@ class MonitoringDashboard(Node):
         self.get_logger().info("Esperando datos de los sensores y monitores...")
 
     def battery_callback(self, msg):
+        """Función Battery callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         self.battery_status = msg
         
         # Emitir alertas específicas según el nivel de batería
@@ -73,6 +88,11 @@ class MonitoringDashboard(Node):
             self.get_logger().warn(f'Batería baja: {msg.percentage:.1f}%')
 
     def hardware_callback(self, msg):
+        """Función Hardware callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         self.hardware_status = msg
         
         # Verificar si hay componentes en estado de error
@@ -81,6 +101,11 @@ class MonitoringDashboard(Node):
                 self.get_logger().error(f'Error en componente: {status.name} - {status.message}')
 
     def temperature_callback(self, msg):
+        """Función Temperature callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         self.temperature = msg
         
         # Alertar si la temperatura es muy alta
@@ -91,6 +116,11 @@ class MonitoringDashboard(Node):
 
     def log_callback(self, msg):
         # Añadir el mensaje a la lista de mensajes recientes
+        """Función Log callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         self.latest_logs.append(msg)
         
         # Mantener solo los mensajes más recientes
@@ -260,6 +290,11 @@ class MonitoringDashboard(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     dashboard = MonitoringDashboard()
     rclpy.spin(dashboard)

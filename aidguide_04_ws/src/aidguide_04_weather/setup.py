@@ -4,6 +4,10 @@ import os
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from glob import glob
 
 package_name = 'aidguide_04_weather'

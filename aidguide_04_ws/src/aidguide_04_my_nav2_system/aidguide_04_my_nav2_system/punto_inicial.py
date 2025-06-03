@@ -5,6 +5,10 @@ from rclpy.node import Node
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from geometry_msgs.msg import PoseWithCovarianceStamped
 
 class Publisher(Node):

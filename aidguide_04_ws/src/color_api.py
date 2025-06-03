@@ -3,6 +3,10 @@ import cv2
 import numpy as np
 import os
 import io
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from flask_cors import CORS
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -12,6 +16,14 @@ app = Flask(__name__)
 CORS(app)
 
 def detectar_colores(img_path):
+    """Función Detectar colores.
+    
+    Args:
+        img_path (Any): Descripción del parámetro.
+    
+    Returns:
+        Descripción del valor de retorno.
+    """
     img = cv2.imread(img_path)
     if img is None:
         return None
@@ -626,6 +638,11 @@ def aplicar_canny_simple(img_path):
 
 @app.route('/api/transform', methods=['POST'])
 def transform_image():
+    """Función Transform image.
+    
+    Returns:
+        Descripción del valor de retorno.
+    """
     data = request.json
     filename = data.get('filename')
     transform_type = data.get('transform_type')

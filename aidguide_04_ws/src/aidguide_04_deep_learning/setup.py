@@ -1,5 +1,13 @@
 from setuptools import setup, find_packages
 import os
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from glob import glob
 
 package_name = 'aidguide_04_deep_learning'

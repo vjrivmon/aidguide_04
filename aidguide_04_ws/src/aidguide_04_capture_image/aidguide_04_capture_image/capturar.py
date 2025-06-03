@@ -10,12 +10,22 @@ from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import Image 
 from rclpy.node import Node  
 from rclpy.qos import ReliabilityPolicy, QoSProfile 
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from datetime import datetime
 
 # Clase que convierte imágenes de ROS2 a OpenCV y detecta objetos (coches, caras, señales stop, peatones y semáforos) con clasificadores Haar
 class Ros2OpenCVImageConverter(Node):   
 
+    """Clase Ros2OpenCVImageConverter.
+    
+    Implementa funcionalidad para Ros2OpenCVImageConverter.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('Ros2OpenCVImageConverter')  
 
         self.bridge_object = CvBridge()
@@ -85,6 +95,11 @@ class Ros2OpenCVImageConverter(Node):
         self.get_logger().info('Nodo de detección inicializado correctamente')
         
     def camera_callback(self, msg):
+        """Función Camera callback.
+        
+        Args:
+            msg (Any): Descripción del parámetro.
+        """
         try:
             # Convertir la imagen de ROS a OpenCV
             cv_image = self.bridge_object.imgmsg_to_cv2(msg, "bgr8")
@@ -174,6 +189,11 @@ class Ros2OpenCVImageConverter(Node):
             self.get_logger().error(f'Error en el procesamiento de imagen: {str(e)}')
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     image_converter = Ros2OpenCVImageConverter()
     

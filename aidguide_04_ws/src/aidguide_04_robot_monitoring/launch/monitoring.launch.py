@@ -6,6 +6,10 @@ from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, LogInfo, ExecuteProcess
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch.conditions import IfCondition
 
 def generate_launch_description():

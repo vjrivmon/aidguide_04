@@ -272,6 +272,12 @@ class LocalizationROSTest(unittest.TestCase):
         # Simular el procesamiento de mensajes
         def side_effect(node, timeout_sec=None):
             # Solo simular la recepción de un mensaje cuando no hay ninguno
+            """Función Side effect.
+            
+            Args:
+                node (Any): Descripción del parámetro.
+                timeout_sec (Any): Descripción del parámetro.
+            """
             if len(self.received_odometry) == 0:
                 # Crear un mensaje de odometría simulado
                 odom_msg = Odometry()
@@ -301,6 +307,12 @@ class LocalizationROSTest(unittest.TestCase):
         # Simular el procesamiento de mensajes
         def side_effect(node, timeout_sec=None):
             # Solo simular la recepción de un mensaje cuando no hay ninguno
+            """Función Side effect.
+            
+            Args:
+                node (Any): Descripción del parámetro.
+                timeout_sec (Any): Descripción del parámetro.
+            """
             if len(self.received_poses) == 0:
                 # Crear un mensaje de posición simulado
                 pose_msg = PoseWithCovarianceStamped()

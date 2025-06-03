@@ -17,6 +17,10 @@ from ament_pep257.main import main
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import pytest
 
 

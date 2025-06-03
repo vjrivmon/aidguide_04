@@ -278,6 +278,12 @@ class VisualNavigationROSTest(unittest.TestCase):
         # Simular el procesamiento de mensajes
         def side_effect(node, timeout_sec=None):
             # Solo simular la recepción de un mensaje cuando se publique una imagen
+            """Función Side effect.
+            
+            Args:
+                node (Any): Descripción del parámetro.
+                timeout_sec (Any): Descripción del parámetro.
+            """
             if len(self.received_traffic_signs) == 0:
                 # Crear un mensaje de detección simulado
                 detection_msg = Image()  # Cambiar por el tipo apropiado

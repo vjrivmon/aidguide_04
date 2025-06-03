@@ -3,10 +3,20 @@ import rclpy
 from rclpy.node import Node
 from diagnostic_msgs.msg import DiagnosticArray, DiagnosticStatus, KeyValue
 import random
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 import time
 
 class HardwareMonitor(Node):
+    """Clase HardwareMonitor.
+    
+    Implementa funcionalidad para HardwareMonitor.
+    """
     def __init__(self):
+        """Función Constructor.
+        """
         super().__init__('hardware_monitor')
         self.publisher = self.create_publisher(DiagnosticArray, '/hardware_health', 10)
         self.timer = self.create_timer(2.0, self.publish_hardware_status)
@@ -28,6 +38,8 @@ class HardwareMonitor(Node):
 
     def publish_hardware_status(self):
         # Actualizar estado de componentes (simulación)
+        """Función Publish hardware status.
+        """
         current_time = time.time()
         elapsed_time = current_time - self.last_update
         self.last_update = current_time
@@ -72,6 +84,11 @@ class HardwareMonitor(Node):
 
     def update_components_status(self, elapsed_time):
         # Simular cambios en los componentes
+        """Función Update components status.
+        
+        Args:
+            elapsed_time (Any): Descripción del parámetro.
+        """
         for name, data in self.components.items():
             # Simular probabilidad de fallo (5% de probabilidad cada actualización)
             if random.random() < 0.05:
@@ -111,6 +128,11 @@ class HardwareMonitor(Node):
 
 
 def main(args=None):
+    """Función Main.
+    
+    Args:
+        args (Any): Descripción del parámetro.
+    """
     rclpy.init(args=args)
     hardware_monitor = HardwareMonitor()
     rclpy.spin(hardware_monitor)

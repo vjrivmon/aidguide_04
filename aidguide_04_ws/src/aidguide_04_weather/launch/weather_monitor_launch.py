@@ -3,6 +3,10 @@ from launch import LaunchDescription
 
 Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
 """
+"""Módulo <module>.
+
+Este módulo proporciona funcionalidades para el proyecto AidGuide 04.
+"""
 from launch_ros.actions import Node
 
 def generate_launch_description():

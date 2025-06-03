@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Nodo de ROS2 para la detección de frutas utilizando un modelo YOLOv8 TFLite.
 
 Este nodo se suscribe a un tema de imágenes, procesa cada imagen utilizando
@@ -73,7 +74,14 @@ class FruitDetectorNode(Node):
                     f"Modelo de fallback ({fallback_model_filename}) tampoco encontrado en {resource_path}."
                 )
                 self.get_logger().error("No se pudo encontrar ningún modelo TFLite. El nodo no funcionará.")
-                return # Salir si no hay modelo
+                self.interpreter = None # Asegurarse de que interpreter es None
+                self.input_details = None
+                self.output_details = None
+                self.bridge = CvBridge() # Podría ser necesario para otros métodos si se llama
+                # Configurar publicadores/suscriptores igualmente para evitar errores de atributo no encontrado,
+                # pero el nodo no será funcional.
+                self._setup_ros_communication()
+                return
 
         if model_to_load_path:
             try:
@@ -86,6 +94,14 @@ class FruitDetectorNode(Node):
         else:
             # Esto no debería ocurrir si la lógica anterior es correcta, pero por si acaso.
             self.get_logger().error("No se seleccionó ningún modelo para cargar. El nodo no funcionará.")
+            # Considerar lanzar una excepción o un mecanismo para detener la inicialización completa
+            self.interpreter = None # Asegurarse de que interpreter es None
+            self.input_details = None
+            self.output_details = None
+            self.bridge = CvBridge() # Podría ser necesario para otros métodos si se llama
+            # Configurar publicadores/suscriptores igualmente para evitar errores de atributo no encontrado,
+            # pero el nodo no será funcional.
+            self._setup_ros_communication()
             return
 
         # Obtener detalles de entrada y salida del modelo
@@ -96,112 +112,9 @@ class FruitDetectorNode(Node):
 
         # CvBridge para convertir entre imágenes de ROS y OpenCV
         self.bridge = CvBridge()
-
-        # Suscriptor al tema de imágenes
-        qos_profile = QoSProfile(
-            reliability=QoSReliabilityPolicy.BEST_EFFORT,
-            history=QoSHistoryPolicy.KEEP_LAST,
-            depth=10
-        )
-        self.image_subscription = self.create_subscription(
-            Image,
-            INPUT_IMAGE_TOPIC,
-            self.image_callback,
-            qos_profile
-        )
-        self.get_logger().info(f'Suscrito al tema de imágenes: {INPUT_IMAGE_TOPIC}')
-
-        # Publicador para los resultados de la detección
-        self.detection_publisher = self.create_publisher(
-            String, 
-            DETECTION_OUTPUT_TOPIC,
-            10 # QoS profile depth
-        )
-        self.get_logger().info(f'Publicando detecciones en el tema: {DETECTION_OUTPUT_TOPIC}')
-
-    def image_callback(self, msg: Image):
-        """Callback que se ejecuta cada vez que se recibe una nueva imagen.
-
-        Args:
-            msg (sensor_msgs.msg.Image): El mensaje de imagen recibido.
-        """
-        self.get_logger().info(f'✨ Recibida imagen con timestamp: {msg.header.stamp}')
-
-        try:
-            # Convertir mensaje de imagen de ROS a formato OpenCV (BGR8)
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
-        except Exception as e:
-            self.get_logger().error(f"Error al convertir imagen de ROS a OpenCV: {e}")
-            return
-
-        # Preprocesamiento de la imagen (ajustar según los requisitos de tu modelo YOLOv8)
-        # Esto es un ejemplo general, YOLOv8 podría requerir normalización específica,
-        # cambio de tamaño manteniendo la relación de aspecto, padding, etc.
-        input_shape = self.input_details[0]['shape'] # Ej: [1, height, width, 3]
-        # Asegúrate de que el tamaño de entrada coincida con el esperado por el modelo.
-        # El entrenamiento se hizo con imgsz=100 para el dataset fruits-360
-        # Si tu modelo YOLO espera 640x640, por ejemplo:
-        # target_height = input_shape[1]
-        # target_width = input_shape[2]
-        # resized_image = cv2.resize(cv_image, (target_width, target_height))
         
-        # Para el modelo entrenado con 'yolov8n-cls.pt' y imgsz=100 en tu script de Colab:
-        # El modelo de clasificación espera una imagen de un tamaño específico,
-        # por ejemplo, 100x100 si imgsz=100.
-        # Para detección de objetos, YOLO usualmente requiere un tamaño como 640x640.
-        # Debes verificar qué espera tu modelo .tflite exportado (si es de clasificación o detección).
-        # El script de Colab parece entrenar un CLASIFICADOR ('yolov8n-cls.pt').
-        # Si es un clasificador, el output será una clase, no bounding boxes.
-        # Si exportaste un modelo de DETECCIÓN, el preprocesamiento y postprocesamiento serán diferentes.
-
-        # Suponiendo que es un modelo de CLASIFICACIÓN y espera 100x100:
-        img_height = self.input_details[0]['shape'][1]
-        img_width = self.input_details[0]['shape'][2]
-        
-        # Redimensionar la imagen al tamaño esperado por el modelo
-        input_image = cv2.resize(cv_image, (img_width, img_height))
-        
-        # Convertir a RGB si es necesario (OpenCV usa BGR por defecto)
-        # input_image = cv2.cvtColor(input_image, cv2.COLOR_BGR2RGB) # Depende del modelo
-        
-        # Expandir dimensiones para que coincida con la forma de entrada del batch (1, H, W, C)
-        input_data = np.expand_dims(input_image, axis=0)
-        
-        # Normalizar los valores de los píxeles si el modelo lo espera (e.g., 0-1 o -1 a 1)
-        # Si tu modelo fue entrenado con imágenes normalizadas (divididas por 255.0, por ejemplo)
-        # input_data = np.float32(input_data) / 255.0
-        
-        # Verificar el tipo de dato esperado por el modelo (usualmente float32 o uint8)
-        if self.input_details[0]['dtype'] == np.float32:
-            input_data = np.float32(input_data)
-            # Normalizar si es float32 y el modelo lo espera (0-1)
-            # input_data = input_data / 255.0 # Descomenta si es necesario
-        elif self.input_details[0]['dtype'] == np.uint8:
-            # No se necesita conversión si ya es uint8 y no hay normalización.
-            pass
-
-
-        # Establecer el tensor de entrada
-        self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
-
-        # Ejecutar la inferencia
-        self.interpreter.invoke()
-
-        # Obtener los resultados de la inferencia
-        # La estructura de 'output_data' dependerá de si es un modelo de clasificación o detección.
-        # Para CLASIFICACIÓN:
-        output_data_cls = self.interpreter.get_tensor(self.output_details[0]['index'])
-        # output_data_cls será un array de scores para cada clase, ej: [[0.1, 0.8, 0.05, ...]]
-        predicted_class_index = np.argmax(output_data_cls[0])
-        confidence_score = output_data_cls[0][predicted_class_index]
-
-        # También obtener las 3 mejores detecciones
-        top_indices = np.argsort(output_data_cls[0])[-3:][::-1]
-        top_scores = output_data_cls[0][top_indices]
-
-        # Aquí necesitarás un mapeo de índices a nombres de clases (frutas)
-        # Este mapeo deberías obtenerlo de tu proceso de entrenamiento.
-        class_names = [
+        # Definir class_names como atributo de instancia
+        self.class_names = [
             "Apple 10", "Apple 11", "Apple 12", "Apple 13", "Apple 14", "Apple 17", "Apple 18", "Apple 19",
             "Apple 5", "Apple 6", "Apple 7", "Apple 8", "Apple 9", "Apple Braeburn 1", "Apple Core 1",
             "Apple Crimson Snow 1", "Apple Golden 1", "Apple Golden 2", "Apple Golden 3", "Apple Granny Smith 1",
@@ -238,73 +151,182 @@ class FruitDetectorNode(Node):
             "Tomato Heart 1", "Tomato Maroon 1", "Tomato Maroon 2", "Tomato Yellow 1", "Tomato not Ripen 1",
             "Walnut 1", "Watermelon 1", "Zucchini 1", "Zucchini dark 1"
         ]
-        # Verificar que el número de clases coincida con la salida del modelo
-        if len(class_names) != output_data_cls.shape[1]:
+
+        self._setup_ros_communication()
+
+    def _setup_ros_communication(self):
+        """Configura los suscriptores y publicadores de ROS."""
+        # Suscriptor al tema de imágenes
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        self.image_subscription = self.create_subscription(
+            Image,
+            INPUT_IMAGE_TOPIC,
+            self.image_callback,
+            qos_profile
+        )
+        self.get_logger().info(f'Suscrito al tema de imágenes: {INPUT_IMAGE_TOPIC}')
+
+        # Publicador para los resultados de la detección
+        self.detection_publisher = self.create_publisher(
+            String, 
+            DETECTION_OUTPUT_TOPIC,
+            10 # QoS profile depth
+        )
+        self.get_logger().info(f'Publicando detecciones en el tema: {DETECTION_OUTPUT_TOPIC}')
+
+    def _preprocess_image(self, cv_image: np.ndarray) -> np.ndarray:
+        """Preprocesa la imagen CV2 para la entrada del modelo TFLite."""
+        self.get_logger().debug("Iniciando preprocesamiento de imagen...")
+        if self.input_details is None:
+            self.get_logger().error("Detalles de entrada del modelo no disponibles. Saltando preprocesamiento.")
+            return None # O lanzar excepción
+
+        input_shape = self.input_details[0]['shape']
+        img_height = input_shape[1]
+        img_width = input_shape[2]
+
+        input_image_resized = cv2.resize(cv_image, (img_width, img_height))
+        
+        # La conversión a RGB depende de cómo fue entrenado el modelo.
+        # Si el modelo espera RGB pero OpenCV entrega BGR:
+        # input_image_rgb = cv2.cvtColor(input_image_resized, cv2.COLOR_BGR2RGB)
+        # Por ahora, asumimos que el modelo trabaja con BGR o ya está en el formato correcto.
+        input_image_expanded = np.expand_dims(input_image_resized, axis=0)
+        
+        input_data = input_image_expanded
+        if self.input_details[0]['dtype'] == np.float32:
+            input_data = np.float32(input_image_expanded)
+            # Normalización (0-1) si el modelo float32 lo espera.
+            # Descomentar si es necesario:
+            # input_data = input_data / 255.0 
+            self.get_logger().debug(f"Imagen preprocesada a float32, forma: {input_data.shape}")
+        elif self.input_details[0]['dtype'] == np.uint8:
+            # Si el modelo espera uint8, input_image_expanded debería estar bien.
+            self.get_logger().debug(f"Imagen preprocesada a uint8, forma: {input_data.shape}")
+        
+        return input_data
+
+    def _get_classification_from_output(self, output_data_cls: np.ndarray) -> tuple[str, float, list[tuple[str, float]]]:
+        """
+        Interpreta la salida del modelo de clasificación.
+
+        Args:
+            output_data_cls: Array NumPy de la salida del tensor del modelo.
+
+        Returns:
+            Una tupla conteniendo:
+                - nombre_clase_predicha (str)
+                - confianza (float)
+                - lista_top_3_predicciones (list[tuple[str, float]])
+        """
+        self.get_logger().debug("Procesando salida de clasificación...")
+        predicted_class_index = int(np.argmax(output_data_cls[0]))
+        confidence_score = float(output_data_cls[0][predicted_class_index])
+
+        top_indices = np.argsort(output_data_cls[0])[-3:][::-1]
+        # top_scores = output_data_cls[0][top_indices] # No se usa directamente, se accede por índice
+
+        predicted_fruit_name = f"ClaseDesconocida_{predicted_class_index}"
+        
+        if not hasattr(self, 'class_names') or not self.class_names:
+            self.get_logger().error("Lista 'class_names' no definida o vacía en el nodo.")
+            # Manejar el caso donde class_names no está disponible
+            top_3_predictions = [(f"ClaseDesconocida_{idx}", float(output_data_cls[0][idx])) for idx in top_indices]
+            return predicted_fruit_name, confidence_score, top_3_predictions
+
+        if len(self.class_names) != output_data_cls.shape[1]:
             self.get_logger().warning(
-                f"El número de clases en class_names ({len(class_names)}) "
+                f"El número de clases en self.class_names ({len(self.class_names)}) "
                 f"no coincide con la salida del modelo ({output_data_cls.shape[1]}). "
                 "Asegúrate de que la lista class_names sea correcta."
             )
-            # Usar placeholders si hay discrepancia para evitar IndexError
-            predicted_fruit = f"Clase_{predicted_class_index}"
-        elif predicted_class_index >= len(class_names):
-            self.get_logger().error(
-                f"predicted_class_index ({predicted_class_index}) está fuera de rango para class_names (tamaño {len(class_names)}). "
-                "Esto no debería ocurrir si las longitudes coinciden y argmax funciona como se espera."
-            )
-            predicted_fruit = f"Error_Clase_{predicted_class_index}"
+            # Aún así intentar mapear lo que se pueda
+        
+        if 0 <= predicted_class_index < len(self.class_names):
+            predicted_fruit_name = self.class_names[predicted_class_index]
         else:
-            predicted_fruit = class_names[predicted_class_index]
+            self.get_logger().error(
+                f"predicted_class_index ({predicted_class_index}) está fuera de rango para self.class_names (tamaño {len(self.class_names)}). "
+            )
+
+        top_3_predictions = []
+        for idx_val in top_indices: # Iterar sobre los valores de los índices
+            idx = int(idx_val) # Asegurar que el índice es un entero
+            score_val = float(output_data_cls[0][idx])
+            fruit_name_top = f"ClaseDesconocida_{idx}"
+            if 0 <= idx < len(self.class_names):
+                fruit_name_top = self.class_names[idx]
+            top_3_predictions.append((fruit_name_top, score_val))
+            self.get_logger().debug(f"  Top: {fruit_name_top}: {score_val:.2f}")
+            
+        self.get_logger().debug(f"Clasificación final: {predicted_fruit_name}, Confianza: {confidence_score:.2f}")
+        return predicted_fruit_name, confidence_score, top_3_predictions
+
+    def image_callback(self, msg: Image):
+        """Callback que se ejecuta cada vez que se recibe una nueva imagen.
+
+        Args:
+            msg (sensor_msgs.msg.Image): El mensaje de imagen recibido.
+        """
+        if not self.interpreter or not self.input_details or not self.output_details:
+            self.get_logger().warn("Intérprete o detalles del modelo no inicializados. Saltando callback.")
+            return
+
+        self.get_logger().info(f'✨ Recibida imagen con timestamp: {msg.header.stamp}')
+
+        try:
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
+        except Exception as e:
+            self.get_logger().error(f"Error al convertir imagen de ROS a OpenCV: {e}")
+            return
+
+        input_data = self._preprocess_image(cv_image)
+        if input_data is None:
+            self.get_logger().error("Fallo en el preprocesamiento de la imagen.")
+            return
+
+        # Establecer el tensor de entrada
+        try:
+            self.interpreter.set_tensor(self.input_details[0]['index'], input_data)
+        except Exception as e:
+            self.get_logger().error(f"Error al establecer el tensor de entrada: {e}")
+            return
+
+        # Ejecutar la inferencia
+        try:
+            self.interpreter.invoke()
+        except Exception as e:
+            self.get_logger().error(f"Error durante la inferencia del modelo: {e}")
+            return
         
-        self.get_logger().info(f"🍓 DETECCIÓN: {predicted_fruit} con confianza: {confidence_score:.2f}")
+        # Obtener los resultados de la inferencia
+        try:
+            output_data_cls = self.interpreter.get_tensor(self.output_details[0]['index'])
+        except Exception as e:
+            self.get_logger().error(f"Error al obtener el tensor de salida: {e}")
+            return
+
+        predicted_fruit, confidence, top_3 = self._get_classification_from_output(output_data_cls)
         
-        # Mostrar las 3 mejores detecciones
+        self.get_logger().info(f"🍓 DETECCIÓN PRINCIPAL: {predicted_fruit} con confianza: {confidence:.2f}")
         self.get_logger().info("🔝 TOP 3 DETECCIONES:")
-        for i, (idx, score) in enumerate(zip(top_indices, top_scores)):
-            if idx < len(class_names):
-                fruit_name = class_names[idx]
-            else:
-                fruit_name = f"Clase_{idx}"
+        for i, (fruit_name, score) in enumerate(top_3):
             self.get_logger().info(f"   {i+1}. {fruit_name}: {score:.2f}")
 
-        if confidence_score >= CONFIDENCE_THRESHOLD:
-            # Publicar el resultado
-            # Si es clasificación, podrías publicar el nombre de la fruta y su confianza.
+        if confidence >= CONFIDENCE_THRESHOLD:
             detection_msg = String()
-            detection_msg.data = f"Fruta: {predicted_fruit}, Confianza: {confidence_score:.2f}"
+            detection_msg.data = f"Fruta: {predicted_fruit}, Confianza: {confidence:.2f}"
             self.detection_publisher.publish(detection_msg)
             self.get_logger().info(f'✅ Publicando: {detection_msg.data}')
         else:
             self.get_logger().info(f'❌ Clasificación por debajo del umbral de confianza ({CONFIDENCE_THRESHOLD}).')
 
-
-        # SI FUERA UN MODELO DE DETECCIÓN (YOLO para bounding boxes):
-        # El post-procesamiento sería más complejo. Necesitarías interpretar
-        # los bounding boxes, scores y clases de la salida del modelo.
-        # output_data_detection = self.interpreter.get_tensor(self.output_details[0]['index'])
-        # Por ejemplo, para un modelo YOLOv8 TFLite de detección, output_details podría tener
-        # una forma como [1, num_detections, 4+num_classes] donde 4 son (x,y,w,h) o (x1,y1,x2,y2)
-        # y num_classes son los scores por cada clase.
-        # Deberías aplicar Non-Max Suppression (NMS) y filtrar por confianza.
-
-        # Ejemplo de cómo se vería el bucle para detección (MUY SIMPLIFICADO):
-        # for detection in output_data_detection[0]: # Iterar sobre las detecciones
-        #     # Extraer bounding box, score de objeto, y scores de clase
-        #     box = detection[:4]
-        #     obj_score = detection[4] # Esto varía según el formato exacto de salida del modelo
-        #     class_scores = detection[5:] # Esto varía
-        #     class_id = np.argmax(class_scores)
-        #     confidence = obj_score * class_scores[class_id] # O solo obj_score dependiendo del modelo
-            
-        #     if confidence > CONFIDENCE_THRESHOLD:
-        #         # Crear mensaje de detección (idealmente un mensaje custom)
-        #         # Dibujar en cv_image (opcional)
-        #         # Publicar
-        #         self.get_logger().info(f"Detectado objeto de clase {class_id} con confianza {confidence}")
-        #         # detection_msg = String() # Reemplazar con mensaje customizado
-        #         # detection_msg.data = f"Objeto: Clase_{class_id}, Confianza: {confidence:.2f}, Box: {box}"
-        #         # self.detection_publisher.publish(detection_msg)
-        #         pass # Fin del ejemplo de detección
+        # El código de ejemplo para detección de objetos (bounding boxes) se mantiene comentado
+        # ya que el nodo actualmente implementa clasificación.
 
 
 def main(args=None):
