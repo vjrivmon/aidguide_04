@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 import os
 from glob import glob
 
@@ -29,4 +29,5 @@ setup(
             'fruit_detector = aidguide_04_deep_learning.fruit_detector_node:main',
         ],
     },
+    scripts=[],  # Dejar vacío para que setuptools use la ubicación correcta
 ) 

@@ -15,10 +15,11 @@ import numpy as np
 import tensorflow as tf # O tflite_runtime.interpreter si usas solo el runtime
 import os
 from ament_index_python.packages import get_package_share_directory
+from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy
 
 # Constantes (ajusta según sea necesario)
 # MODEL_FILENAME se determinará dinámicamente ahora
-INPUT_IMAGE_TOPIC = '/image_raw' # Tema al que te suscribes para recibir imágenes
+INPUT_IMAGE_TOPIC = '/image' # Tema al que te suscribes para recibir imágenes
 DETECTION_OUTPUT_TOPIC = '/detected_fruits' # Tema donde publicas las detecciones
 CONFIDENCE_THRESHOLD = 0.5 # Umbral de confianza para considerar una detección
 
@@ -97,11 +98,16 @@ class FruitDetectorNode(Node):
         self.bridge = CvBridge()
 
         # Suscriptor al tema de imágenes
+        qos_profile = QoSProfile(
+            reliability=QoSReliabilityPolicy.BEST_EFFORT,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=10
+        )
         self.image_subscription = self.create_subscription(
             Image,
             INPUT_IMAGE_TOPIC,
             self.image_callback,
-            10 # QoS profile depth
+            qos_profile
         )
         self.get_logger().info(f'Suscrito al tema de imágenes: {INPUT_IMAGE_TOPIC}')
 
@@ -119,7 +125,7 @@ class FruitDetectorNode(Node):
         Args:
             msg (sensor_msgs.msg.Image): El mensaje de imagen recibido.
         """
-        self.get_logger().debug(f'Recibida imagen con timestamp: {msg.header.stamp}')
+        self.get_logger().info(f'✨ Recibida imagen con timestamp: {msg.header.stamp}')
 
         try:
             # Convertir mensaje de imagen de ROS a formato OpenCV (BGR8)
@@ -189,6 +195,10 @@ class FruitDetectorNode(Node):
         predicted_class_index = np.argmax(output_data_cls[0])
         confidence_score = output_data_cls[0][predicted_class_index]
 
+        # También obtener las 3 mejores detecciones
+        top_indices = np.argsort(output_data_cls[0])[-3:][::-1]
+        top_scores = output_data_cls[0][top_indices]
+
         # Aquí necesitarás un mapeo de índices a nombres de clases (frutas)
         # Este mapeo deberías obtenerlo de tu proceso de entrenamiento.
         class_names = [
@@ -246,7 +256,16 @@ class FruitDetectorNode(Node):
         else:
             predicted_fruit = class_names[predicted_class_index]
         
-        self.get_logger().info(f"Fruta detectada (clasificación): {predicted_fruit} con confianza: {confidence_score:.2f}")
+        self.get_logger().info(f"🍓 DETECCIÓN: {predicted_fruit} con confianza: {confidence_score:.2f}")
+        
+        # Mostrar las 3 mejores detecciones
+        self.get_logger().info("🔝 TOP 3 DETECCIONES:")
+        for i, (idx, score) in enumerate(zip(top_indices, top_scores)):
+            if idx < len(class_names):
+                fruit_name = class_names[idx]
+            else:
+                fruit_name = f"Clase_{idx}"
+            self.get_logger().info(f"   {i+1}. {fruit_name}: {score:.2f}")
 
         if confidence_score >= CONFIDENCE_THRESHOLD:
             # Publicar el resultado
@@ -254,9 +273,9 @@ class FruitDetectorNode(Node):
             detection_msg = String()
             detection_msg.data = f"Fruta: {predicted_fruit}, Confianza: {confidence_score:.2f}"
             self.detection_publisher.publish(detection_msg)
-            self.get_logger().info(f'Publicando: {detection_msg.data}')
+            self.get_logger().info(f'✅ Publicando: {detection_msg.data}')
         else:
-            self.get_logger().info(f'Clasificación por debajo del umbral de confianza ({CONFIDENCE_THRESHOLD}).')
+            self.get_logger().info(f'❌ Clasificación por debajo del umbral de confianza ({CONFIDENCE_THRESHOLD}).')
 
 
         # SI FUERA UN MODELO DE DETECCIÓN (YOLO para bounding boxes):
